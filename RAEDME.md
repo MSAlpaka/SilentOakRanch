@@ -8,4 +8,7 @@ Inklusive Kundenportal, Buchungssystem, Zusatzleistungen, Rechnungsmodul und Auf
 - `frontend/`: React (Vite oder Next.js)
 - `shared/`: gemeinsame Typdefinitionen
 
+## Lizenz
+Die Software steht unter der [MIT-Lizenz](LICENSE).
+
 > Generiert und verwaltet mit OpenAI Codex.

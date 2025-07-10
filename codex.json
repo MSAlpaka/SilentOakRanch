@@ -1,0 +1,17 @@
+{
+  "name": "SilentOakRanch",
+  "type": "monorepo",
+  "backend": {
+    "language": "php",
+    "framework": "symfony",
+    "path": "backend"
+  },
+  "frontend": {
+    "language": "typescript",
+    "framework": "react",
+    "path": "frontend"
+  },
+  "shared": {
+    "path": "shared"
+  }
+}

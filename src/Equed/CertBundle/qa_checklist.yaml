@@ -1,0 +1,18 @@
+profile: equed
+DoD:
+  - requirement: domainModelingComplete
+    status: pending
+  - requirement: securityReviewDone
+    status: pending
+  - requirement: codeReviewed
+    status: pending
+  - requirement: documentationUpdated
+    status: pending
+  - requirement: pipelineGreen
+    status: pending
+  - requirement: deployChecklistCompleted
+    status: pending
+badgeRules: pending
+crossoverHandling: pending
+testsExist: pending
+certificateIssuanceLogic: pending

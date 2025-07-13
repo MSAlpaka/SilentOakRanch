@@ -45,6 +45,9 @@ class Subscription
     #[ORM\Column(type: 'datetime_immutable')]
     private \DateTimeImmutable $nextDue;
 
+    #[ORM\Column(type: 'datetime_immutable', nullable: true)]
+    private ?\DateTimeImmutable $endDate = null;
+
     #[ORM\Column(enumType: SubscriptionInterval::class)]
     private SubscriptionInterval $interval;
 
@@ -155,6 +158,17 @@ class Subscription
     public function setNextDue(\DateTimeImmutable $nextDue): self
     {
         $this->nextDue = $nextDue;
+        return $this;
+    }
+
+    public function getEndDate(): ?\DateTimeImmutable
+    {
+        return $this->endDate;
+    }
+
+    public function setEndDate(?\DateTimeImmutable $endDate): self
+    {
+        $this->endDate = $endDate;
         return $this;
     }
 

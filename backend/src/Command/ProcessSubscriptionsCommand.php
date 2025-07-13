@@ -81,7 +81,11 @@ class ProcessSubscriptionsCommand extends Command
             }
 
             $next = $this->nextDueDate($subscription->getNextDue(), $subscription->getInterval());
-            $subscription->setNextDue($next);
+            if (!$subscription->isAutoRenew() && $subscription->getEndDate() !== null && $next > $subscription->getEndDate()) {
+                $subscription->setActive(false);
+            } else {
+                $subscription->setNextDue($next);
+            }
             $this->em->persist($subscription);
 
             $processed++;

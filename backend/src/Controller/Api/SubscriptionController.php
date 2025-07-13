@@ -72,17 +72,27 @@ class SubscriptionController extends AbstractController
             return $this->json(['message' => 'Invalid start date'], 400);
         }
 
+        $endDate = null;
+
         $autoRenew = $data['autoRenew'] ?? true;
         if ($autoRenew === false) {
             if (empty($data['endDate'])) {
                 return $this->json(['message' => 'endDate required when autoRenew is false'], 400);
             }
             try {
-                new \DateTimeImmutable($data['endDate']);
+                $endDate = new \DateTimeImmutable($data['endDate']);
             } catch (\Exception) {
                 return $this->json(['message' => 'Invalid endDate'], 400);
             }
         }
+        if (!empty($data['endDate']) && $autoRenew !== false) {
+            try {
+                $endDate = new \DateTimeImmutable($data['endDate']);
+            } catch (\Exception) {
+                return $this->json(['message' => 'Invalid endDate'], 400);
+            }
+        }
+        $endDate = $endDate ?? null;
 
         $relations = array_intersect_key($data, array_flip(['userId', 'horseId', 'stallUnitId']));
         $provided = array_filter($relations, static fn($v) => $v !== null && $v !== '');
@@ -105,6 +115,7 @@ class SubscriptionController extends AbstractController
             ->setAmount($data['amount'])
             ->setStartsAt($startsAt)
             ->setNextDue(new \DateTimeImmutable($nextDueStr))
+            ->setEndDate($endDate)
             ->setInterval($interval)
             ->setActive($data['active'] ?? true)
             ->setAutoRenew($autoRenew);
@@ -174,6 +185,7 @@ class SubscriptionController extends AbstractController
             'amount' => $subscription->getAmount(),
             'startsAt' => $subscription->getStartsAt()->format('c'),
             'nextDue' => $subscription->getNextDue()->format('c'),
+            'endDate' => $subscription->getEndDate()?->format('c'),
             'interval' => $subscription->getInterval()->value,
             'active' => $subscription->isActive(),
             'autoRenew' => $subscription->isAutoRenew(),

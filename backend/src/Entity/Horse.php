@@ -25,6 +25,10 @@ class Horse
     #[ORM\Column(type: 'text', nullable: true)]
     private ?string $notes = null;
 
+    #[ORM\ManyToOne(targetEntity: User::class)]
+    #[ORM\JoinColumn(nullable: false)]
+    private User $owner;
+
     #[ORM\ManyToOne(targetEntity: StallUnit::class, inversedBy: 'currentHorse')]
     private ?StallUnit $currentLocation = null;
 
@@ -74,6 +78,17 @@ class Horse
     public function setNotes(?string $notes): self
     {
         $this->notes = $notes;
+        return $this;
+    }
+
+    public function getOwner(): User
+    {
+        return $this->owner;
+    }
+
+    public function setOwner(User $owner): self
+    {
+        $this->owner = $owner;
         return $this;
     }
 

@@ -23,6 +23,7 @@ export function useUser() {
   useEffect(() => {
     if (!token) {
       setUser(null)
+      setLoading(false)
       return
     }
     setLoading(true)

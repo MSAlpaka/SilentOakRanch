@@ -6,7 +6,9 @@ use App\Enum\PricingRuleType;
 use App\Enum\PricingUnit;
 use Doctrine\ORM\Mapping as ORM;
 
-#[ORM\Entity]
+use App\Repository\PricingRuleRepository;
+
+#[ORM\Entity(repositoryClass: PricingRuleRepository::class)]
 class PricingRule
 {
     #[ORM\Id]
@@ -37,6 +39,9 @@ class PricingRule
 
     #[ORM\Column(type: 'boolean')]
     private bool $requiresSubscription;
+
+    #[ORM\Column(type: 'boolean')]
+    private bool $isDefault = false;
 
     public function getId(): ?int
     {
@@ -128,6 +133,17 @@ class PricingRule
     public function setRequiresSubscription(bool $requiresSubscription): self
     {
         $this->requiresSubscription = $requiresSubscription;
+        return $this;
+    }
+
+    public function isDefault(): bool
+    {
+        return $this->isDefault;
+    }
+
+    public function setIsDefault(bool $isDefault): self
+    {
+        $this->isDefault = $isDefault;
         return $this;
     }
 }

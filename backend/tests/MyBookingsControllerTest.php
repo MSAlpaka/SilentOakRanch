@@ -4,8 +4,11 @@ namespace App\Tests;
 
 use App\Controller\MyBookingsController;
 use App\Entity\Booking;
+use App\Entity\Horse;
 use App\Entity\StallUnit;
 use App\Entity\User;
+use App\Enum\BookingType;
+use App\Enum\Gender;
 use App\Enum\StallUnitStatus;
 use App\Enum\StallUnitType;
 use App\Enum\UserRole;
@@ -47,6 +50,8 @@ class MyBookingsControllerTest extends KernelTestCase
         $user->setLastName('B');
         $user->setActive(true);
         $user->setCreatedAt(new \DateTimeImmutable());
+        $this->em->persist($user);
+        $this->em->flush();
         return $user;
     }
 
@@ -62,16 +67,35 @@ class MyBookingsControllerTest extends KernelTestCase
         return $stall;
     }
 
+    private function createHorse(User $owner, StallUnit $stall): Horse
+    {
+        $horse = new Horse();
+        $horse->setName('Pony');
+        $horse->setGender(Gender::MARE);
+        $horse->setDateOfBirth(new \DateTimeImmutable('2020-01-01'));
+        $horse->setOwner($owner);
+        $horse->setCurrentLocation($stall);
+        $this->em->persist($horse);
+        $this->em->flush();
+        return $horse;
+    }
+
     public function testMyBookings(): void
     {
         $stall = $this->createStallUnit();
         $user = $this->createUser();
+        $horse = $this->createHorse($user, $stall);
 
         $booking = new Booking();
         $booking->setStallUnit($stall)
             ->setStartDate(new \DateTimeImmutable('2024-01-01'))
             ->setEndDate(new \DateTimeImmutable('2024-01-10'))
-            ->setUser($user->getEmail());
+            ->setUser($user->getEmail())
+            ->setHorse($horse)
+            ->setType(BookingType::OTHER)
+            ->setLabel('test')
+            ->setDateFrom(new \DateTimeImmutable('2024-01-01'))
+            ->setDateTo(new \DateTimeImmutable('2024-01-10'));
         $this->em->persist($booking);
         $this->em->flush();
 

@@ -4,8 +4,11 @@ namespace App\Tests;
 
 use App\Controller\BookingController;
 use App\Entity\Booking;
+use App\Entity\Horse;
 use App\Entity\StallUnit;
 use App\Entity\User;
+use App\Enum\Gender;
+use App\Enum\BookingType;
 use App\Enum\StallUnitStatus;
 use App\Enum\StallUnitType;
 use App\Enum\UserRole;
@@ -48,6 +51,8 @@ class BookingControllerTest extends KernelTestCase
         $user->setLastName('B');
         $user->setActive(true);
         $user->setCreatedAt(new \DateTimeImmutable());
+        $this->em->persist($user);
+        $this->em->flush();
         return $user;
     }
 
@@ -63,10 +68,24 @@ class BookingControllerTest extends KernelTestCase
         return $stall;
     }
 
+    private function createHorse(User $owner, StallUnit $stall): Horse
+    {
+        $horse = new Horse();
+        $horse->setName('Pony');
+        $horse->setGender(Gender::MARE);
+        $horse->setDateOfBirth(new \DateTimeImmutable('2020-01-01'));
+        $horse->setOwner($owner);
+        $horse->setCurrentLocation($stall);
+        $this->em->persist($horse);
+        $this->em->flush();
+        return $horse;
+    }
+
     public function testCreateBookingSuccess(): void
     {
         $stall = $this->createStallUnit();
         $user = $this->createUser();
+        $horse = $this->createHorse($user, $stall);
 
         $security = $this->createMock(Security::class);
         $security->method('getUser')->willReturn($user);
@@ -74,16 +93,18 @@ class BookingControllerTest extends KernelTestCase
         $controller = static::getContainer()->get(BookingController::class);
 
         $request = new Request([], [], [], [], [], [], json_encode([
-            'stallUnitId' => $stall->getId(),
-            'startDate' => '2024-01-01T00:00:00Z',
-            'endDate' => '2024-01-10T00:00:00Z',
+            'horseId' => $horse->getId(),
+            'type' => 'service',
+            'label' => 'Lesson',
+            'dateFrom' => '2024-01-01T00:00:00Z'
         ]));
 
-        $response = $controller->__invoke($request, $this->stallUnitRepository, $this->bookingRepository, $this->em, $security);
+        $response = $controller->createHorseBooking($request, $this->em, $security, $this->stallUnitRepository);
         $data = json_decode($response->getContent(), true);
 
-        $this->assertSame(200, $response->getStatusCode());
-        $this->assertSame('PENDING', $data['status']);
+        $this->assertSame(201, $response->getStatusCode());
+        $this->assertSame('service', $data['type']);
+        $this->assertSame('Lesson', $data['label']);
         $this->assertNotNull($data['id']);
     }
 
@@ -96,7 +117,11 @@ class BookingControllerTest extends KernelTestCase
         $booking->setStallUnit($stall)
             ->setStartDate(new \DateTimeImmutable('2024-01-05'))
             ->setEndDate(new \DateTimeImmutable('2024-01-15'))
-            ->setUser($user->getEmail());
+            ->setUser($user->getEmail())
+            ->setType(BookingType::OTHER)
+            ->setLabel('Overlap')
+            ->setDateFrom(new \DateTimeImmutable('2024-01-05'))
+            ->setDateTo(new \DateTimeImmutable('2024-01-15'));
         $this->em->persist($booking);
         $this->em->flush();
 

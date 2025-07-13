@@ -4,9 +4,10 @@ namespace App\Entity;
 
 use App\Enum\StallUnitType;
 use App\Enum\StallUnitStatus;
+use App\Repository\StallUnitRepository;
 use Doctrine\ORM\Mapping as ORM;
 
-#[ORM\Entity]
+#[ORM\Entity(repositoryClass: StallUnitRepository::class)]
 class StallUnit
 {
     #[ORM\Id]

@@ -20,9 +20,23 @@ class SubscriptionController extends AbstractController
 {
     #[Route('/api/subscriptions', methods: ['GET'])]
     #[IsGranted('ROLE_ADMIN')]
-    public function list(SubscriptionRepository $subscriptionRepository): JsonResponse
+    public function list(Request $request, SubscriptionRepository $subscriptionRepository): JsonResponse
     {
-        $subscriptions = $subscriptionRepository->findAll();
+        $typeParam = $request->query->get('type');
+        $activeOnlyParam = $request->query->get('activeOnly');
+
+        $type = null;
+        if ($typeParam !== null) {
+            try {
+                $type = SubscriptionType::from(strtolower($typeParam));
+            } catch (\ValueError) {
+                return $this->json(['message' => 'Invalid type'], 400);
+            }
+        }
+
+        $activeOnly = $activeOnlyParam === 'true';
+
+        $subscriptions = $subscriptionRepository->findFiltered($type, $activeOnly);
         $data = [];
         foreach ($subscriptions as $subscription) {
             $data[] = $this->serializeSubscription($subscription);
@@ -105,12 +119,25 @@ class SubscriptionController extends AbstractController
 
     private function serializeSubscription(Subscription $subscription): array
     {
+        $user = $subscription->getUser();
+        $horse = $subscription->getHorse();
+        $stall = $subscription->getStallUnit();
+
         return [
             'id' => $subscription->getId(),
             'type' => $subscription->getSubscriptionType()->value,
-            'userId' => $subscription->getUser()->getId(),
-            'horseId' => $subscription->getHorse()?->getId(),
-            'stallUnitId' => $subscription->getStallUnit()?->getId(),
+            'user' => [
+                'id' => $user->getId(),
+                'name' => trim($user->getFirstName() . ' ' . $user->getLastName()),
+            ],
+            'horse' => $horse ? [
+                'id' => $horse->getId(),
+                'name' => $horse->getName(),
+            ] : null,
+            'stallUnit' => $stall ? [
+                'id' => $stall->getId(),
+                'name' => method_exists($stall, 'getName') ? $stall->getName() : '',
+            ] : null,
             'title' => $subscription->getTitle(),
             'description' => $subscription->getDescription(),
             'amount' => $subscription->getAmount(),

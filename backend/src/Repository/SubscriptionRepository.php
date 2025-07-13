@@ -3,6 +3,7 @@
 namespace App\Repository;
 
 use App\Entity\Subscription;
+use App\Enum\SubscriptionType;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
 
@@ -27,5 +28,24 @@ class SubscriptionRepository extends ServiceEntityRepository
             ->setParameter('now', $now)
             ->getQuery()
             ->getResult();
+    }
+
+    /**
+     * @return Subscription[]
+     */
+    public function findFiltered(?SubscriptionType $type, bool $activeOnly): array
+    {
+        $qb = $this->createQueryBuilder('s');
+
+        if ($type) {
+            $qb->andWhere('s.subscriptionType = :type')
+                ->setParameter('type', $type);
+        }
+
+        if ($activeOnly) {
+            $qb->andWhere('s.active = true');
+        }
+
+        return $qb->getQuery()->getResult();
     }
 }

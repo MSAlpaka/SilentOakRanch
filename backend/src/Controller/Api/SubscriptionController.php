@@ -50,8 +50,38 @@ class SubscriptionController extends AbstractController
     public function create(Request $request, EntityManagerInterface $em): JsonResponse
     {
         $data = json_decode($request->getContent(), true);
-        if (!is_array($data) || !isset($data['type'], $data['title'], $data['amount'], $data['startsAt'], $data['interval'])) {
+        if (!is_array($data)) {
             return $this->json(['message' => 'Invalid payload'], 400);
+        }
+
+        if (isset($data['startDate']) && !isset($data['startsAt'])) {
+            $data['startsAt'] = $data['startDate'];
+        }
+
+        if (!isset($data['type'], $data['title'], $data['amount'], $data['startsAt'], $data['interval'])) {
+            return $this->json(['message' => 'Invalid payload'], 400);
+        }
+
+        if (!is_numeric($data['amount']) || $data['amount'] <= 0) {
+            return $this->json(['message' => 'Amount must be greater than zero'], 400);
+        }
+
+        try {
+            $startsAt = new \DateTimeImmutable($data['startsAt']);
+        } catch (\Exception) {
+            return $this->json(['message' => 'Invalid start date'], 400);
+        }
+
+        $autoRenew = $data['autoRenew'] ?? true;
+        if ($autoRenew === false) {
+            if (empty($data['endDate'])) {
+                return $this->json(['message' => 'endDate required when autoRenew is false'], 400);
+            }
+            try {
+                new \DateTimeImmutable($data['endDate']);
+            } catch (\Exception) {
+                return $this->json(['message' => 'Invalid endDate'], 400);
+            }
         }
 
         $relations = array_intersect_key($data, array_flip(['userId', 'horseId', 'stallUnitId']));
@@ -68,15 +98,16 @@ class SubscriptionController extends AbstractController
         }
 
         $subscription = new Subscription();
+        $nextDueStr = $data['nextDue'] ?? $data['startsAt'];
         $subscription->setSubscriptionType($type)
             ->setTitle($data['title'])
             ->setDescription($data['description'] ?? null)
             ->setAmount($data['amount'])
-            ->setStartsAt(new \DateTimeImmutable($data['startsAt']))
-            ->setNextDue(new \DateTimeImmutable($data['nextDue'] ?? $data['startsAt']))
+            ->setStartsAt($startsAt)
+            ->setNextDue(new \DateTimeImmutable($nextDueStr))
             ->setInterval($interval)
             ->setActive($data['active'] ?? true)
-            ->setAutoRenew($data['autoRenew'] ?? true);
+            ->setAutoRenew($autoRenew);
 
         if ($type === SubscriptionType::USER && isset($data['userId'])) {
             /** @var User|null $user */

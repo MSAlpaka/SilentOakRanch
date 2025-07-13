@@ -3,6 +3,7 @@
 namespace App\Entity;
 
 use App\Enum\BookingStatus;
+use App\Enum\BookingType;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity(repositoryClass: 'App\\Repository\\BookingRepository')]
@@ -32,6 +33,21 @@ class Booking
 
     #[ORM\Column(enumType: BookingStatus::class)]
     private BookingStatus $status = BookingStatus::PENDING;
+
+    #[ORM\Column(enumType: BookingType::class)]
+    private BookingType $type;
+
+    #[ORM\Column(type: 'string')]
+    private string $label;
+
+    #[ORM\Column(type: 'datetime')]
+    private \DateTimeInterface $dateFrom;
+
+    #[ORM\Column(type: 'datetime', nullable: true)]
+    private ?\DateTimeInterface $dateTo = null;
+
+    #[ORM\Column(type: 'boolean')]
+    private bool $isConfirmed = false;
 
     public function getId(): ?int
     {
@@ -101,6 +117,61 @@ class Booking
     public function setStatus(BookingStatus $status): self
     {
         $this->status = $status;
+        return $this;
+    }
+
+    public function getType(): BookingType
+    {
+        return $this->type;
+    }
+
+    public function setType(BookingType $type): self
+    {
+        $this->type = $type;
+        return $this;
+    }
+
+    public function getLabel(): string
+    {
+        return $this->label;
+    }
+
+    public function setLabel(string $label): self
+    {
+        $this->label = $label;
+        return $this;
+    }
+
+    public function getDateFrom(): \DateTimeInterface
+    {
+        return $this->dateFrom;
+    }
+
+    public function setDateFrom(\DateTimeInterface $dateFrom): self
+    {
+        $this->dateFrom = $dateFrom;
+        return $this;
+    }
+
+    public function getDateTo(): ?\DateTimeInterface
+    {
+        return $this->dateTo;
+    }
+
+    public function setDateTo(?\DateTimeInterface $dateTo): self
+    {
+        $this->dateTo = $dateTo;
+        return $this;
+    }
+
+    public function isConfirmed(): bool
+    {
+        return $this->isConfirmed;
+    }
+
+    public function setIsConfirmed(bool $isConfirmed): self
+    {
+        $this->isConfirmed = $isConfirmed;
         return $this;
     }
 }

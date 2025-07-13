@@ -87,10 +87,10 @@ class BookingControllerTest extends KernelTestCase
         return $horse;
     }
 
-    private function createPricingRule(): PricingRule
+    private function createPricingRule(PricingRuleType $type = PricingRuleType::SERVICE): PricingRule
     {
         $rule = new PricingRule();
-        $rule->setType(PricingRuleType::SERVICE);
+        $rule->setType($type);
         $rule->setTarget('default');
         $rule->setPrice('10.00');
         $rule->setUnit(PricingUnit::PER_USE);
@@ -130,6 +130,33 @@ class BookingControllerTest extends KernelTestCase
         $this->assertNull($data['dateTo']);
         $this->assertNotNull($data['id']);
         $this->assertSame('10.00', $data['price']);
+    }
+
+    public function testBookingPriceCalculatedWhenMissing(): void
+    {
+        $stall = $this->createStallUnit();
+        $user = $this->createUser();
+        $this->createPricingRule(PricingRuleType::OTHER);
+
+        $security = $this->createMock(Security::class);
+        $security->method('getUser')->willReturn($user);
+
+        $controller = static::getContainer()->get(BookingController::class);
+        $request = new Request([], [], [], [], [], [], json_encode([
+            'stallUnitId' => $stall->getId(),
+            'startDate' => '2024-01-01T00:00:00Z',
+            'endDate' => '2024-01-02T00:00:00Z',
+        ]));
+
+        $response = $controller->__invoke($request, $this->stallUnitRepository, $this->bookingRepository, $this->em, $security, $this->pricingRuleRepository);
+        $data = json_decode($response->getContent(), true);
+
+        $this->assertSame(200, $response->getStatusCode());
+        $this->assertSame('10.00', $data['price']);
+
+        $booking = $this->bookingRepository->find($data['id']);
+        $this->assertNotNull($booking);
+        $this->assertSame('10.00', $booking->getPrice());
     }
 
     public function testOverlapRejected(): void

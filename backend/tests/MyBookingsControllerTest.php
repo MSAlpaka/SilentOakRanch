@@ -92,12 +92,16 @@ class MyBookingsControllerTest extends KernelTestCase
             ->setEndDate(new \DateTimeImmutable('2024-01-10'))
             ->setUser($user->getEmail())
             ->setHorse($horse)
+            ->setPrice('12.34')
             ->setType(BookingType::OTHER)
             ->setLabel('test')
             ->setDateFrom(new \DateTimeImmutable('2024-01-01'))
             ->setDateTo(new \DateTimeImmutable('2024-01-10'));
         $this->em->persist($booking);
         $this->em->flush();
+
+        $stored = $this->bookingRepository->find($booking->getId());
+        $this->assertSame('12.34', $stored->getPrice());
 
         $security = $this->createMock(Security::class);
         $security->method('getUser')->willReturn($user);

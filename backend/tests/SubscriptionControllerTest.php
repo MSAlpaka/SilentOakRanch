@@ -125,6 +125,66 @@ class SubscriptionControllerTest extends KernelTestCase
         $this->assertCount(0, $this->subscriptionRepository->findAll());
     }
 
+    public function testCreateSubscriptionStartDateAlias(): void
+    {
+        $user = $this->createUser();
+        $stall = $this->createStallUnit();
+        $this->createHorse($user, $stall);
+
+        $controller = static::getContainer()->get(SubscriptionController::class);
+        $request = new Request([], [], [], [], [], [], json_encode([
+            'type' => 'stall',
+            'title' => 'Boarding',
+            'amount' => '100.00',
+            'startDate' => '2024-01-01T00:00:00Z',
+            'interval' => 'monthly',
+            'stallUnitId' => $stall->getId(),
+        ]));
+
+        $response = $controller->create($request, $this->em);
+        $this->assertSame(201, $response->getStatusCode());
+        $this->assertCount(1, $this->subscriptionRepository->findAll());
+    }
+
+    public function testCreateSubscriptionInvalidAmount(): void
+    {
+        $stall = $this->createStallUnit();
+
+        $controller = static::getContainer()->get(SubscriptionController::class);
+        $request = new Request([], [], [], [], [], [], json_encode([
+            'type' => 'stall',
+            'title' => 'Boarding',
+            'amount' => '0',
+            'startsAt' => '2024-01-01T00:00:00Z',
+            'interval' => 'monthly',
+            'stallUnitId' => $stall->getId(),
+        ]));
+
+        $response = $controller->create($request, $this->em);
+        $this->assertSame(400, $response->getStatusCode());
+        $this->assertCount(0, $this->subscriptionRepository->findAll());
+    }
+
+    public function testCreateSubscriptionRequiresEndDate(): void
+    {
+        $stall = $this->createStallUnit();
+
+        $controller = static::getContainer()->get(SubscriptionController::class);
+        $request = new Request([], [], [], [], [], [], json_encode([
+            'type' => 'stall',
+            'title' => 'Boarding',
+            'amount' => '100.00',
+            'startsAt' => '2024-01-01T00:00:00Z',
+            'interval' => 'monthly',
+            'stallUnitId' => $stall->getId(),
+            'autoRenew' => false,
+        ]));
+
+        $response = $controller->create($request, $this->em);
+        $this->assertSame(400, $response->getStatusCode());
+        $this->assertCount(0, $this->subscriptionRepository->findAll());
+    }
+
     public function testListSubscriptions(): void
     {
         $user = $this->createUser();

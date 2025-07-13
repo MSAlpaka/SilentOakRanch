@@ -14,6 +14,10 @@ use App\Enum\StallUnitType;
 use App\Enum\UserRole;
 use App\Repository\BookingRepository;
 use App\Repository\StallUnitRepository;
+use App\Repository\PricingRuleRepository;
+use App\Entity\PricingRule;
+use App\Enum\PricingRuleType;
+use App\Enum\PricingUnit;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Tools\SchemaTool;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
@@ -25,6 +29,7 @@ class BookingControllerTest extends KernelTestCase
     private EntityManagerInterface $em;
     private BookingRepository $bookingRepository;
     private StallUnitRepository $stallUnitRepository;
+    private PricingRuleRepository $pricingRuleRepository;
 
     protected function setUp(): void
     {
@@ -34,6 +39,7 @@ class BookingControllerTest extends KernelTestCase
         $this->em = $container->get(EntityManagerInterface::class);
         $this->bookingRepository = $container->get(BookingRepository::class);
         $this->stallUnitRepository = $container->get(StallUnitRepository::class);
+        $this->pricingRuleRepository = $container->get(PricingRuleRepository::class);
 
         $tool = new SchemaTool($this->em);
         $tool->dropSchema($this->em->getMetadataFactory()->getAllMetadata());
@@ -81,11 +87,26 @@ class BookingControllerTest extends KernelTestCase
         return $horse;
     }
 
+    private function createPricingRule(): PricingRule
+    {
+        $rule = new PricingRule();
+        $rule->setType(PricingRuleType::SERVICE);
+        $rule->setTarget('default');
+        $rule->setPrice('10.00');
+        $rule->setUnit(PricingUnit::PER_USE);
+        $rule->setRequiresSubscription(false);
+        $rule->setIsDefault(true);
+        $this->em->persist($rule);
+        $this->em->flush();
+        return $rule;
+    }
+
     public function testCreateBookingSuccess(): void
     {
         $stall = $this->createStallUnit();
         $user = $this->createUser();
         $horse = $this->createHorse($user, $stall);
+        $this->createPricingRule();
 
         $security = $this->createMock(Security::class);
         $security->method('getUser')->willReturn($user);
@@ -99,7 +120,7 @@ class BookingControllerTest extends KernelTestCase
             'dateFrom' => '2024-01-01T00:00:00Z'
         ]));
 
-        $response = $controller->createHorseBooking($request, $this->em, $security, $this->stallUnitRepository);
+        $response = $controller->createHorseBooking($request, $this->em, $security, $this->stallUnitRepository, $this->pricingRuleRepository);
         $data = json_decode($response->getContent(), true);
 
         $this->assertSame(201, $response->getStatusCode());
@@ -108,6 +129,7 @@ class BookingControllerTest extends KernelTestCase
         $this->assertArrayHasKey('dateTo', $data);
         $this->assertNull($data['dateTo']);
         $this->assertNotNull($data['id']);
+        $this->assertSame('10.00', $data['price']);
     }
 
     public function testOverlapRejected(): void
@@ -141,7 +163,7 @@ class BookingControllerTest extends KernelTestCase
             'endDate' => '2024-01-20T00:00:00Z',
         ]));
 
-        $response = $controller->__invoke($request, $this->stallUnitRepository, $this->bookingRepository, $this->em, $security);
+        $response = $controller->__invoke($request, $this->stallUnitRepository, $this->bookingRepository, $this->em, $security, $this->pricingRuleRepository);
         $this->assertSame(400, $response->getStatusCode());
     }
 
@@ -150,6 +172,7 @@ class BookingControllerTest extends KernelTestCase
         $stall = $this->createStallUnit();
         $user = $this->createUser();
         $horse = $this->createHorse($user, $stall);
+        $this->createPricingRule();
 
         $security = $this->createMock(Security::class);
         $security->method('getUser')->willReturn($user);
@@ -164,11 +187,12 @@ class BookingControllerTest extends KernelTestCase
             'dateTo' => '2024-01-03T00:00:00Z',
         ]));
 
-        $response = $controller->createHorseBooking($request, $this->em, $security, $this->stallUnitRepository);
+        $response = $controller->createHorseBooking($request, $this->em, $security, $this->stallUnitRepository, $this->pricingRuleRepository);
         $data = json_decode($response->getContent(), true);
 
         $this->assertSame(201, $response->getStatusCode());
         $this->assertSame('2024-01-03T00:00:00+00:00', $data['dateTo']);
+        $this->assertSame('10.00', $data['price']);
     }
 
     public function testHorseMustBelongToUser(): void
@@ -200,7 +224,7 @@ class BookingControllerTest extends KernelTestCase
             'dateFrom' => '2024-01-01T00:00:00Z'
         ]));
 
-        $response = $controller->createHorseBooking($request, $this->em, $security, $this->stallUnitRepository);
+        $response = $controller->createHorseBooking($request, $this->em, $security, $this->stallUnitRepository, $this->pricingRuleRepository);
         $this->assertSame(403, $response->getStatusCode());
     }
 }

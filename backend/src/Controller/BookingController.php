@@ -6,6 +6,8 @@ use App\Entity\Booking;
 use App\Entity\Horse;
 use App\Repository\BookingRepository;
 use App\Repository\StallUnitRepository;
+use App\Repository\PricingRuleRepository;
+use App\Enum\PricingUnit;
 use App\Enum\BookingType;
 use App\Entity\StallUnit;
 use App\Entity\User;
@@ -25,7 +27,8 @@ class BookingController extends AbstractController
         StallUnitRepository $stallUnitRepository,
         BookingRepository $bookingRepository,
         EntityManagerInterface $em,
-        Security $security
+        Security $security,
+        PricingRuleRepository $pricingRuleRepository
     ): JsonResponse {
         $data = json_decode($request->getContent(), true);
         if (!isset($data['stallUnitId'], $data['startDate'], $data['endDate'])) {
@@ -72,6 +75,26 @@ class BookingController extends AbstractController
             ->setDateTo($end)
             ->setIsConfirmed(false);
 
+        if (isset($data['price'])) {
+            $booking->setPrice($data['price']);
+        } else {
+            $rule = $pricingRuleRepository->findDefault(BookingType::OTHER, $start);
+            if ($rule) {
+                $price = (float) $rule->getPrice();
+                $cost = $price;
+                $unit = $rule->getUnit();
+                if ($unit === PricingUnit::PER_DAY) {
+                    $days = max(1, $start->diff($end)->days);
+                    $cost = $price * $days;
+                } elseif ($unit === PricingUnit::PER_MONTH) {
+                    $diff = $start->diff($end);
+                    $months = $diff->y * 12 + $diff->m + $diff->d / 30;
+                    $cost = $price * $months;
+                }
+                $booking->setPrice(number_format($cost, 2, '.', ''));
+            }
+        }
+
         $em->persist($booking);
         $em->flush();
 
@@ -86,6 +109,7 @@ class BookingController extends AbstractController
             ],
             'startDate' => $start->format('c'),
             'endDate' => $end->format('c'),
+            'price' => $booking->getPrice(),
         ]);
     }
 
@@ -95,7 +119,8 @@ class BookingController extends AbstractController
         Request $request,
         EntityManagerInterface $em,
         Security $security,
-        StallUnitRepository $stallUnitRepository
+        StallUnitRepository $stallUnitRepository,
+        PricingRuleRepository $pricingRuleRepository
     ): JsonResponse {
         $data = json_decode($request->getContent(), true);
         if (!isset($data['horseId'], $data['type'], $data['label'], $data['dateFrom'])) {
@@ -145,6 +170,27 @@ class BookingController extends AbstractController
         }
         $booking->setStallUnit($stallUnit);
 
+        if (isset($data['price'])) {
+            $booking->setPrice($data['price']);
+        } else {
+            $rule = $pricingRuleRepository->findDefault($booking->getType(), $booking->getDateFrom());
+            if ($rule) {
+                $price = (float) $rule->getPrice();
+                $cost = $price;
+                $unit = $rule->getUnit();
+                $dateTo = $booking->getDateTo() ?? $booking->getDateFrom();
+                if ($unit === PricingUnit::PER_DAY) {
+                    $days = max(1, $booking->getDateFrom()->diff($dateTo)->days);
+                    $cost = $price * $days;
+                } elseif ($unit === PricingUnit::PER_MONTH) {
+                    $diff = $booking->getDateFrom()->diff($dateTo);
+                    $months = $diff->y * 12 + $diff->m + $diff->d / 30;
+                    $cost = $price * $months;
+                }
+                $booking->setPrice(number_format($cost, 2, '.', ''));
+            }
+        }
+
         $em->persist($booking);
         $em->flush();
 
@@ -156,6 +202,7 @@ class BookingController extends AbstractController
             'dateFrom' => $booking->getDateFrom()->format('c'),
             'dateTo' => $booking->getDateTo()?->format('c'),
             'isConfirmed' => $booking->isConfirmed(),
+            'price' => $booking->getPrice(),
         ], 201);
     }
 }

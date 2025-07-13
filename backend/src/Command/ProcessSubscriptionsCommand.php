@@ -6,6 +6,7 @@ use App\Entity\Invoice;
 use App\Entity\InvoiceItem;
 use App\Enum\InvoiceStatus;
 use App\Enum\SubscriptionInterval;
+use App\Enum\SubscriptionType;
 use App\Repository\InvoiceRepository;
 use App\Repository\SubscriptionRepository;
 use Doctrine\ORM\EntityManagerInterface;
@@ -36,6 +37,14 @@ class ProcessSubscriptionsCommand extends Command
 
         foreach ($subscriptions as $subscription) {
             $user = $subscription->getUser();
+
+            if ($subscription->getSubscriptionType() === SubscriptionType::STALL && $subscription->getStallUnit()) {
+                $stall = $subscription->getStallUnit();
+                if (!$subscription->getTitle()) {
+                    $subscription->setTitle(sprintf('Boxenmiete %s', $stall->getName()));
+                }
+                $subscription->setAmount($stall->getMonthlyRent());
+            }
             $period = $subscription->getNextDue()->format('Y-m');
 
             $invoice = $this->invoiceRepository->findOneBy([

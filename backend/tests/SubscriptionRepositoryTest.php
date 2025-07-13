@@ -5,6 +5,7 @@ namespace App\Tests;
 use App\Entity\Subscription;
 use App\Entity\User;
 use App\Enum\SubscriptionInterval;
+use App\Enum\SubscriptionType;
 use App\Enum\UserRole;
 use App\Repository\SubscriptionRepository;
 use Doctrine\ORM\EntityManagerInterface;
@@ -52,6 +53,7 @@ class SubscriptionRepositoryTest extends KernelTestCase
 
         $due = new Subscription();
         $due->setUser($user)
+            ->setSubscriptionType(SubscriptionType::USER)
             ->setTitle('Due')
             ->setAmount('10.00')
             ->setStartsAt(new \DateTimeImmutable('2024-01-01'))
@@ -63,6 +65,7 @@ class SubscriptionRepositoryTest extends KernelTestCase
 
         $future = new Subscription();
         $future->setUser($user)
+            ->setSubscriptionType(SubscriptionType::USER)
             ->setTitle('Future')
             ->setAmount('10.00')
             ->setStartsAt(new \DateTimeImmutable('2024-01-01'))
@@ -74,6 +77,7 @@ class SubscriptionRepositoryTest extends KernelTestCase
 
         $inactive = new Subscription();
         $inactive->setUser($user)
+            ->setSubscriptionType(SubscriptionType::USER)
             ->setTitle('Inactive')
             ->setAmount('10.00')
             ->setStartsAt(new \DateTimeImmutable('2024-01-01'))

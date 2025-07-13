@@ -7,7 +7,11 @@ use App\Entity\InvoiceItem;
 use App\Entity\Subscription;
 use App\Entity\User;
 use App\Enum\SubscriptionInterval;
+use App\Enum\SubscriptionType;
 use App\Enum\UserRole;
+use App\Entity\StallUnit;
+use App\Enum\StallUnitType;
+use App\Enum\StallUnitStatus;
 use App\Repository\InvoiceRepository;
 use App\Repository\SubscriptionRepository;
 use Doctrine\ORM\EntityManagerInterface;
@@ -52,12 +56,26 @@ class ProcessSubscriptionsCommandTest extends KernelTestCase
         return $user;
     }
 
+    private function createStallUnit(): StallUnit
+    {
+        $stall = new StallUnit();
+        $stall->setName('Box 1');
+        $stall->setType(StallUnitType::BOX);
+        $stall->setArea('A');
+        $stall->setStatus(StallUnitStatus::FREE);
+        $stall->setMonthlyRent('100.00');
+        $this->em->persist($stall);
+        $this->em->flush();
+        return $stall;
+    }
+
     public function testProcessSubscriptions(): void
     {
         $user = $this->createUser();
 
         $subscription = new Subscription();
         $subscription->setUser($user)
+            ->setSubscriptionType(SubscriptionType::USER)
             ->setTitle('Boarding')
             ->setAmount('50.00')
             ->setStartsAt(new \DateTimeImmutable('2024-01-01'))
@@ -84,6 +102,44 @@ class ProcessSubscriptionsCommandTest extends KernelTestCase
         $this->assertCount(1, $items);
         $this->assertSame('Boarding', $items[0]->getLabel());
         $this->assertSame('50.00', $invoice->getTotal());
+
+        $expectedNextDue = (new \DateTimeImmutable('2024-01-01'))->add(new \DateInterval('P1M'));
+        $this->assertSame($expectedNextDue->format('Y-m-d'), $subscription->getNextDue()->format('Y-m-d'));
+    }
+
+    public function testProcessStallSubscriptions(): void
+    {
+        $user = $this->createUser();
+        $stall = $this->createStallUnit();
+
+        $subscription = new Subscription();
+        $subscription->setUser($user)
+            ->setSubscriptionType(SubscriptionType::STALL)
+            ->setStallUnit($stall)
+            ->setTitle('Boxenmiete ' . $stall->getName())
+            ->setAmount($stall->getMonthlyRent())
+            ->setStartsAt(new \DateTimeImmutable('2024-01-01'))
+            ->setNextDue(new \DateTimeImmutable('2024-01-01'))
+            ->setInterval(SubscriptionInterval::MONTHLY)
+            ->setActive(true)
+            ->setAutoRenew(true);
+        $this->em->persist($subscription);
+        $this->em->flush();
+
+        $application = new Application(self::$kernel);
+        $command = self::getContainer()->get(ProcessSubscriptionsCommand::class);
+        $application->add($command);
+        $tester = new CommandTester($command);
+        $tester->execute([]);
+
+        $invoices = $this->invoiceRepository->findByUser($user->getEmail());
+        $this->assertCount(1, $invoices);
+        $invoice = $invoices[0];
+        $items = $this->em->getRepository(InvoiceItem::class)->findBy(['invoice' => $invoice]);
+        $this->assertCount(1, $items);
+        $this->assertSame('Boxenmiete ' . $stall->getName(), $items[0]->getLabel());
+        $this->assertSame($stall->getMonthlyRent(), $items[0]->getAmount());
+        $this->assertSame($stall->getMonthlyRent(), $invoice->getTotal());
 
         $expectedNextDue = (new \DateTimeImmutable('2024-01-01'))->add(new \DateInterval('P1M'));
         $this->assertSame($expectedNextDue->format('Y-m-d'), $subscription->getNextDue()->format('Y-m-d'));

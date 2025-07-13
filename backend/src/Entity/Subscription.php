@@ -3,6 +3,8 @@
 namespace App\Entity;
 
 use App\Enum\SubscriptionInterval;
+use App\Enum\SubscriptionType;
+use App\Entity\StallUnit;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity]
@@ -20,6 +22,13 @@ class Subscription
     #[ORM\ManyToOne(targetEntity: Horse::class)]
     #[ORM\JoinColumn(nullable: true)]
     private ?Horse $horse = null;
+
+    #[ORM\ManyToOne(targetEntity: StallUnit::class)]
+    #[ORM\JoinColumn(nullable: true)]
+    private ?StallUnit $stallUnit = null;
+
+    #[ORM\Column(enumType: SubscriptionType::class)]
+    private SubscriptionType $subscriptionType = SubscriptionType::USER;
 
     #[ORM\Column(type: 'string')]
     private string $title;
@@ -69,6 +78,28 @@ class Subscription
     public function setHorse(?Horse $horse): self
     {
         $this->horse = $horse;
+        return $this;
+    }
+
+    public function getStallUnit(): ?StallUnit
+    {
+        return $this->stallUnit;
+    }
+
+    public function setStallUnit(?StallUnit $stallUnit): self
+    {
+        $this->stallUnit = $stallUnit;
+        return $this;
+    }
+
+    public function getSubscriptionType(): SubscriptionType
+    {
+        return $this->subscriptionType;
+    }
+
+    public function setSubscriptionType(SubscriptionType $subscriptionType): self
+    {
+        $this->subscriptionType = $subscriptionType;
         return $this;
     }
 

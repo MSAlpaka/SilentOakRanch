@@ -27,6 +27,9 @@ class StallUnit
     #[ORM\Column(enumType: StallUnitStatus::class)]
     private StallUnitStatus $status;
 
+    #[ORM\Column(type: 'decimal', precision: 10, scale: 2, options: ['default' => '0.00'])]
+    private string $monthlyRent = '0.00';
+
     #[ORM\OneToOne(targetEntity: Horse::class, mappedBy: 'currentLocation')]
     private ?Horse $currentHorse = null;
 
@@ -76,6 +79,17 @@ class StallUnit
     public function setStatus(StallUnitStatus $status): self
     {
         $this->status = $status;
+        return $this;
+    }
+
+    public function getMonthlyRent(): string
+    {
+        return $this->monthlyRent;
+    }
+
+    public function setMonthlyRent(string $monthlyRent): self
+    {
+        $this->monthlyRent = $monthlyRent;
         return $this;
     }
 

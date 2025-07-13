@@ -7,5 +7,6 @@ enum PricingRuleType: string
     case SERVICE = 'service';
     case FACILITY = 'facility';
     case SPECIAL = 'special';
+    case OTHER = 'other';
 }
 

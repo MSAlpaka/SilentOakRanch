@@ -146,11 +146,100 @@ class SubscriptionControllerTest extends KernelTestCase
         $this->em->flush();
 
         $controller = static::getContainer()->get(SubscriptionController::class);
-        $response = $controller->list($this->subscriptionRepository);
+        $request = new Request();
+        $response = $controller->list($request, $this->subscriptionRepository);
         $data = json_decode($response->getContent(), true);
 
         $this->assertSame(200, $response->getStatusCode());
         $this->assertCount(1, $data);
         $this->assertSame('Boarding', $data[0]['title']);
+        $this->assertSame($user->getId(), $data[0]['user']['id']);
+        $this->assertSame($user->getFirstName().' '.$user->getLastName(), $data[0]['user']['name']);
+        $this->assertSame($stall->getId(), $data[0]['stallUnit']['id']);
+        $this->assertSame($stall->getName(), $data[0]['stallUnit']['name']);
+    }
+
+    public function testListSubscriptionsActiveOnlyFilter(): void
+    {
+        $user = $this->createUser();
+        $stall = $this->createStallUnit();
+        $this->createHorse($user, $stall);
+
+        $active = new Subscription();
+        $active->setUser($user)
+            ->setStallUnit($stall)
+            ->setSubscriptionType(SubscriptionType::STALL)
+            ->setTitle('Active')
+            ->setAmount('100.00')
+            ->setStartsAt(new \DateTimeImmutable('2024-01-01'))
+            ->setNextDue(new \DateTimeImmutable('2024-01-01'))
+            ->setInterval(SubscriptionInterval::MONTHLY)
+            ->setActive(true)
+            ->setAutoRenew(true);
+        $this->em->persist($active);
+
+        $inactive = new Subscription();
+        $inactive->setUser($user)
+            ->setStallUnit($stall)
+            ->setSubscriptionType(SubscriptionType::STALL)
+            ->setTitle('Inactive')
+            ->setAmount('100.00')
+            ->setStartsAt(new \DateTimeImmutable('2024-01-01'))
+            ->setNextDue(new \DateTimeImmutable('2024-01-01'))
+            ->setInterval(SubscriptionInterval::MONTHLY)
+            ->setActive(false)
+            ->setAutoRenew(true);
+        $this->em->persist($inactive);
+        $this->em->flush();
+
+        $controller = static::getContainer()->get(SubscriptionController::class);
+        $request = new Request(['activeOnly' => 'true']);
+        $response = $controller->list($request, $this->subscriptionRepository);
+        $data = json_decode($response->getContent(), true);
+
+        $this->assertCount(1, $data);
+        $this->assertSame('Active', $data[0]['title']);
+    }
+
+    public function testListSubscriptionsTypeFilter(): void
+    {
+        $user = $this->createUser();
+        $stall = $this->createStallUnit();
+        $horse = $this->createHorse($user, $stall);
+
+        $stallSub = new Subscription();
+        $stallSub->setUser($user)
+            ->setStallUnit($stall)
+            ->setSubscriptionType(SubscriptionType::STALL)
+            ->setTitle('Stall')
+            ->setAmount('100.00')
+            ->setStartsAt(new \DateTimeImmutable('2024-01-01'))
+            ->setNextDue(new \DateTimeImmutable('2024-01-01'))
+            ->setInterval(SubscriptionInterval::MONTHLY)
+            ->setActive(true)
+            ->setAutoRenew(true);
+        $this->em->persist($stallSub);
+
+        $horseSub = new Subscription();
+        $horseSub->setUser($user)
+            ->setHorse($horse)
+            ->setSubscriptionType(SubscriptionType::HORSE)
+            ->setTitle('Horse')
+            ->setAmount('50.00')
+            ->setStartsAt(new \DateTimeImmutable('2024-01-01'))
+            ->setNextDue(new \DateTimeImmutable('2024-01-01'))
+            ->setInterval(SubscriptionInterval::MONTHLY)
+            ->setActive(true)
+            ->setAutoRenew(true);
+        $this->em->persist($horseSub);
+        $this->em->flush();
+
+        $controller = static::getContainer()->get(SubscriptionController::class);
+        $request = new Request(['type' => 'horse']);
+        $response = $controller->list($request, $this->subscriptionRepository);
+        $data = json_decode($response->getContent(), true);
+
+        $this->assertCount(1, $data);
+        $this->assertSame('Horse', $data[0]['title']);
     }
 }

@@ -30,4 +30,17 @@ class BookingRepository extends ServiceEntityRepository
 
         return (int) $qb->getQuery()->getSingleScalarResult() > 0;
     }
+
+    /**
+     * @return Booking[]
+     */
+    public function findByUser(string $email): array
+    {
+        return $this->createQueryBuilder('b')
+            ->where('b.user = :email')
+            ->setParameter('email', $email)
+            ->orderBy('b.startDate', 'ASC')
+            ->getQuery()
+            ->getResult();
+    }
 }

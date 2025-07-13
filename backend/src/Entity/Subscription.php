@@ -2,8 +2,7 @@
 
 namespace App\Entity;
 
-use App\Enum\BookingType;
-use App\Enum\SubscriptionStatus;
+use App\Enum\SubscriptionInterval;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity]
@@ -22,21 +21,26 @@ class Subscription
     #[ORM\JoinColumn(nullable: true)]
     private ?Horse $horse = null;
 
-    #[ORM\Column(enumType: BookingType::class)]
-    private BookingType $type;
+    #[ORM\Column(type: 'string')]
+    private string $title;
+
+    #[ORM\Column(type: 'text', nullable: true)]
+    private ?string $description = null;
+
+    #[ORM\Column(type: 'decimal', precision: 10, scale: 2)]
+    private string $amount;
 
     #[ORM\Column(type: 'datetime_immutable')]
     private \DateTimeImmutable $startsAt;
 
-    #[ORM\Column(type: 'datetime_immutable', nullable: true)]
-    private ?\DateTimeImmutable $endsAt = null;
+    #[ORM\Column(type: 'datetime_immutable')]
+    private \DateTimeImmutable $nextDue;
 
-    #[ORM\Column(enumType: SubscriptionStatus::class)]
-    private SubscriptionStatus $status = SubscriptionStatus::ACTIVE;
+    #[ORM\Column(enumType: SubscriptionInterval::class)]
+    private SubscriptionInterval $interval;
 
-    #[ORM\ManyToOne(targetEntity: PricingRule::class)]
-    #[ORM\JoinColumn(nullable: false)]
-    private PricingRule $pricingRule;
+    #[ORM\Column(type: 'boolean')]
+    private bool $active = true;
 
     #[ORM\Column(type: 'boolean')]
     private bool $autoRenew = true;
@@ -68,14 +72,36 @@ class Subscription
         return $this;
     }
 
-    public function getType(): BookingType
+    public function getTitle(): string
     {
-        return $this->type;
+        return $this->title;
     }
 
-    public function setType(BookingType $type): self
+    public function setTitle(string $title): self
     {
-        $this->type = $type;
+        $this->title = $title;
+        return $this;
+    }
+
+    public function getDescription(): ?string
+    {
+        return $this->description;
+    }
+
+    public function setDescription(?string $description): self
+    {
+        $this->description = $description;
+        return $this;
+    }
+
+    public function getAmount(): string
+    {
+        return $this->amount;
+    }
+
+    public function setAmount(string $amount): self
+    {
+        $this->amount = $amount;
         return $this;
     }
 
@@ -90,36 +116,36 @@ class Subscription
         return $this;
     }
 
-    public function getEndsAt(): ?\DateTimeImmutable
+    public function getNextDue(): \DateTimeImmutable
     {
-        return $this->endsAt;
+        return $this->nextDue;
     }
 
-    public function setEndsAt(?\DateTimeImmutable $endsAt): self
+    public function setNextDue(\DateTimeImmutable $nextDue): self
     {
-        $this->endsAt = $endsAt;
+        $this->nextDue = $nextDue;
         return $this;
     }
 
-    public function getStatus(): SubscriptionStatus
+    public function getInterval(): SubscriptionInterval
     {
-        return $this->status;
+        return $this->interval;
     }
 
-    public function setStatus(SubscriptionStatus $status): self
+    public function setInterval(SubscriptionInterval $interval): self
     {
-        $this->status = $status;
+        $this->interval = $interval;
         return $this;
     }
 
-    public function getPricingRule(): PricingRule
+    public function isActive(): bool
     {
-        return $this->pricingRule;
+        return $this->active;
     }
 
-    public function setPricingRule(PricingRule $pricingRule): self
+    public function setActive(bool $active): self
     {
-        $this->pricingRule = $pricingRule;
+        $this->active = $active;
         return $this;
     }
 

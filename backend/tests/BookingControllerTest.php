@@ -105,6 +105,8 @@ class BookingControllerTest extends KernelTestCase
         $this->assertSame(201, $response->getStatusCode());
         $this->assertSame('service', $data['type']);
         $this->assertSame('Lesson', $data['label']);
+        $this->assertArrayHasKey('dateTo', $data);
+        $this->assertNull($data['dateTo']);
         $this->assertNotNull($data['id']);
     }
 
@@ -137,5 +139,64 @@ class BookingControllerTest extends KernelTestCase
 
         $response = $controller->__invoke($request, $this->stallUnitRepository, $this->bookingRepository, $this->em, $security);
         $this->assertSame(400, $response->getStatusCode());
+    }
+
+    public function testCreateHorseBookingWithDateTo(): void
+    {
+        $stall = $this->createStallUnit();
+        $user = $this->createUser();
+        $horse = $this->createHorse($user, $stall);
+
+        $security = $this->createMock(Security::class);
+        $security->method('getUser')->willReturn($user);
+
+        $controller = static::getContainer()->get(BookingController::class);
+
+        $request = new Request([], [], [], [], [], [], json_encode([
+            'horseId' => $horse->getId(),
+            'type' => 'service',
+            'label' => 'Lesson',
+            'dateFrom' => '2024-01-01T00:00:00Z',
+            'dateTo' => '2024-01-03T00:00:00Z',
+        ]));
+
+        $response = $controller->createHorseBooking($request, $this->em, $security, $this->stallUnitRepository);
+        $data = json_decode($response->getContent(), true);
+
+        $this->assertSame(201, $response->getStatusCode());
+        $this->assertSame('2024-01-03T00:00:00+00:00', $data['dateTo']);
+    }
+
+    public function testHorseMustBelongToUser(): void
+    {
+        $stall = $this->createStallUnit();
+        $owner = $this->createUser();
+        $horse = $this->createHorse($owner, $stall);
+
+        $otherUser = new User();
+        $otherUser->setEmail('other@example.com');
+        $otherUser->setPassword('pw');
+        $otherUser->setRoles([]);
+        $otherUser->setRole(UserRole::CUSTOMER);
+        $otherUser->setFirstName('C');
+        $otherUser->setLastName('D');
+        $otherUser->setActive(true);
+        $otherUser->setCreatedAt(new \DateTimeImmutable());
+        $this->em->persist($otherUser);
+        $this->em->flush();
+
+        $security = $this->createMock(Security::class);
+        $security->method('getUser')->willReturn($otherUser);
+
+        $controller = static::getContainer()->get(BookingController::class);
+        $request = new Request([], [], [], [], [], [], json_encode([
+            'horseId' => $horse->getId(),
+            'type' => 'service',
+            'label' => 'Lesson',
+            'dateFrom' => '2024-01-01T00:00:00Z'
+        ]));
+
+        $response = $controller->createHorseBooking($request, $this->em, $security, $this->stallUnitRepository);
+        $this->assertSame(403, $response->getStatusCode());
     }
 }

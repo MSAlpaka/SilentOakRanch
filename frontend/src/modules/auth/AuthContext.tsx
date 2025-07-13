@@ -27,17 +27,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   async function login(username: string, password: string) {
     const response = await api.post('/login', { username, password })
-    const { token, role } = response.data
-    setToken(token)
-    setRole(role)
-    localStorage.setItem('token', token)
-    localStorage.setItem('role', role)
+    const { token: newToken, role: newRole } = response.data
 
-    const me = await api.get('/me', {
-      headers: { Authorization: `Bearer ${token}` },
-    })
-    setUser(me.data as UserInfo)
-    localStorage.setItem('user', JSON.stringify(me.data))
+    try {
+      const me = await api.get('/me', {
+        headers: { Authorization: `Bearer ${newToken}` },
+      })
+
+      setUser(me.data as UserInfo)
+      setToken(newToken)
+      setRole(newRole)
+      localStorage.setItem('token', newToken)
+      localStorage.setItem('role', newRole)
+      localStorage.setItem('user', JSON.stringify(me.data))
+    } catch (err) {
+      setToken(null)
+      setRole(null)
+      localStorage.removeItem('token')
+      localStorage.removeItem('role')
+      throw err
+    }
   }
 
   function logout() {

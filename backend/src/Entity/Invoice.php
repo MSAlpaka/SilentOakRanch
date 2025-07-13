@@ -16,6 +16,9 @@ class Invoice
     #[ORM\Column(type: 'string')]
     private string $user;
 
+    #[ORM\Column(type: 'string', unique: true)]
+    private string $number;
+
     #[ORM\Column(type: 'string')]
     private string $period;
 
@@ -41,6 +44,17 @@ class Invoice
     public function setUser(string $user): self
     {
         $this->user = $user;
+        return $this;
+    }
+
+    public function getNumber(): string
+    {
+        return $this->number;
+    }
+
+    public function setNumber(string $number): self
+    {
+        $this->number = $number;
         return $this;
     }
 

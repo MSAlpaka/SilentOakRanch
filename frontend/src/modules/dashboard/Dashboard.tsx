@@ -33,7 +33,7 @@ function Dashboard() {
   return (
     <div className="min-h-screen">
       <header className="bg-gray-800 text-white p-4 flex justify-between">
-        <span>Logged in as {user}</span>
+        <span>Logged in as {user?.firstName ?? user?.email}</span>
         <button onClick={logout} className="text-sm underline">
           Logout
         </button>

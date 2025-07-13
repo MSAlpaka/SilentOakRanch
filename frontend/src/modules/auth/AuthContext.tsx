@@ -1,8 +1,9 @@
 import { createContext, useContext, useState, ReactNode } from 'react'
 import api from '../../axios'
+import { UserInfo } from './useUser'
 
 type AuthState = {
-  user: string | null
+  user: UserInfo | null
   role: 'admin' | 'staff' | 'customer' | null
   token: string | null
   login: (username: string, password: string) => Promise<void>
@@ -12,9 +13,10 @@ type AuthState = {
 const AuthContext = createContext<AuthState | undefined>(undefined)
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<string | null>(() =>
-    localStorage.getItem('user')
-  )
+  const [user, setUser] = useState<UserInfo | null>(() => {
+    const raw = localStorage.getItem('user')
+    return raw ? (JSON.parse(raw) as UserInfo) : null
+  })
   const [role, setRole] = useState<'admin' | 'staff' | 'customer' | null>(() =>
     (localStorage.getItem('role') as 'admin' | 'staff' | 'customer' | null) ||
     null
@@ -26,12 +28,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   async function login(username: string, password: string) {
     const response = await api.post('/login', { username, password })
     const { token, role } = response.data
-    setUser(username)
     setToken(token)
     setRole(role)
-    localStorage.setItem('user', username)
     localStorage.setItem('token', token)
     localStorage.setItem('role', role)
+
+    const me = await api.get('/me', {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+    setUser(me.data as UserInfo)
+    localStorage.setItem('user', JSON.stringify(me.data))
   }
 
   function logout() {

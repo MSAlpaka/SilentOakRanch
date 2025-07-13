@@ -144,4 +144,37 @@ class ProcessSubscriptionsCommandTest extends KernelTestCase
         $expectedNextDue = (new \DateTimeImmutable('2024-01-01'))->add(new \DateInterval('P1M'));
         $this->assertSame($expectedNextDue->format('Y-m-d'), $subscription->getNextDue()->format('Y-m-d'));
     }
+
+    public function testProcessSubscriptionsWithEndDate(): void
+    {
+        $user = $this->createUser();
+
+        $subscription = new Subscription();
+        $subscription->setUser($user)
+            ->setSubscriptionType(SubscriptionType::USER)
+            ->setTitle('One time')
+            ->setAmount('50.00')
+            ->setStartsAt(new \DateTimeImmutable('2024-01-01'))
+            ->setNextDue(new \DateTimeImmutable('2024-01-01'))
+            ->setEndDate(new \DateTimeImmutable('2024-02-01'))
+            ->setInterval(SubscriptionInterval::MONTHLY)
+            ->setActive(true)
+            ->setAutoRenew(false);
+        $this->em->persist($subscription);
+        $this->em->flush();
+
+        $application = new Application(self::$kernel);
+        $command = self::getContainer()->get(ProcessSubscriptionsCommand::class);
+        $application->add($command);
+        $tester = new CommandTester($command);
+        $tester->execute([]);
+
+        // after first run nextDue should move to endDate
+        $this->assertSame('2024-02-01', $subscription->getNextDue()->format('Y-m-d'));
+
+        $tester->execute([]);
+
+        // after second run subscription should be inactive
+        $this->assertFalse($subscription->isActive());
+    }
 }

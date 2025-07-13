@@ -185,6 +185,33 @@ class SubscriptionControllerTest extends KernelTestCase
         $this->assertCount(0, $this->subscriptionRepository->findAll());
     }
 
+    public function testCreateSubscriptionWithEndDate(): void
+    {
+        $user = $this->createUser();
+        $stall = $this->createStallUnit();
+        $this->createHorse($user, $stall);
+
+        $controller = static::getContainer()->get(SubscriptionController::class);
+        $request = new Request([], [], [], [], [], [], json_encode([
+            'type' => 'stall',
+            'title' => 'Boarding',
+            'amount' => '100.00',
+            'startsAt' => '2024-01-01T00:00:00Z',
+            'interval' => 'monthly',
+            'stallUnitId' => $stall->getId(),
+            'autoRenew' => false,
+            'endDate' => '2024-02-01T00:00:00Z',
+        ]));
+
+        $response = $controller->create($request, $this->em);
+        $data = json_decode($response->getContent(), true);
+
+        $this->assertSame(201, $response->getStatusCode());
+        $this->assertNotNull($data['endDate']);
+        $stored = $this->subscriptionRepository->find($data['id']);
+        $this->assertNotNull($stored?->getEndDate());
+    }
+
     public function testListSubscriptions(): void
     {
         $user = $this->createUser();
@@ -199,6 +226,7 @@ class SubscriptionControllerTest extends KernelTestCase
             ->setAmount('100.00')
             ->setStartsAt(new \DateTimeImmutable('2024-01-01'))
             ->setNextDue(new \DateTimeImmutable('2024-01-01'))
+            ->setEndDate(new \DateTimeImmutable('2024-02-01'))
             ->setInterval(SubscriptionInterval::MONTHLY)
             ->setActive(true)
             ->setAutoRenew(true);
@@ -217,6 +245,7 @@ class SubscriptionControllerTest extends KernelTestCase
         $this->assertSame($user->getFirstName().' '.$user->getLastName(), $data[0]['user']['name']);
         $this->assertSame($stall->getId(), $data[0]['stallUnit']['id']);
         $this->assertSame($stall->getName(), $data[0]['stallUnit']['name']);
+        $this->assertSame('2024-02-01T00:00:00+00:00', $data[0]['endDate']);
     }
 
     public function testListSubscriptionsActiveOnlyFilter(): void

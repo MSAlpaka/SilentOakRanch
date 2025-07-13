@@ -49,6 +49,9 @@ class Booking
     #[ORM\Column(type: 'boolean')]
     private bool $isConfirmed = false;
 
+    #[ORM\Column(type: 'decimal', precision: 10, scale: 2, nullable: true)]
+    private ?string $price = null;
+
     public function getId(): ?int
     {
         return $this->id;
@@ -172,6 +175,17 @@ class Booking
     public function setIsConfirmed(bool $isConfirmed): self
     {
         $this->isConfirmed = $isConfirmed;
+        return $this;
+    }
+
+    public function getPrice(): ?string
+    {
+        return $this->price;
+    }
+
+    public function setPrice(?string $price): self
+    {
+        $this->price = $price;
         return $this;
     }
 }

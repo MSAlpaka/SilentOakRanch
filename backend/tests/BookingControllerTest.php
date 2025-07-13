@@ -120,12 +120,16 @@ class BookingControllerTest extends KernelTestCase
             ->setStartDate(new \DateTimeImmutable('2024-01-05'))
             ->setEndDate(new \DateTimeImmutable('2024-01-15'))
             ->setUser($user->getEmail())
+            ->setPrice('50.00')
             ->setType(BookingType::OTHER)
             ->setLabel('Overlap')
             ->setDateFrom(new \DateTimeImmutable('2024-01-05'))
             ->setDateTo(new \DateTimeImmutable('2024-01-15'));
         $this->em->persist($booking);
         $this->em->flush();
+
+        $stored = $this->bookingRepository->find($booking->getId());
+        $this->assertSame('50.00', $stored->getPrice());
 
         $security = $this->createMock(Security::class);
         $security->method('getUser')->willReturn($user);

@@ -4,5 +4,16 @@
 
 {% block body %}
 <h1>QR Code Verification</h1>
-<p>Scanned code: {{ code }}</p>
+
+{% if status == 'valid' %}
+    <p>Code {{ code }} ist gültig.</p>
+    <form method="post">
+        <input type="hidden" name="code" value="{{ code }}">
+        <button type="submit">Jetzt wiegen</button>
+    </form>
+{% elseif status == 'redeemed' %}
+    <p>Code {{ code }} wurde bereits eingelöst.</p>
+{% else %}
+    <p>Ungültiger Code.</p>
+{% endif %}
 {% endblock %}

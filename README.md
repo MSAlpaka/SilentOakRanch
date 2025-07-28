@@ -12,3 +12,8 @@ Inklusive Kundenportal, Buchungssystem, Zusatzleistungen, Rechnungsmodul und Auf
 Die Software steht unter der [MIT-Lizenz](LICENSE).
 
 > Generiert und verwaltet mit OpenAI Codex.
+
+## QA-Dokumente
+- `Projektplan_2025.md`: Überblick zu geplanten Meilensteinen
+- `deep_qa_audit.md`: laufende QA-Audits
+- `final_qa_report.md`: abschließender QA-Bericht

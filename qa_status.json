@@ -1,0 +1,12 @@
+{
+  "domainModelingComplete": false,
+  "securityReviewDone": false,
+  "codeReviewed": false,
+  "documentationUpdated": false,
+  "pipelineGreen": false,
+  "deployChecklistCompleted": false,
+  "badgeRules": false,
+  "crossoverHandling": false,
+  "testsExist": false,
+  "certificateIssuanceLogic": false
+}

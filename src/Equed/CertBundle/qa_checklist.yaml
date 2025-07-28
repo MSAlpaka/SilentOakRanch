@@ -1,13 +1,13 @@
 profile: equed
 DoD:
   - requirement: domainModelingComplete
-    status: pending
+    status: in-progress
   - requirement: securityReviewDone
     status: pending
   - requirement: codeReviewed
     status: pending
   - requirement: documentationUpdated
-    status: pending
+    status: in-progress
   - requirement: pipelineGreen
     status: pending
   - requirement: deployChecklistCompleted

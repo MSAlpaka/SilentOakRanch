@@ -1,0 +1,3 @@
+<p>Hello {{ booking.customerName }},</p>
+<p>Your booking for {{ booking.horseName }} on {{ booking.bookingDateTime|date('Y-m-d H:i') }} is awaiting payment.</p>
+<p>Please complete payment here: <a href="{{ paymentUrl }}">{{ paymentUrl }}</a></p>

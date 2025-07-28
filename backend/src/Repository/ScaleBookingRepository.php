@@ -15,4 +15,17 @@ class ScaleBookingRepository extends ServiceEntityRepository
     {
         parent::__construct($registry, ScaleBooking::class);
     }
+
+    /**
+     * Checks if a booking already exists for the given date and time.
+     */
+    public function existsForDateTime(\DateTimeInterface $bookingDateTime): bool
+    {
+        return (bool) $this->createQueryBuilder('b')
+            ->select('1')
+            ->andWhere('b.bookingDateTime = :dt')
+            ->setParameter('dt', $bookingDateTime)
+            ->getQuery()
+            ->getOneOrNullResult();
+    }
 }

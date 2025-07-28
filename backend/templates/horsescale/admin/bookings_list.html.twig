@@ -1,0 +1,46 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}HorseScale Bookings{% endblock %}
+
+{% block stylesheets %}
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+{% endblock %}
+
+{% block javascripts %}
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+{% endblock %}
+
+{% block body %}
+<div class="container mt-4">
+    <h1 class="mb-3">Bookings</h1>
+    <table class="table table-striped table-responsive">
+        <thead>
+            <tr>
+                <th>Date</th>
+                <th>Customer</th>
+                <th>Horse</th>
+                <th>Status</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for booking in bookings %}
+            <tr>
+                <td>{{ booking.bookingDateTime|date('Y-m-d H:i') }}</td>
+                <td>{{ booking.customerName }}</td>
+                <td>{{ booking.horseName }}</td>
+                <td>{{ booking.status }}</td>
+                <td>
+                    <a class="btn btn-sm btn-primary" href="{{ path('horsescale_admin_booking_edit', {id: booking.id}) }}">Edit</a>
+                    <a class="btn btn-sm btn-secondary" href="{{ path('horsescale_admin_booking_email', {id: booking.id}) }}">Send Email</a>
+                </td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="5">No bookings found.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

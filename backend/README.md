@@ -2,6 +2,16 @@
 
 Symfony-API für Stallverwaltung, Buchungen, Rechnungen und Authentifizierung.
 
+## Installation
+
+PHP-Abhängigkeiten werden mit Composer installiert. Da die Erweiterung
+`ext-sodium` nicht in allen Umgebungen verfügbar ist, kann sie beim
+Installieren ignoriert werden:
+
+```bash
+composer install --ignore-platform-req=ext-sodium
+```
+
 ## Datenbank
 
 Standardmäßig wird eine SQLite-Datenbank verwendet. Die Verbindungszeichenfolge

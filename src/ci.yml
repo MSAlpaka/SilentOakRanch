@@ -39,7 +39,7 @@ jobs:
 
       - name: Install backend dependencies
         working-directory: backend
-        run: composer install --no-interaction --no-progress --prefer-dist
+        run: composer install --ignore-platform-req=ext-sodium --no-interaction --no-progress --prefer-dist
 
       - name: Lint backend
         working-directory: backend

@@ -3,6 +3,7 @@
 namespace App\Controller;
 
 use App\Entity\User;
+use App\Service\InvitationService;
 use Doctrine\ORM\EntityManagerInterface;
 use Lexik\Bundle\JWTAuthenticationBundle\Services\JWTTokenManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -67,5 +68,30 @@ class AuthController extends AbstractController
         $token = $jwtManager->create($user);
 
         return $this->json(['token' => $token]);
+    }
+
+    #[Route('/invite', name: 'invite', methods: ['POST'])]
+    public function invite(Request $request, InvitationService $invitationService): JsonResponse
+    {
+        $data = json_decode($request->getContent(), true);
+        $email = $data['email'] ?? null;
+
+        if (!$email) {
+            return $this->json(['message' => 'Email is required'], 400);
+        }
+
+        $invitationService->sendInvitation($email);
+
+        return $this->json(['message' => 'Invitation sent']);
+    }
+
+    #[Route('/accept-invite/{token}', name: 'accept_invite', methods: ['POST'])]
+    public function acceptInvite(string $token, InvitationService $invitationService): JsonResponse
+    {
+        if (!$invitationService->acceptInvitation($token)) {
+            return $this->json(['message' => 'Invalid token'], 400);
+        }
+
+        return $this->json(['message' => 'Invitation accepted']);
     }
 }

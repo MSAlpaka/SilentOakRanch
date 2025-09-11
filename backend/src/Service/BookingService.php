@@ -11,7 +11,8 @@ class BookingService
 {
     public function __construct(
         private EntityManagerInterface $em,
-        private CalendarService $calendarService
+        private CalendarService $calendarService,
+        private MailService $mailService
     ) {
     }
 
@@ -44,6 +45,9 @@ class BookingService
 
         $this->em->persist($booking);
         $this->em->flush();
+
+        $this->mailService->sendBookingConfirmation($booking);
+        $this->mailService->sendInvoiceDraft($booking);
 
         return $booking;
     }

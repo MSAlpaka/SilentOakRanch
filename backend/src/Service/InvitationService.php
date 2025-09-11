@@ -4,14 +4,12 @@ namespace App\Service;
 
 use App\Entity\Invitation;
 use Doctrine\ORM\EntityManagerInterface;
-use Symfony\Component\Mailer\MailerInterface;
-use Symfony\Component\Mime\Email;
 
 class InvitationService
 {
     public function __construct(
         private readonly EntityManagerInterface $entityManager,
-        private readonly MailerInterface $mailer
+        private readonly MailService $mailService
     ) {
     }
 
@@ -26,12 +24,7 @@ class InvitationService
         $this->entityManager->persist($invitation);
         $this->entityManager->flush();
 
-        $message = (new Email())
-            ->to($email)
-            ->subject('Invitation')
-            ->text('Use this token to accept your invitation: ' . $token);
-
-        $this->mailer->send($message);
+        $this->mailService->sendInvitation($email, $token);
 
         return $token;
     }

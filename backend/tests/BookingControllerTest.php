@@ -78,6 +78,8 @@ class BookingControllerTest extends KernelTestCase
     {
         $horse = new Horse();
         $horse->setName('Pony');
+        $horse->setAge(5);
+        $horse->setBreed('Arabian');
         $horse->setGender(Gender::MARE);
         $horse->setDateOfBirth(new \DateTimeImmutable('2020-01-01'));
         $horse->setOwner($owner);

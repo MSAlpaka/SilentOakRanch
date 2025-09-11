@@ -4,6 +4,7 @@ namespace App\Entity;
 
 use Doctrine\ORM\Mapping as ORM;
 use App\Enum\Gender;
+use DateTimeImmutable;
 
 #[ORM\Entity]
 class Horse
@@ -18,6 +19,9 @@ class Horse
 
     #[ORM\Column(type: 'integer')]
     private int $age;
+
+    #[ORM\Column(type: 'datetime_immutable', nullable: true)]
+    private ?DateTimeImmutable $dateOfBirth = null;
 
     #[ORM\Column(type: 'string')]
     private string $breed;
@@ -65,6 +69,17 @@ class Horse
     public function setAge(int $age): self
     {
         $this->age = $age;
+        return $this;
+    }
+
+    public function getDateOfBirth(): ?DateTimeImmutable
+    {
+        return $this->dateOfBirth;
+    }
+
+    public function setDateOfBirth(?DateTimeImmutable $dob): self
+    {
+        $this->dateOfBirth = $dob;
         return $this;
     }
 

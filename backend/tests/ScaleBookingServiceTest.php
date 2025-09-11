@@ -64,4 +64,50 @@ class ScaleBookingServiceTest extends TestCase
         $this->assertNotEmpty($booking->getQrToken());
         $this->assertSame('10.00', $booking->getPrice());
     }
+
+    /**
+     * @dataProvider bookingPriceProvider
+     */
+    public function testCreateBookingSetsCorrectPrice(
+        ScaleBookingType $type,
+        string $expectedPrice,
+        string $slotTime
+    ): void {
+        $em = $this->createStub(EntityManagerInterface::class);
+
+        $slotService = $this->createStub(ScaleSlotService::class);
+        $slotService->method('isSlotAvailable')->willReturn(true);
+
+        $qr = $this->createStub(QrCodeGenerator::class);
+
+        $service = new ScaleBookingService($slotService, $em, $qr);
+
+        $owner = (new User())
+            ->setEmail('a@b.c')
+            ->setPassword('pw')
+            ->setRole(UserRole::CUSTOMER)
+            ->setFirstName('A')
+            ->setLastName('B')
+            ->setActive(true)
+            ->setCreatedAt(new \DateTimeImmutable());
+
+        $horse = (new Horse())
+            ->setName('Star')
+            ->setAge(5)
+            ->setBreed('Arab')
+            ->setOwner($owner);
+
+        $slot = new \DateTimeImmutable($slotTime);
+        $booking = $service->createBooking($horse, $owner, $slot, $type);
+
+        $this->assertSame($expectedPrice, $booking->getPrice());
+    }
+
+    public function bookingPriceProvider(): iterable
+    {
+        yield [ScaleBookingType::SINGLE, '10.00', '2024-01-01 10:00'];
+        yield [ScaleBookingType::PACKAGE, '45.00', '2024-01-01 10:00'];
+        yield [ScaleBookingType::PREMIUM, '20.00', '2024-01-01 10:00'];
+        yield [ScaleBookingType::DYNAMIC, '18.00', '2024-01-01 16:00'];
+    }
 }

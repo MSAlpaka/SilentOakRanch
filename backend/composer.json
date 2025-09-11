@@ -1,4 +1,6 @@
 {
+    "name": "silent-oak-ranch/app",
+    "description": "Stall-App für Urlaubspension & Rekonvaleszenz",
     "type": "project",
     "license": "proprietary",
     "version": "1.0.0",

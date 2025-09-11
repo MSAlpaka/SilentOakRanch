@@ -67,6 +67,12 @@ class HorseController extends AbstractController
         if (isset($data['specialNotes'])) {
             $horse->setSpecialNotes($data['specialNotes']);
         }
+        if (isset($data['medicalHistory'])) {
+            $horse->setMedicalHistory($data['medicalHistory']);
+        }
+        if (isset($data['medication'])) {
+            $horse->setMedication($data['medication']);
+        }
 
         $em->persist($horse);
         $em->flush();
@@ -110,6 +116,12 @@ class HorseController extends AbstractController
         }
         if (array_key_exists('specialNotes', $data)) {
             $horse->setSpecialNotes($data['specialNotes']);
+        }
+        if (array_key_exists('medicalHistory', $data)) {
+            $horse->setMedicalHistory($data['medicalHistory']);
+        }
+        if (array_key_exists('medication', $data)) {
+            $horse->setMedication($data['medication']);
         }
         if (isset($data['ownerId']) && $staff) {
             $owner = $em->getRepository(User::class)->find($data['ownerId']);
@@ -160,6 +172,8 @@ class HorseController extends AbstractController
             'age' => $horse->getAge(),
             'breed' => $horse->getBreed(),
             'specialNotes' => $horse->getSpecialNotes(),
+            'medicalHistory' => $horse->getMedicalHistory(),
+            'medication' => $horse->getMedication(),
             'owner' => [
                 'id' => $owner->getId(),
                 'name' => $ownerName,

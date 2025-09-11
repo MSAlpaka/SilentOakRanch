@@ -43,4 +43,16 @@ class BookingRepository extends ServiceEntityRepository
             ->getQuery()
             ->getResult();
     }
+
+    public function isDateRangeFree(\DateTimeInterface $start, \DateTimeInterface $end): bool
+    {
+        $qb = $this->createQueryBuilder('b');
+        $qb->select('count(b.id)')
+            ->where('b.startDate < :end')
+            ->andWhere('b.endDate > :start')
+            ->setParameter('start', $start)
+            ->setParameter('end', $end);
+
+        return (int) $qb->getQuery()->getSingleScalarResult() === 0;
+    }
 }

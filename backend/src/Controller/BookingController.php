@@ -7,6 +7,10 @@ use App\Entity\Horse;
 use App\Repository\BookingRepository;
 use App\Repository\StallUnitRepository;
 use App\Repository\PricingRuleRepository;
+use App\Repository\PackageRepository;
+use App\Repository\AddOnRepository;
+use App\Service\CalendarService;
+use App\Service\BookingService;
 use App\Enum\PricingUnit;
 use App\Enum\BookingType;
 use App\Entity\StallUnit;
@@ -203,6 +207,61 @@ class BookingController extends AbstractController
             'dateTo' => $booking->getDateTo()?->format('c'),
             'isConfirmed' => $booking->isConfirmed(),
             'price' => $booking->getPrice(),
+        ], 201);
+    }
+    #[Route('/api/package-bookings/check', name: 'api_package_booking_check', methods: ['POST'])]
+    public function checkAvailability(Request $request, CalendarService $calendarService): JsonResponse
+    {
+        $data = json_decode($request->getContent(), true);
+        if (!isset($data['startDate'], $data['endDate'])) {
+            return $this->json(['message' => 'Invalid payload'], 400);
+        }
+        $start = new \DateTimeImmutable($data['startDate']);
+        $end = new \DateTimeImmutable($data['endDate']);
+        $available = $calendarService->isRangeFree($start, $end);
+
+        return $this->json(['available' => $available]);
+    }
+
+    #[Route('/api/package-bookings', name: 'api_package_booking_create', methods: ['POST'])]
+    public function createPackageBooking(
+        Request $request,
+        PackageRepository $packageRepository,
+        AddOnRepository $addOnRepository,
+        BookingService $bookingService
+    ): JsonResponse {
+        $data = json_decode($request->getContent(), true);
+        if (!isset($data['packageId'], $data['startDate'])) {
+            return $this->json(['message' => 'Invalid payload'], 400);
+        }
+
+        $package = $packageRepository->find($data['packageId']);
+        if (!$package) {
+            return $this->json(['message' => 'Package not found'], 404);
+        }
+
+        $start = new \DateTimeImmutable($data['startDate']);
+        $addOns = [];
+        if (!empty($data['addOnIds']) && is_array($data['addOnIds'])) {
+            $addOns = $addOnRepository->findBy(['id' => $data['addOnIds']]);
+        }
+
+        try {
+            $booking = $bookingService->createBooking($package, $start, $addOns);
+        } catch (\RuntimeException $e) {
+            return $this->json(['message' => $e->getMessage()], 400);
+        }
+
+        return $this->json([
+            'id' => $booking->getId(),
+            'startDate' => $booking->getStartDate()->format('c'),
+            'endDate' => $booking->getEndDate()->format('c'),
+            'price' => $booking->getPrice(),
+            'package' => [
+                'id' => $package->getId(),
+                'name' => $package->getName(),
+            ],
+            'addOns' => array_map(fn($a) => ['id' => $a->getId(), 'name' => $a->getName()], $booking->getAddOns()->toArray()),
         ], 201);
     }
 }

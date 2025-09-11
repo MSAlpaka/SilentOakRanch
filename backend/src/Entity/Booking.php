@@ -4,6 +4,8 @@ namespace App\Entity;
 
 use App\Enum\BookingStatus;
 use App\Enum\BookingType;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity(repositoryClass: 'App\\Repository\\BookingRepository')]
@@ -51,6 +53,18 @@ class Booking
 
     #[ORM\Column(type: 'decimal', precision: 10, scale: 2, nullable: true)]
     private ?string $price = null;
+
+    #[ORM\ManyToOne(targetEntity: Package::class)]
+    private ?Package $package = null;
+
+    #[ORM\ManyToMany(targetEntity: AddOn::class)]
+    #[ORM\JoinTable(name: 'booking_add_on')]
+    private Collection $addOns;
+
+    public function __construct()
+    {
+        $this->addOns = new ArrayCollection();
+    }
 
     public function getId(): ?int
     {
@@ -186,6 +200,39 @@ class Booking
     public function setPrice(?string $price): self
     {
         $this->price = $price;
+        return $this;
+    }
+
+    public function getPackage(): ?Package
+    {
+        return $this->package;
+    }
+
+    public function setPackage(?Package $package): self
+    {
+        $this->package = $package;
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, AddOn>
+     */
+    public function getAddOns(): Collection
+    {
+        return $this->addOns;
+    }
+
+    public function addAddOn(AddOn $addOn): self
+    {
+        if (!$this->addOns->contains($addOn)) {
+            $this->addOns->add($addOn);
+        }
+        return $this;
+    }
+
+    public function removeAddOn(AddOn $addOn): self
+    {
+        $this->addOns->removeElement($addOn);
         return $this;
     }
 }

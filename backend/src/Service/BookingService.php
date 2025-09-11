@@ -6,13 +6,15 @@ use App\Entity\AddOn;
 use App\Entity\Booking;
 use App\Entity\Package;
 use Doctrine\ORM\EntityManagerInterface;
+use Symfony\Contracts\Translation\TranslatorInterface;
 
 class BookingService
 {
     public function __construct(
         private EntityManagerInterface $em,
         private CalendarService $calendarService,
-        private MailService $mailService
+        private MailService $mailService,
+        private TranslatorInterface $translator
     ) {
     }
 
@@ -24,7 +26,9 @@ class BookingService
         $end = (clone $start)->modify(sprintf('+%d day', $package->getDuration()));
 
         if (!$this->calendarService->isRangeFree($start, $end)) {
-            throw new \RuntimeException('Date range is not available');
+            throw new \RuntimeException(
+                $this->translator->trans('Date range is not available', [], 'validators')
+            );
         }
 
         $booking = new Booking();

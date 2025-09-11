@@ -8,15 +8,19 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Annotation\Route;
+use Symfony\Contracts\Translation\TranslatorInterface;
 
 class StripeWebhookController extends AbstractController
 {
+    public function __construct(private TranslatorInterface $translator)
+    {
+    }
     #[Route('/api/bookings/{id}/pay', name: 'api_booking_pay', methods: ['POST'])]
     public function pay(int $id, BookingRepository $bookingRepository, StripeService $stripeService): JsonResponse
     {
         $booking = $bookingRepository->find($id);
         if (!$booking) {
-            return $this->json(['message' => 'Booking not found'], 404);
+            return $this->json(['message' => $this->translator->trans('Booking not found', [], 'validators')], 404);
         }
 
         $amount = (int) (floatval($booking->getPrice()) * 100);

@@ -11,16 +11,20 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
+use Symfony\Contracts\Translation\TranslatorInterface;
 
 class HorseController extends AbstractController
 {
+    public function __construct(private TranslatorInterface $translator)
+    {
+    }
     #[Route('/api/horses', methods: ['GET'])]
     #[IsGranted('ROLE_USER')]
     public function list(EntityManagerInterface $em, Security $security): JsonResponse
     {
         $user = $security->getUser();
         if (!$user instanceof User) {
-            return $this->json(['message' => 'Unauthorized'], 401);
+            return $this->json(['message' => $this->translator->trans('Unauthorized', [], 'validators')], 401);
         }
 
         $repository = $em->getRepository(Horse::class);
@@ -41,12 +45,12 @@ class HorseController extends AbstractController
     {
         $user = $security->getUser();
         if (!$user instanceof User) {
-            return $this->json(['message' => 'Unauthorized'], 401);
+            return $this->json(['message' => $this->translator->trans('Unauthorized', [], 'validators')], 401);
         }
 
         $data = json_decode($request->getContent(), true);
         if (!is_array($data) || !isset($data['name'], $data['age'], $data['breed'])) {
-            return $this->json(['message' => 'Invalid payload'], 400);
+            return $this->json(['message' => $this->translator->trans('Invalid payload', [], 'validators')], 400);
         }
 
         $owner = $user;
@@ -54,7 +58,7 @@ class HorseController extends AbstractController
             if ($security->isGranted('ROLE_ADMIN') || $security->isGranted('ROLE_STAFF')) {
                 $owner = $em->getRepository(User::class)->find($data['ownerId']) ?? $owner;
             } elseif ($data['ownerId'] !== $user->getId()) {
-                return $this->json(['message' => 'Forbidden'], 403);
+                return $this->json(['message' => $this->translator->trans('Forbidden', [], 'validators')], 403);
             }
         }
 
@@ -87,22 +91,22 @@ class HorseController extends AbstractController
         /** @var Horse|null $horse */
         $horse = $em->getRepository(Horse::class)->find($id);
         if (!$horse) {
-            return $this->json(['message' => 'Horse not found'], 404);
+            return $this->json(['message' => $this->translator->trans('Horse not found', [], 'validators')], 404);
         }
 
         $user = $security->getUser();
         if (!$user instanceof User) {
-            return $this->json(['message' => 'Unauthorized'], 401);
+            return $this->json(['message' => $this->translator->trans('Unauthorized', [], 'validators')], 401);
         }
 
         $staff = $security->isGranted('ROLE_ADMIN') || $security->isGranted('ROLE_STAFF');
         if (!$staff && $horse->getOwner() !== $user) {
-            return $this->json(['message' => 'Forbidden'], 403);
+            return $this->json(['message' => $this->translator->trans('Forbidden', [], 'validators')], 403);
         }
 
         $data = json_decode($request->getContent(), true);
         if (!is_array($data)) {
-            return $this->json(['message' => 'Invalid payload'], 400);
+            return $this->json(['message' => $this->translator->trans('Invalid payload', [], 'validators')], 400);
         }
 
         if (isset($data['name'])) {
@@ -142,17 +146,17 @@ class HorseController extends AbstractController
         /** @var Horse|null $horse */
         $horse = $em->getRepository(Horse::class)->find($id);
         if (!$horse) {
-            return $this->json(['message' => 'Horse not found'], 404);
+            return $this->json(['message' => $this->translator->trans('Horse not found', [], 'validators')], 404);
         }
 
         $user = $security->getUser();
         if (!$user instanceof User) {
-            return $this->json(['message' => 'Unauthorized'], 401);
+            return $this->json(['message' => $this->translator->trans('Unauthorized', [], 'validators')], 401);
         }
 
         $staff = $security->isGranted('ROLE_ADMIN') || $security->isGranted('ROLE_STAFF');
         if (!$staff && $horse->getOwner() !== $user) {
-            return $this->json(['message' => 'Forbidden'], 403);
+            return $this->json(['message' => $this->translator->trans('Forbidden', [], 'validators')], 403);
         }
 
         $em->remove($horse);

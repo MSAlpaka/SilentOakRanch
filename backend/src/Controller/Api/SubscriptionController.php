@@ -15,9 +15,13 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
+use Symfony\Contracts\Translation\TranslatorInterface;
 
 class SubscriptionController extends AbstractController
 {
+    public function __construct(private TranslatorInterface $translator)
+    {
+    }
     #[Route('/api/subscriptions', methods: ['GET'])]
     #[IsGranted('ROLE_ADMIN')]
     public function list(Request $request, SubscriptionRepository $subscriptionRepository): JsonResponse
@@ -30,7 +34,7 @@ class SubscriptionController extends AbstractController
             try {
                 $type = SubscriptionType::from(strtolower($typeParam));
             } catch (\ValueError) {
-                return $this->json(['message' => 'Invalid type'], 400);
+                return $this->json(['message' => $this->translator->trans('Invalid type', [], 'validators')], 400);
             }
         }
 
@@ -51,7 +55,7 @@ class SubscriptionController extends AbstractController
     {
         $data = json_decode($request->getContent(), true);
         if (!is_array($data)) {
-            return $this->json(['message' => 'Invalid payload'], 400);
+            return $this->json(['message' => $this->translator->trans('Invalid payload', [], 'validators')], 400);
         }
 
         if (isset($data['startDate']) && !isset($data['startsAt'])) {
@@ -59,17 +63,17 @@ class SubscriptionController extends AbstractController
         }
 
         if (!isset($data['type'], $data['title'], $data['amount'], $data['startsAt'], $data['interval'])) {
-            return $this->json(['message' => 'Invalid payload'], 400);
+            return $this->json(['message' => $this->translator->trans('Invalid payload', [], 'validators')], 400);
         }
 
         if (!is_numeric($data['amount']) || $data['amount'] <= 0) {
-            return $this->json(['message' => 'Amount must be greater than zero'], 400);
+            return $this->json(['message' => $this->translator->trans('Amount must be greater than zero', [], 'validators')], 400);
         }
 
         try {
             $startsAt = new \DateTimeImmutable($data['startsAt']);
         } catch (\Exception) {
-            return $this->json(['message' => 'Invalid start date'], 400);
+            return $this->json(['message' => $this->translator->trans('Invalid start date', [], 'validators')], 400);
         }
 
         $endDate = null;
@@ -77,19 +81,19 @@ class SubscriptionController extends AbstractController
         $autoRenew = $data['autoRenew'] ?? true;
         if ($autoRenew === false) {
             if (empty($data['endDate'])) {
-                return $this->json(['message' => 'endDate required when autoRenew is false'], 400);
+                return $this->json(['message' => $this->translator->trans('endDate required when autoRenew is false', [], 'validators')], 400);
             }
             try {
                 $endDate = new \DateTimeImmutable($data['endDate']);
             } catch (\Exception) {
-                return $this->json(['message' => 'Invalid endDate'], 400);
+                return $this->json(['message' => $this->translator->trans('Invalid endDate', [], 'validators')], 400);
             }
         }
         if (!empty($data['endDate']) && $autoRenew !== false) {
             try {
                 $endDate = new \DateTimeImmutable($data['endDate']);
             } catch (\Exception) {
-                return $this->json(['message' => 'Invalid endDate'], 400);
+                return $this->json(['message' => $this->translator->trans('Invalid endDate', [], 'validators')], 400);
             }
         }
         $endDate = $endDate ?? null;
@@ -97,14 +101,14 @@ class SubscriptionController extends AbstractController
         $relations = array_intersect_key($data, array_flip(['userId', 'horseId', 'stallUnitId']));
         $provided = array_filter($relations, static fn($v) => $v !== null && $v !== '');
         if (count($provided) !== 1) {
-            return $this->json(['message' => 'Exactly one relation required'], 400);
+            return $this->json(['message' => $this->translator->trans('Exactly one relation required', [], 'validators')], 400);
         }
 
         try {
             $type = SubscriptionType::from($data['type']);
             $interval = SubscriptionInterval::from($data['interval']);
         } catch (\ValueError) {
-            return $this->json(['message' => 'Invalid type or interval'], 400);
+            return $this->json(['message' => $this->translator->trans('Invalid type or interval', [], 'validators')], 400);
         }
 
         $subscription = new Subscription();
@@ -122,35 +126,35 @@ class SubscriptionController extends AbstractController
 
         if ($type === SubscriptionType::USER && isset($data['userId'])) {
             /** @var User|null $user */
-            $user = $em->getRepository(User::class)->find($data['userId']);
-            if (!$user) {
-                return $this->json(['message' => 'User not found'], 404);
-            }
+              $user = $em->getRepository(User::class)->find($data['userId']);
+              if (!$user) {
+                  return $this->json(['message' => $this->translator->trans('User not found', [], 'validators')], 404);
+              }
             $subscription->setUser($user);
         } elseif ($type === SubscriptionType::HORSE && isset($data['horseId'])) {
             /** @var Horse|null $horse */
-            $horse = $em->getRepository(Horse::class)->find($data['horseId']);
-            if (!$horse) {
-                return $this->json(['message' => 'Horse not found'], 404);
-            }
+              $horse = $em->getRepository(Horse::class)->find($data['horseId']);
+              if (!$horse) {
+                  return $this->json(['message' => $this->translator->trans('Horse not found', [], 'validators')], 404);
+              }
             $subscription->setHorse($horse);
             $subscription->setUser($horse->getOwner());
         } elseif ($type === SubscriptionType::STALL && isset($data['stallUnitId'])) {
             /** @var StallUnit|null $stall */
-            $stall = $em->getRepository(StallUnit::class)->find($data['stallUnitId']);
-            if (!$stall) {
-                return $this->json(['message' => 'Stall unit not found'], 404);
-            }
+              $stall = $em->getRepository(StallUnit::class)->find($data['stallUnitId']);
+              if (!$stall) {
+                  return $this->json(['message' => $this->translator->trans('Stall unit not found', [], 'validators')], 404);
+              }
             $subscription->setStallUnit($stall);
             $horse = method_exists($stall, 'getCurrentHorse') ? $stall->getCurrentHorse() : null;
             $user = $horse?->getOwner();
-            if (!$user) {
-                return $this->json(['message' => 'User not found'], 404);
-            }
-            $subscription->setHorse($horse);
-            $subscription->setUser($user);
+              if (!$user) {
+                  return $this->json(['message' => $this->translator->trans('User not found', [], 'validators')], 404);
+              }
+          $subscription->setHorse($horse);
+          $subscription->setUser($user);
         } else {
-            return $this->json(['message' => 'Relation mismatch'], 400);
+            return $this->json(['message' => $this->translator->trans('Relation mismatch', [], 'validators')], 400);
         }
 
         $em->persist($subscription);

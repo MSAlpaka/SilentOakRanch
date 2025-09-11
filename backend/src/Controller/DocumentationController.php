@@ -12,9 +12,13 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
+use Symfony\Contracts\Translation\TranslatorInterface;
 
 class DocumentationController extends AbstractController
 {
+    public function __construct(private TranslatorInterface $translator)
+    {
+    }
     #[Route('/api/bookings/{id}/docs', methods: ['GET'])]
     #[IsGranted('ROLE_USER')]
     public function list(int $id, EntityManagerInterface $em, Security $security): JsonResponse
@@ -22,18 +26,18 @@ class DocumentationController extends AbstractController
         /** @var User|null $user */
         $user = $security->getUser();
         if (!$user instanceof User) {
-            return $this->json(['message' => 'Unauthorized'], 401);
+            return $this->json(['message' => $this->translator->trans('Unauthorized', [], 'validators')], 401);
         }
 
         /** @var Booking|null $booking */
         $booking = $em->getRepository(Booking::class)->find($id);
         if (!$booking) {
-            return $this->json(['message' => 'Booking not found'], 404);
+            return $this->json(['message' => $this->translator->trans('Booking not found', [], 'validators')], 404);
         }
 
         $staff = $security->isGranted('ROLE_ADMIN') || $security->isGranted('ROLE_STAFF');
         if (!$staff && $booking->getUser() !== $user->getEmail()) {
-            return $this->json(['message' => 'Forbidden'], 403);
+            return $this->json(['message' => $this->translator->trans('Forbidden', [], 'validators')], 403);
         }
 
         $docs = $em->getRepository(Documentation::class)->findBy(['booking' => $booking], ['date' => 'ASC']);
@@ -49,23 +53,23 @@ class DocumentationController extends AbstractController
         /** @var User|null $user */
         $user = $security->getUser();
         if (!$user instanceof User) {
-            return $this->json(['message' => 'Unauthorized'], 401);
+            return $this->json(['message' => $this->translator->trans('Unauthorized', [], 'validators')], 401);
         }
 
         /** @var Booking|null $booking */
         $booking = $em->getRepository(Booking::class)->find($id);
         if (!$booking) {
-            return $this->json(['message' => 'Booking not found'], 404);
+            return $this->json(['message' => $this->translator->trans('Booking not found', [], 'validators')], 404);
         }
 
         $staff = $security->isGranted('ROLE_ADMIN') || $security->isGranted('ROLE_STAFF');
         if (!$staff && $booking->getUser() !== $user->getEmail()) {
-            return $this->json(['message' => 'Forbidden'], 403);
+            return $this->json(['message' => $this->translator->trans('Forbidden', [], 'validators')], 403);
         }
 
         $data = json_decode($request->getContent(), true);
         if (!is_array($data) || !isset($data['date'])) {
-            return $this->json(['message' => 'Invalid payload'], 400);
+            return $this->json(['message' => $this->translator->trans('Invalid payload', [], 'validators')], 400);
         }
 
         $doc = new Documentation();

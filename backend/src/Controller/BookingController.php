@@ -22,9 +22,14 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Bundle\SecurityBundle\Security;
+use Symfony\Contracts\Translation\TranslatorInterface;
 
 class BookingController extends AbstractController
 {
+    public function __construct(private TranslatorInterface $translator)
+    {
+    }
+
     #[Route('/api/bookings', name: 'api_create_booking', methods: ['POST'])]
     public function __invoke(
         Request $request,
@@ -36,19 +41,19 @@ class BookingController extends AbstractController
     ): JsonResponse {
         $data = json_decode($request->getContent(), true);
         if (!isset($data['stallUnitId'], $data['startDate'], $data['endDate'])) {
-            return $this->json(['message' => 'Invalid payload'], 400);
+            return $this->json(['message' => $this->translator->trans('Invalid payload', [], 'validators')], 400);
         }
 
         $stallUnit = $stallUnitRepository->find($data['stallUnitId']);
         if (!$stallUnit) {
-            return $this->json(['message' => 'StallUnit not found'], 404);
+            return $this->json(['message' => $this->translator->trans('StallUnit not found', [], 'validators')], 404);
         }
 
         $start = new \DateTimeImmutable($data['startDate']);
         $end = new \DateTimeImmutable($data['endDate']);
 
         if ($bookingRepository->hasOverlap($stallUnit, $start, $end)) {
-            return $this->json(['message' => 'Booking overlaps existing booking'], 400);
+            return $this->json(['message' => $this->translator->trans('Booking overlaps existing booking', [], 'validators')], 400);
         }
 
         $booking = new Booking();
@@ -59,9 +64,9 @@ class BookingController extends AbstractController
         if (isset($data['horseId'])) {
             /** @var Horse|null $horse */
             $horse = $em->getRepository(Horse::class)->find($data['horseId']);
-            if (!$horse) {
-                return $this->json(['message' => 'Horse not found'], 404);
-            }
+                if (!$horse) {
+                    return $this->json(['message' => $this->translator->trans('Horse not found', [], 'validators')], 404);
+                }
             $booking->setHorse($horse);
         }
 
@@ -69,7 +74,7 @@ class BookingController extends AbstractController
         if ($user && method_exists($user, 'getEmail')) {
             $booking->setUser($user->getEmail());
         } else {
-            return $this->json(['message' => 'Unauthorized'], 401);
+            return $this->json(['message' => $this->translator->trans('Unauthorized', [], 'validators')], 401);
         }
 
         // populate new booking fields with defaults
@@ -128,23 +133,23 @@ class BookingController extends AbstractController
     ): JsonResponse {
         $data = json_decode($request->getContent(), true);
         if (!isset($data['horseId'], $data['type'], $data['label'], $data['dateFrom'])) {
-            return $this->json(['message' => 'Invalid payload'], 400);
+            return $this->json(['message' => $this->translator->trans('Invalid payload', [], 'validators')], 400);
         }
 
         /** @var User|null $user */
         $user = $security->getUser();
         if (!$user instanceof User) {
-            return $this->json(['message' => 'Unauthorized'], 401);
+            return $this->json(['message' => $this->translator->trans('Unauthorized', [], 'validators')], 401);
         }
 
         /** @var Horse|null $horse */
         $horse = $em->getRepository(Horse::class)->find($data['horseId']);
         if (!$horse) {
-            return $this->json(['message' => 'Horse not found'], 404);
+            return $this->json(['message' => $this->translator->trans('Horse not found', [], 'validators')], 404);
         }
 
         if ($horse->getOwner() !== $user) {
-            return $this->json(['message' => 'Forbidden'], 403);
+            return $this->json(['message' => $this->translator->trans('Forbidden', [], 'validators')], 403);
         }
 
         $booking = new Booking();
@@ -169,7 +174,7 @@ class BookingController extends AbstractController
         if (!$stallUnit instanceof StallUnit) {
             $stallUnit = $stallUnitRepository->findOneBy([]);
             if (!$stallUnit) {
-                return $this->json(['message' => 'No stall unit available'], 400);
+                return $this->json(['message' => $this->translator->trans('No stall unit available', [], 'validators')], 400);
             }
         }
         $booking->setStallUnit($stallUnit);
@@ -214,7 +219,7 @@ class BookingController extends AbstractController
     {
         $data = json_decode($request->getContent(), true);
         if (!isset($data['startDate'], $data['endDate'])) {
-            return $this->json(['message' => 'Invalid payload'], 400);
+            return $this->json(['message' => $this->translator->trans('Invalid payload', [], 'validators')], 400);
         }
         $start = new \DateTimeImmutable($data['startDate']);
         $end = new \DateTimeImmutable($data['endDate']);
@@ -232,12 +237,12 @@ class BookingController extends AbstractController
     ): JsonResponse {
         $data = json_decode($request->getContent(), true);
         if (!isset($data['packageId'], $data['startDate'])) {
-            return $this->json(['message' => 'Invalid payload'], 400);
+            return $this->json(['message' => $this->translator->trans('Invalid payload', [], 'validators')], 400);
         }
 
         $package = $packageRepository->find($data['packageId']);
         if (!$package) {
-            return $this->json(['message' => 'Package not found'], 404);
+            return $this->json(['message' => $this->translator->trans('Package not found', [], 'validators')], 404);
         }
 
         $start = new \DateTimeImmutable($data['startDate']);

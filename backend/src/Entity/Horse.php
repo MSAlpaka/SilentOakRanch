@@ -2,7 +2,6 @@
 
 namespace App\Entity;
 
-use App\Enum\Gender;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity]
@@ -16,14 +15,14 @@ class Horse
     #[ORM\Column(type: 'string')]
     private string $name;
 
-    #[ORM\Column(enumType: Gender::class)]
-    private Gender $gender;
+    #[ORM\Column(type: 'integer')]
+    private int $age;
 
-    #[ORM\Column(type: 'date')]
-    private \DateTimeInterface $dateOfBirth;
+    #[ORM\Column(type: 'string')]
+    private string $breed;
 
     #[ORM\Column(type: 'text', nullable: true)]
-    private ?string $notes = null;
+    private ?string $specialNotes = null;
 
     #[ORM\ManyToOne(targetEntity: User::class)]
     #[ORM\JoinColumn(nullable: false)]
@@ -48,36 +47,36 @@ class Horse
         return $this;
     }
 
-    public function getGender(): Gender
+    public function getAge(): int
     {
-        return $this->gender;
+        return $this->age;
     }
 
-    public function setGender(Gender $gender): self
+    public function setAge(int $age): self
     {
-        $this->gender = $gender;
+        $this->age = $age;
         return $this;
     }
 
-    public function getDateOfBirth(): \DateTimeInterface
+    public function getBreed(): string
     {
-        return $this->dateOfBirth;
+        return $this->breed;
     }
 
-    public function setDateOfBirth(\DateTimeInterface $dateOfBirth): self
+    public function setBreed(string $breed): self
     {
-        $this->dateOfBirth = $dateOfBirth;
+        $this->breed = $breed;
         return $this;
     }
 
-    public function getNotes(): ?string
+    public function getSpecialNotes(): ?string
     {
-        return $this->notes;
+        return $this->specialNotes;
     }
 
-    public function setNotes(?string $notes): self
+    public function setSpecialNotes(?string $specialNotes): self
     {
-        $this->notes = $notes;
+        $this->specialNotes = $specialNotes;
         return $this;
     }
 

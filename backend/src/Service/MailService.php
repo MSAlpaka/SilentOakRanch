@@ -3,6 +3,7 @@
 namespace App\Service;
 
 use App\Entity\Booking;
+use App\Entity\Invoice;
 use Symfony\Bridge\Twig\Mime\TemplatedEmail;
 use Symfony\Component\Mailer\MailerInterface;
 use Symfony\Component\Mime\Address;
@@ -44,5 +45,18 @@ class MailService
             ->context(['booking' => $booking]);
 
         $this->mailer->send($message);
+    }
+
+    public function sendInvoice(Invoice $invoice): void
+    {
+        $user = $invoice->getUser();
+
+        $email = (new TemplatedEmail())
+            ->to(new Address($user->getEmail(), sprintf('%s %s', $user->getFirstName(), $user->getLastName())))
+            ->subject('Invoice')
+            ->html('<p>Please find your invoice attached.</p>')
+            ->attachFromPath($invoice->getPdfPath(), 'invoice.pdf');
+
+        $this->mailer->send($email);
     }
 }

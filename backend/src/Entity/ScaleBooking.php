@@ -3,50 +3,42 @@
 namespace App\Entity;
 
 use App\Enum\ScaleBookingStatus;
+use App\Enum\ScaleBookingType;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity(repositoryClass: 'App\\Repository\\ScaleBookingRepository')]
+#[ORM\HasLifecycleCallbacks]
 class ScaleBooking
 {
     #[ORM\Id]
     #[ORM\Column(type: 'guid')]
     private string $id;
 
+    #[ORM\ManyToOne(targetEntity: Horse::class)]
+    #[ORM\JoinColumn(nullable: false)]
+    private Horse $horse;
+
+    #[ORM\ManyToOne(targetEntity: User::class)]
+    #[ORM\JoinColumn(nullable: false)]
+    private User $owner;
+
     #[ORM\Column(type: 'datetime')]
-    private \DateTimeInterface $bookingDateTime;
+    private \DateTimeInterface $slot;
 
-    #[ORM\Column(type: 'string')]
-    private string $customerName;
+    #[ORM\Column(type: 'float', nullable: true)]
+    private ?float $weight = null;
 
-    #[ORM\Column(type: 'string')]
-    private string $customerEmail;
+    #[ORM\Column(enumType: ScaleBookingType::class)]
+    private ScaleBookingType $bookingType;
 
-    #[ORM\Column(type: 'string', nullable: true)]
-    private ?string $customerPhone = null;
-
-    #[ORM\Column(type: 'string')]
-    private string $horseName;
-
-    #[ORM\Column(type: 'decimal', precision: 10, scale: 2, nullable: true)]
-    private ?string $estimatedWeight = null;
-
-    #[ORM\Column(type: 'decimal', precision: 10, scale: 2, nullable: true)]
-    private ?string $actualWeight = null;
-
-    #[ORM\Column(type: 'text', nullable: true)]
-    private ?string $comment = null;
+    #[ORM\Column(type: 'decimal', precision: 10, scale: 2)]
+    private string $price;
 
     #[ORM\Column(enumType: ScaleBookingStatus::class)]
-    private ScaleBookingStatus $status = ScaleBookingStatus::PENDING;
+    private ScaleBookingStatus $status;
 
-    #[ORM\Column(type: 'guid')]
-    private string $qrCode;
-
-    #[ORM\Column(type: 'datetime', nullable: true)]
-    private ?\DateTimeInterface $redeemedAt = null;
-
-    #[ORM\Column(type: 'datetime', nullable: true)]
-    private ?\DateTimeInterface $resultEmailSentAt = null;
+    #[ORM\Column(type: 'string', unique: true)]
+    private string $qrToken;
 
     #[ORM\Column(type: 'datetime')]
     private \DateTimeInterface $createdAt;
@@ -65,91 +57,69 @@ class ScaleBooking
         return $this;
     }
 
-    public function getBookingDateTime(): \DateTimeInterface
+    public function getHorse(): Horse
     {
-        return $this->bookingDateTime;
+        return $this->horse;
     }
 
-    public function setBookingDateTime(\DateTimeInterface $bookingDateTime): self
+    public function setHorse(Horse $horse): self
     {
-        $this->bookingDateTime = $bookingDateTime;
+        $this->horse = $horse;
         return $this;
     }
 
-    public function getCustomerName(): string
+    public function getOwner(): User
     {
-        return $this->customerName;
+        return $this->owner;
     }
 
-    public function setCustomerName(string $customerName): self
+    public function setOwner(User $owner): self
     {
-        $this->customerName = $customerName;
+        $this->owner = $owner;
         return $this;
     }
 
-    public function getCustomerEmail(): string
+    public function getSlot(): \DateTimeInterface
     {
-        return $this->customerEmail;
+        return $this->slot;
     }
 
-    public function setCustomerEmail(string $customerEmail): self
+    public function setSlot(\DateTimeInterface $slot): self
     {
-        $this->customerEmail = $customerEmail;
+        $this->slot = $slot;
         return $this;
     }
 
-    public function getCustomerPhone(): ?string
+    public function getWeight(): ?float
     {
-        return $this->customerPhone;
+        return $this->weight;
     }
 
-    public function setCustomerPhone(?string $customerPhone): self
+    public function setWeight(?float $weight): self
     {
-        $this->customerPhone = $customerPhone;
+        $this->weight = $weight;
         return $this;
     }
 
-    public function getHorseName(): string
+    public function getBookingType(): ScaleBookingType
     {
-        return $this->horseName;
+        return $this->bookingType;
     }
 
-    public function setHorseName(string $horseName): self
+    public function setBookingType(ScaleBookingType $bookingType): self
     {
-        $this->horseName = $horseName;
+        $this->bookingType = $bookingType;
         return $this;
     }
 
-    public function getEstimatedWeight(): ?string
+    public function getPrice(): string
     {
-        return $this->estimatedWeight;
+        return $this->price;
     }
 
-    public function setEstimatedWeight(?string $estimatedWeight): self
+    public function setPrice(string $price): self
     {
-        $this->estimatedWeight = $estimatedWeight;
-        return $this;
-    }
-
-    public function getActualWeight(): ?string
-    {
-        return $this->actualWeight;
-    }
-
-    public function setActualWeight(?string $actualWeight): self
-    {
-        $this->actualWeight = $actualWeight;
-        return $this;
-    }
-
-    public function getComment(): ?string
-    {
-        return $this->comment;
-    }
-
-    public function setComment(?string $comment): self
-    {
-        $this->comment = $comment;
+        $this->price = $price;
         return $this;
     }
 
@@ -164,36 +134,14 @@ class ScaleBooking
         return $this;
     }
 
-    public function getQrCode(): string
+    public function getQrToken(): string
     {
-        return $this->qrCode;
+        return $this->qrToken;
     }
 
-    public function setQrCode(string $qrCode): self
+    public function setQrToken(string $qrToken): self
     {
-        $this->qrCode = $qrCode;
-        return $this;
-    }
-
-    public function getRedeemedAt(): ?\DateTimeInterface
-    {
-        return $this->redeemedAt;
-    }
-
-    public function setRedeemedAt(?\DateTimeInterface $redeemedAt): self
-    {
-        $this->redeemedAt = $redeemedAt;
-        return $this;
-    }
-
-    public function getResultEmailSentAt(): ?\DateTimeInterface
-    {
-        return $this->resultEmailSentAt;
-    }
-
-    public function setResultEmailSentAt(?\DateTimeInterface $resultEmailSentAt): self
-    {
-        $this->resultEmailSentAt = $resultEmailSentAt;
+        $this->qrToken = $qrToken;
         return $this;
     }
 
@@ -217,5 +165,19 @@ class ScaleBooking
     {
         $this->updatedAt = $updatedAt;
         return $this;
+    }
+
+    #[ORM\PrePersist]
+    public function onPrePersist(): void
+    {
+        $now = new \DateTimeImmutable();
+        $this->createdAt = $now;
+        $this->updatedAt = $now;
+    }
+
+    #[ORM\PreUpdate]
+    public function onPreUpdate(): void
+    {
+        $this->updatedAt = new \DateTimeImmutable();
     }
 }

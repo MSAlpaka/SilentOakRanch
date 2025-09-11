@@ -17,14 +17,14 @@ class ScaleBookingRepository extends ServiceEntityRepository
     }
 
     /**
-     * Checks if a booking already exists for the given date and time.
+     * Checks if a booking already exists for the given slot.
      */
-    public function existsForDateTime(\DateTimeInterface $bookingDateTime): bool
+    public function existsForDateTime(\DateTimeInterface $slot): bool
     {
         return (bool) $this->createQueryBuilder('b')
             ->select('1')
-            ->andWhere('b.bookingDateTime = :dt')
-            ->setParameter('dt', $bookingDateTime)
+            ->andWhere('b.slot = :slot')
+            ->setParameter('slot', $slot)
             ->getQuery()
             ->getOneOrNullResult();
     }

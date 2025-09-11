@@ -1,44 +1,22 @@
-import { useAuth } from '../auth/AuthContext'
-
-function AdminView() {
-  return <div className="p-4">Admin Dashboard</div>
-}
-
-function StaffView() {
-  return <div className="p-4">Staff Dashboard</div>
-}
-
-function CustomerView() {
-  return <div className="p-4">Customer Dashboard</div>
-}
+import { logout } from '../auth/authSlice'
+import { useAppDispatch } from '../../store'
 
 function Dashboard() {
-  const { role, user, logout } = useAuth()
+  const dispatch = useAppDispatch()
 
-  let content: JSX.Element | null = null
-  switch (role) {
-    case 'admin':
-      content = <AdminView />
-      break
-    case 'staff':
-      content = <StaffView />
-      break
-    case 'customer':
-      content = <CustomerView />
-      break
-    default:
-      content = null
+  function handleLogout() {
+    dispatch(logout())
   }
 
   return (
     <div className="min-h-screen">
       <header className="bg-gray-800 text-white p-4 flex justify-between">
-        <span>Logged in as {user?.firstName ?? user?.email}</span>
-        <button onClick={logout} className="text-sm underline">
+        <span>Logged in</span>
+        <button onClick={handleLogout} className="text-sm underline">
           Logout
         </button>
       </header>
-      {content}
+      <div className="p-4">Dashboard</div>
     </div>
   )
 }

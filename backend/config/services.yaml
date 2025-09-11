@@ -16,5 +16,9 @@ services:
     App\:
         resource: '../src/'
 
+    Stripe\StripeClient:
+        arguments:
+            $config: '%env(STRIPE_SECRET_KEY)%'
+
     # add more service definitions when explicit configuration is needed
     # please note that last definitions always *replace* previous ones

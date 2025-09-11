@@ -43,6 +43,9 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column(type: 'datetime')]
     private \DateTimeInterface $createdAt;
 
+    #[ORM\Column(type: 'string', nullable: true)]
+    private ?string $stripeCustomerId = null;
+
     public function getId(): ?int
     {
         return $this->id;
@@ -157,6 +160,17 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function setCreatedAt(\DateTimeInterface $createdAt): self
     {
         $this->createdAt = $createdAt;
+        return $this;
+    }
+
+    public function getStripeCustomerId(): ?string
+    {
+        return $this->stripeCustomerId;
+    }
+
+    public function setStripeCustomerId(?string $stripeCustomerId): self
+    {
+        $this->stripeCustomerId = $stripeCustomerId;
         return $this;
     }
 }

@@ -2,17 +2,13 @@
 
 namespace App\Service;
 
-use Endroid\QrCode\Builder\BuilderInterface;
+use Endroid\QrCode\Builder\Builder;
 
 class QrCodeGenerator
 {
-    public function __construct(private readonly BuilderInterface $builder)
-    {
-    }
-
     public function generate(string $data): string
     {
-        $result = $this->builder
+        $result = Builder::create()
             ->data($data)
             ->build();
 

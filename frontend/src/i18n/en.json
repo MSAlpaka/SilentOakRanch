@@ -1,0 +1,86 @@
+{
+  "auth": {
+    "login": {
+      "title": "Login",
+      "username": "Username",
+      "password": "Password",
+      "button": "Login",
+      "error": "Invalid credentials"
+    },
+    "register": {
+      "title": "Register",
+      "username": "Username",
+      "password": "Password",
+      "button": "Register",
+      "error": "Registration failed"
+    },
+    "invite": {
+      "title": "Set Password",
+      "new_password": "New Password",
+      "button": "Accept Invite",
+      "error": "Unable to accept invite"
+    },
+    "user_error": "Failed to load user"
+  },
+  "dashboard": {
+    "logged_in": "Logged in",
+    "logout": "Logout",
+    "title": "Dashboard"
+  },
+  "horses": {
+    "title": "Horses",
+    "new": "New Horse",
+    "name": "Name",
+    "age": "Age",
+    "breed": "Breed",
+    "add_reko": "Add Reko Info",
+    "special_notes": "Special Notes",
+    "medical_history": "Medical History",
+    "medication": "Medication",
+    "save": "Save Horse",
+    "error_save": "Failed to save horse",
+    "error_load": "Failed to load horses"
+  },
+  "bookings": {
+    "my_bookings": "My Bookings",
+    "horse": "Horse",
+    "stall": "Stall",
+    "start": "Start",
+    "end": "End",
+    "status": "Status",
+    "price": "Price",
+    "actions": "Actions",
+    "title_new": "New Booking",
+    "select_horse": "Select horse",
+    "select_package": "Select package",
+    "package": "Package",
+    "start_date": "Start Date",
+    "book": "Book",
+    "error_create": "Failed to create booking"
+  },
+  "subscriptions": {
+    "active_title": "Active Subscriptions",
+    "new": "+ New Subscription",
+    "loading": "Loading...",
+    "error_load": "Failed to load data",
+    "type": "Type",
+    "title": "Title",
+    "amount": "Amount",
+    "start": "Start",
+    "autorenew": "AutoRenew",
+    "end": "End",
+    "new_title": "New Subscription",
+    "assignment": "Assignment",
+    "please_select": "Please select",
+    "save": "Save Subscription",
+    "autoRenew": "AutoRenew",
+    "start_date": "Start Date",
+    "end_date": "End Date",
+    "error_save": "Failed to save subscription"
+  },
+  "common": {
+    "yes": "Yes",
+    "no": "No"
+  }
+}
+

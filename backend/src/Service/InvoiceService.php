@@ -72,7 +72,7 @@ class InvoiceService
 
         $this->em->flush();
 
-        $this->mailService->sendInvoice($invoice);
+        $this->mailService->sendInvoice($user, $invoice, $pdfPath);
 
         return $invoice;
     }

@@ -3,6 +3,7 @@
 namespace App\Entity;
 
 use Doctrine\ORM\Mapping as ORM;
+use App\Enum\Gender;
 
 #[ORM\Entity]
 class Horse
@@ -20,6 +21,9 @@ class Horse
 
     #[ORM\Column(type: 'string')]
     private string $breed;
+
+    #[ORM\Column(type: 'string', nullable: true)]
+    private ?string $gender = null;
 
     #[ORM\Column(type: 'text', nullable: true)]
     private ?string $specialNotes = null;
@@ -72,6 +76,17 @@ class Horse
     public function setBreed(string $breed): self
     {
         $this->breed = $breed;
+        return $this;
+    }
+
+    public function getGender(): ?string
+    {
+        return $this->gender;
+    }
+
+    public function setGender(Gender|string|null $gender): self
+    {
+        $this->gender = $gender instanceof Gender ? $gender->value : $gender;
         return $this;
     }
 

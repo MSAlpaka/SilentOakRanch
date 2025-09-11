@@ -20,17 +20,17 @@ jobs:
         working-directory: frontend
         run: npm ci
 
-      - name: Build frontend
-        working-directory: frontend
-        run: npm run build
-
       - name: Lint frontend
         working-directory: frontend
-        run: npm run lint --if-present
+        run: npm run lint
 
       - name: Test frontend
         working-directory: frontend
-        run: npm test --if-present
+        run: npm test
+
+      - name: Build frontend
+        working-directory: frontend
+        run: npm run build
 
       - name: Set up PHP
         uses: shivammathur/setup-php@v2
@@ -39,7 +39,7 @@ jobs:
 
       - name: Install backend dependencies
         working-directory: backend
-        run: composer install --ignore-platform-req=ext-sodium --no-interaction --no-progress --prefer-dist
+        run: composer install --no-interaction --prefer-dist --ignore-platform-req=ext-sodium
 
       - name: Lint backend
         working-directory: backend
@@ -47,4 +47,4 @@ jobs:
 
       - name: Test backend
         working-directory: backend
-        run: ./bin/phpunit
+        run: vendor/bin/phpunit

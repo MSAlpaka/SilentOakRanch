@@ -50,11 +50,11 @@ class MyInvoicesControllerTest extends KernelTestCase
         $user = $this->createUser();
 
         $invoice = new Invoice();
-        $invoice->setUser($user->getEmail());
+        $invoice->setUser($user);
         $invoice->setNumber('INV-001');
         $invoice->setPeriod('2024-01');
         $invoice->setCreatedAt(new \DateTimeImmutable());
-        $invoice->setStatus(InvoiceStatus::OPEN);
+        $invoice->setStatus(InvoiceStatus::SENT);
         $invoice->setTotal('100.00');
         $this->em->persist($invoice);
         $this->em->flush();
@@ -70,7 +70,7 @@ class MyInvoicesControllerTest extends KernelTestCase
         $this->assertSame(200, $response->getStatusCode());
         $this->assertCount(1, $data);
         $this->assertSame('INV-001', $data[0]['number']);
-        $this->assertSame('OPEN', $data[0]['status']);
+        $this->assertSame('SENT', $data[0]['status']);
         $this->assertSame('/storage/invoices/INV-001.pdf', $data[0]['downloadUrl']);
     }
 }

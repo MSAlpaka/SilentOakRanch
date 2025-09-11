@@ -58,7 +58,7 @@ class ProcessSubscriptionsCommand extends Command
                 $invoice->setNumber(uniqid('INV-'));
                 $invoice->setPeriod($period);
                 $invoice->setCreatedAt(new \DateTimeImmutable());
-                $invoice->setStatus(InvoiceStatus::OPEN);
+                $invoice->setStatus(InvoiceStatus::SENT);
                 $invoice->setTotal('0.00');
                 $this->em->persist($invoice);
             }

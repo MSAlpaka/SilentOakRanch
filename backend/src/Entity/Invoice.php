@@ -6,6 +6,7 @@ use App\Enum\InvoiceStatus;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity]
+#[ORM\HasLifecycleCallbacks]
 class Invoice
 {
     #[ORM\Id]
@@ -13,73 +14,107 @@ class Invoice
     #[ORM\Column(type: 'integer')]
     private ?int $id = null;
 
-    #[ORM\Column(type: 'string')]
-    private string $user;
+    #[ORM\ManyToOne(targetEntity: User::class)]
+    #[ORM\JoinColumn(nullable: false)]
+    private User $user;
 
-    #[ORM\Column(type: 'string', unique: true)]
-    private string $number;
+    #[ORM\ManyToOne(targetEntity: Booking::class)]
+    #[ORM\JoinColumn(nullable: true)]
+    private ?Booking $booking = null;
 
-    #[ORM\Column(type: 'string')]
-    private string $period;
+    #[ORM\ManyToOne(targetEntity: ScaleBooking::class)]
+    #[ORM\JoinColumn(nullable: true)]
+    private ?ScaleBooking $scaleBooking = null;
 
-    #[ORM\Column(type: 'datetime')]
-    private \DateTimeInterface $createdAt;
+    #[ORM\Column(type: 'string', nullable: true)]
+    private ?string $stripePaymentId = null;
+
+    #[ORM\Column(type: 'decimal', precision: 10, scale: 2)]
+    private string $amount;
+
+    #[ORM\Column(type: 'string', length: 3)]
+    private string $currency;
 
     #[ORM\Column(enumType: InvoiceStatus::class)]
     private InvoiceStatus $status;
 
-    #[ORM\Column(type: 'decimal', precision: 10, scale: 2)]
-    private string $total;
-
     #[ORM\Column(type: 'string', nullable: true)]
-    private ?string $stripeInvoiceId = null;
+    private ?string $pdfPath = null;
+
+    #[ORM\Column(type: 'datetime')]
+    private \DateTimeInterface $createdAt;
+
+    #[ORM\Column(type: 'datetime')]
+    private \DateTimeInterface $updatedAt;
 
     public function getId(): ?int
     {
         return $this->id;
     }
 
-    public function getUser(): string
+    public function getUser(): User
     {
         return $this->user;
     }
 
-    public function setUser(string $user): self
+    public function setUser(User $user): self
     {
         $this->user = $user;
         return $this;
     }
 
-    public function getNumber(): string
+    public function getBooking(): ?Booking
     {
-        return $this->number;
+        return $this->booking;
     }
 
-    public function setNumber(string $number): self
+    public function setBooking(?Booking $booking): self
     {
-        $this->number = $number;
+        $this->booking = $booking;
         return $this;
     }
 
-    public function getPeriod(): string
+    public function getScaleBooking(): ?ScaleBooking
     {
-        return $this->period;
+        return $this->scaleBooking;
     }
 
-    public function setPeriod(string $period): self
+    public function setScaleBooking(?ScaleBooking $scaleBooking): self
     {
-        $this->period = $period;
+        $this->scaleBooking = $scaleBooking;
         return $this;
     }
 
-    public function getCreatedAt(): \DateTimeInterface
+    public function getStripePaymentId(): ?string
     {
-        return $this->createdAt;
+        return $this->stripePaymentId;
     }
 
-    public function setCreatedAt(\DateTimeInterface $createdAt): self
+    public function setStripePaymentId(?string $stripePaymentId): self
     {
-        $this->createdAt = $createdAt;
+        $this->stripePaymentId = $stripePaymentId;
+        return $this;
+    }
+
+    public function getAmount(): string
+    {
+        return $this->amount;
+    }
+
+    public function setAmount(string $amount): self
+    {
+        $this->amount = $amount;
+        return $this;
+    }
+
+    public function getCurrency(): string
+    {
+        return $this->currency;
+    }
+
+    public function setCurrency(string $currency): self
+    {
+        $this->currency = $currency;
         return $this;
     }
 
@@ -94,26 +129,50 @@ class Invoice
         return $this;
     }
 
-    public function getTotal(): string
+    public function getPdfPath(): ?string
     {
-        return $this->total;
+        return $this->pdfPath;
     }
 
-    public function setTotal(string $total): self
+    public function setPdfPath(?string $pdfPath): self
     {
-        $this->total = $total;
+        $this->pdfPath = $pdfPath;
         return $this;
     }
 
-    public function getStripeInvoiceId(): ?string
+    public function getCreatedAt(): \DateTimeInterface
     {
-        return $this->stripeInvoiceId;
+        return $this->createdAt;
     }
 
-    public function setStripeInvoiceId(?string $stripeInvoiceId): self
+    public function setCreatedAt(\DateTimeInterface $createdAt): self
     {
-        $this->stripeInvoiceId = $stripeInvoiceId;
+        $this->createdAt = $createdAt;
         return $this;
+    }
+
+    public function getUpdatedAt(): \DateTimeInterface
+    {
+        return $this->updatedAt;
+    }
+
+    public function setUpdatedAt(\DateTimeInterface $updatedAt): self
+    {
+        $this->updatedAt = $updatedAt;
+        return $this;
+    }
+
+    #[ORM\PrePersist]
+    public function onPrePersist(): void
+    {
+        $now = new \DateTimeImmutable();
+        $this->createdAt = $now;
+        $this->updatedAt = $now;
+    }
+
+    #[ORM\PreUpdate]
+    public function onPreUpdate(): void
+    {
+        $this->updatedAt = new \DateTimeImmutable();
     }
 }
-

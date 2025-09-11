@@ -1,26 +1,27 @@
 # SilentOakRanch
 
-Digitale Infrastruktur für einen modernen Pferdebetrieb.  
-Inklusive Kundenportal, Buchungssystem, Zusatzleistungen, Rechnungsmodul und Aufgabenverwaltung.
+## Project overview & tech stack
+Symfony 7.3, PHP 8.2, React, Redux Toolkit, Vite, Vitest, ESLint, i18n.
 
-## Struktur
-- `backend/`: Symfony (API Platform)
-- `frontend/`: React (Vite oder Next.js)
-- `shared/`: gemeinsame Typdefinitionen
+## Backend setup
+```bash
+cd backend && composer install --ignore-platform-req=ext-sodium
+```
 
-## Setup
+## Frontend setup
+```bash
+cd frontend && npm ci
+```
 
-### Composer
-Composer requires `ext-sodium`; since the CI environment lacks this extension, run
-`composer install --ignore-platform-req=ext-sodium`.
+## Dev commands
+```bash
+composer install
+vendor/bin/phpunit
+npm run lint
+npm test
+npm run build
+```
 
-## Release-Checkliste
-- Linting und Tests laufen ohne Fehler
-- Versionsnummern und Abhängigkeiten aktualisieren
-- Changelog und Dokumentation aktualisieren
-- Git-Tag und Release erstellen
+## Workaround note for `ext-sodium`
+Some environments lack the `ext-sodium` PHP extension. Use `composer install --ignore-platform-req=ext-sodium` to bypass the requirement during installation.
 
-## Lizenz
-Die Software steht unter der [MIT-Lizenz](LICENSE).
-
-> Generiert und verwaltet mit OpenAI Codex.

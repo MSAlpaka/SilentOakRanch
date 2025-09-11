@@ -24,6 +24,12 @@ class Horse
     #[ORM\Column(type: 'text', nullable: true)]
     private ?string $specialNotes = null;
 
+    #[ORM\Column(type: 'text', nullable: true)]
+    private ?string $medicalHistory = null;
+
+    #[ORM\Column(type: 'text', nullable: true)]
+    private ?string $medication = null;
+
     #[ORM\ManyToOne(targetEntity: User::class)]
     #[ORM\JoinColumn(nullable: false)]
     private User $owner;
@@ -77,6 +83,28 @@ class Horse
     public function setSpecialNotes(?string $specialNotes): self
     {
         $this->specialNotes = $specialNotes;
+        return $this;
+    }
+
+    public function getMedicalHistory(): ?string
+    {
+        return $this->medicalHistory;
+    }
+
+    public function setMedicalHistory(?string $medicalHistory): self
+    {
+        $this->medicalHistory = $medicalHistory;
+        return $this;
+    }
+
+    public function getMedication(): ?string
+    {
+        return $this->medication;
+    }
+
+    public function setMedication(?string $medication): self
+    {
+        $this->medication = $medication;
         return $this;
     }
 

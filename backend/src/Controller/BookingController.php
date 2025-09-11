@@ -56,6 +56,13 @@ class BookingController extends AbstractController
             return $this->json(['message' => $this->translator->trans('Booking overlaps existing booking', [], 'validators')], 400);
         }
 
+        /** @var User|null $user */
+        $user = $security->getUser();
+        if (!$user instanceof User) {
+            return $this->json(['message' => $this->translator->trans('Unauthorized', [], 'validators')], 401);
+        }
+        $staff = $security->isGranted('ROLE_ADMIN') || $security->isGranted('ROLE_STAFF');
+
         $booking = new Booking();
         $booking->setStallUnit($stallUnit)
             ->setStartDate($start)
@@ -64,17 +71,17 @@ class BookingController extends AbstractController
         if (isset($data['horseId'])) {
             /** @var Horse|null $horse */
             $horse = $em->getRepository(Horse::class)->find($data['horseId']);
-                if (!$horse) {
-                    return $this->json(['message' => $this->translator->trans('Horse not found', [], 'validators')], 404);
-                }
+            if (!$horse) {
+                return $this->json(['message' => $this->translator->trans('Horse not found', [], 'validators')], 404);
+            }
+            if (!$staff && $horse->getOwner() !== $user) {
+                return $this->json(['message' => $this->translator->trans('Forbidden', [], 'validators')], 403);
+            }
             $booking->setHorse($horse);
         }
 
-        $user = $security->getUser();
-        if ($user && method_exists($user, 'getEmail')) {
+        if (method_exists($user, 'getEmail')) {
             $booking->setUser($user->getEmail());
-        } else {
-            return $this->json(['message' => $this->translator->trans('Unauthorized', [], 'validators')], 401);
         }
 
         // populate new booking fields with defaults

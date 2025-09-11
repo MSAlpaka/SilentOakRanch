@@ -16,7 +16,7 @@ final class Version20250715000000 extends AbstractMigration
 
     public function up(Schema $schema): void
     {
-        $this->addSql('CREATE TABLE documentation (id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, booking_id INTEGER NOT NULL, date DATETIME NOT NULL, notes CLOB DEFAULT NULL, images CLOB DEFAULT NULL, CONSTRAINT FK_DOCUMENTATION_BOOKING FOREIGN KEY (booking_id) REFERENCES booking (id) NOT DEFERRABLE INITIALLY IMMEDIATE)');
+        $this->addSql('CREATE TABLE documentation (id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, booking_id INTEGER NOT NULL, date DATETIME NOT NULL, notes CLOB DEFAULT NULL, images CLOB DEFAULT NULL, CONSTRAINT FK_DOCUMENTATION_BOOKING FOREIGN KEY (booking_id) REFERENCES booking (id))');
         $this->addSql('CREATE INDEX IDX_DOCUMENTATION_BOOKING ON documentation (booking_id)');
         $this->addSql('ALTER TABLE horse ADD COLUMN medical_history CLOB DEFAULT NULL');
         $this->addSql('ALTER TABLE horse ADD COLUMN medication CLOB DEFAULT NULL');

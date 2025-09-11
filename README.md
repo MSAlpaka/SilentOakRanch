@@ -3,6 +3,15 @@
 ## Project overview & tech stack
 Symfony 7.3, PHP 8.2, React, Redux Toolkit, Vite, Vitest, ESLint, i18n.
 
+## Setup
+After cloning, run:
+
+```bash
+composer install --ignore-platform-req=ext-sodium
+npm ci
+npm run build
+```
+
 ## Backend setup
 ```bash
 cd backend && composer install --ignore-platform-req=ext-sodium

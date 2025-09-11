@@ -7,16 +7,20 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Bundle\SecurityBundle\Security;
+use Symfony\Contracts\Translation\TranslatorInterface;
 
 class MyInvoicesController extends AbstractController
 {
+    public function __construct(private TranslatorInterface $translator)
+    {
+    }
     #[Route('/api/my/invoices', name: 'api_my_invoices', methods: ['GET'])]
     public function __invoke(InvoiceRepository $invoiceRepository, Security $security): JsonResponse
     {
         $user = $security->getUser();
 
         if (!$user) {
-            return $this->json(['message' => 'Unauthorized'], 401);
+            return $this->json(['message' => $this->translator->trans('Unauthorized', [], 'validators')], 401);
         }
 
         $invoices = $invoiceRepository->findByUser($user->getEmail());

@@ -11,9 +11,13 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use Symfony\Component\Routing\Annotation\Route;
+use Symfony\Contracts\Translation\TranslatorInterface;
 
 class AuthController extends AbstractController
 {
+    public function __construct(private TranslatorInterface $translator)
+    {
+    }
     #[Route('/api/register', name: 'api_register', methods: ['POST'])]
     public function register(
         Request $request,
@@ -26,11 +30,11 @@ class AuthController extends AbstractController
         $password = $data['password'] ?? null;
 
         if (!$email || !$password) {
-            return $this->json(['message' => 'Email and password are required'], 400);
+            return $this->json(['message' => $this->translator->trans('Email and password are required', [], 'validators')], 400);
         }
 
         if ($em->getRepository(User::class)->findOneBy(['email' => $email])) {
-            return $this->json(['message' => 'Email already exists'], 400);
+            return $this->json(['message' => $this->translator->trans('Email already exists', [], 'validators')], 400);
         }
 
         $user = new User();
@@ -57,12 +61,12 @@ class AuthController extends AbstractController
         $password = $data['password'] ?? null;
 
         if (!$email || !$password) {
-            return $this->json(['message' => 'Email and password are required'], 400);
+            return $this->json(['message' => $this->translator->trans('Email and password are required', [], 'validators')], 400);
         }
 
         $user = $em->getRepository(User::class)->findOneBy(['email' => $email]);
         if (!$user || !$passwordHasher->isPasswordValid($user, $password)) {
-            return $this->json(['message' => 'Invalid credentials'], 401);
+            return $this->json(['message' => $this->translator->trans('Invalid credentials', [], 'validators')], 401);
         }
 
         $token = $jwtManager->create($user);
@@ -77,21 +81,21 @@ class AuthController extends AbstractController
         $email = $data['email'] ?? null;
 
         if (!$email) {
-            return $this->json(['message' => 'Email is required'], 400);
+            return $this->json(['message' => $this->translator->trans('Email is required', [], 'validators')], 400);
         }
 
         $invitationService->sendInvitation($email);
 
-        return $this->json(['message' => 'Invitation sent']);
+        return $this->json(['message' => $this->translator->trans('Invitation sent', [], 'validators')]);
     }
 
     #[Route('/accept-invite/{token}', name: 'accept_invite', methods: ['POST'])]
     public function acceptInvite(string $token, InvitationService $invitationService): JsonResponse
     {
         if (!$invitationService->acceptInvitation($token)) {
-            return $this->json(['message' => 'Invalid token'], 400);
+            return $this->json(['message' => $this->translator->trans('Invalid token', [], 'validators')], 400);
         }
 
-        return $this->json(['message' => 'Invitation accepted']);
+        return $this->json(['message' => $this->translator->trans('Invitation accepted', [], 'validators')]);
     }
 }

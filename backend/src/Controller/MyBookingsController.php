@@ -8,9 +8,13 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Bundle\SecurityBundle\Security;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\Routing\Annotation\Route;
+use Symfony\Contracts\Translation\TranslatorInterface;
 
 class MyBookingsController extends AbstractController
 {
+    public function __construct(private TranslatorInterface $translator)
+    {
+    }
     #[Route('/api/my/bookings', name: 'api_my_bookings', methods: ['GET'])]
     public function __invoke(BookingRepository $bookingRepository, Security $security): JsonResponse
     {
@@ -18,7 +22,7 @@ class MyBookingsController extends AbstractController
         $user = $security->getUser();
 
         if (!$user instanceof User) {
-            return $this->json(['message' => 'Unauthorized'], 401);
+            return $this->json(['message' => $this->translator->trans('Unauthorized', [], 'validators')], 401);
         }
 
         $bookings = $bookingRepository->findByUser($user->getEmail());

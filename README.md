@@ -8,6 +8,12 @@ Inklusive Kundenportal, Buchungssystem, Zusatzleistungen, Rechnungsmodul und Auf
 - `frontend/`: React (Vite oder Next.js)
 - `shared/`: gemeinsame Typdefinitionen
 
+## Release-Checkliste
+- Linting und Tests laufen ohne Fehler
+- Versionsnummern und Abhängigkeiten aktualisieren
+- Changelog und Dokumentation aktualisieren
+- Git-Tag und Release erstellen
+
 ## Lizenz
 Die Software steht unter der [MIT-Lizenz](LICENSE).
 

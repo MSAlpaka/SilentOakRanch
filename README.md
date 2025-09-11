@@ -8,6 +8,12 @@ Inklusive Kundenportal, Buchungssystem, Zusatzleistungen, Rechnungsmodul und Auf
 - `frontend/`: React (Vite oder Next.js)
 - `shared/`: gemeinsame Typdefinitionen
 
+## Setup
+
+### Composer
+Composer requires `ext-sodium`; since the CI environment lacks this extension, run
+`composer install --ignore-platform-req=ext-sodium`.
+
 ## Release-Checkliste
 - Linting und Tests laufen ohne Fehler
 - Versionsnummern und Abhängigkeiten aktualisieren

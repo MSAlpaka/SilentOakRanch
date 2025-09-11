@@ -222,6 +222,12 @@ class Booking
         return $this->addOns;
     }
 
+    public function setAddOns(Collection $addOns): self
+    {
+        $this->addOns = $addOns;
+        return $this;
+    }
+
     public function addAddOn(AddOn $addOn): self
     {
         if (!$this->addOns->contains($addOn)) {

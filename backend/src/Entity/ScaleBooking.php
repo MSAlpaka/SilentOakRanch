@@ -59,6 +59,12 @@ class ScaleBooking
         return $this->id;
     }
 
+    public function setId(string $id): self
+    {
+        $this->id = $id;
+        return $this;
+    }
+
     public function getBookingDateTime(): \DateTimeInterface
     {
         return $this->bookingDateTime;

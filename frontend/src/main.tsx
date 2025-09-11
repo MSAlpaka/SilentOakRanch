@@ -5,13 +5,16 @@ import App from './App'
 import './index.css'
 import { Provider } from 'react-redux'
 import { store } from './store'
+import { AuthProvider } from './modules/auth/AuthContext'
 
 ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
   <React.StrictMode>
     <Provider store={store}>
-      <BrowserRouter>
-        <App />
-      </BrowserRouter>
+      <AuthProvider>
+        <BrowserRouter>
+          <App />
+        </BrowserRouter>
+      </AuthProvider>
     </Provider>
   </React.StrictMode>
 )

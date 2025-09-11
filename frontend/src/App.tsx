@@ -9,6 +9,9 @@ import HorseList from './modules/horses/HorseList'
 import HorseForm from './modules/horses/HorseForm'
 import BookingList from './modules/bookings/BookingList'
 import BookingForm from './modules/bookings/BookingForm'
+import ScaleBookingForm from './modules/scale/ScaleBookingForm'
+import ScaleBookingList from './modules/scale/ScaleBookingList'
+import AdminScaleBookingList from './modules/scale/AdminScaleBookingList'
 import PrivateRoute from './modules/auth/PrivateRoute'
 
 function App() {
@@ -21,12 +24,15 @@ function App() {
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/bookings" element={<BookingList />} />
         <Route path="/bookings/new" element={<BookingForm />} />
+        <Route path="/scale/book" element={<ScaleBookingForm />} />
+        <Route path="/scale/my" element={<ScaleBookingList />} />
       </Route>
-      <Route element={<PrivateRoute roles={['admin', 'staff']} />}>
+      <Route element={<PrivateRoute roles={['admin', 'staff']} />}> 
         <Route path="/admin/subscriptions" element={<SubscriptionList />} />
         <Route path="/admin/subscriptions/new" element={<SubscriptionForm />} />
         <Route path="/admin/horses" element={<HorseList />} />
         <Route path="/admin/horses/new" element={<HorseForm />} />
+        <Route path="/admin/scale" element={<AdminScaleBookingList />} />
       </Route>
       <Route path="*" element={<Navigate to="/dashboard" replace />} />
     </Routes>

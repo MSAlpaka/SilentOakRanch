@@ -2,7 +2,6 @@
 framework:
     secret: '%env(APP_SECRET)%'
     default_locale: 'de'
-    timezone: 'Europe/Berlin'
 
     # Note that the session will be started ONLY if you read or write from it.
     session: true

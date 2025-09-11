@@ -31,6 +31,9 @@ class Invoice
     #[ORM\Column(type: 'decimal', precision: 10, scale: 2)]
     private string $total;
 
+    #[ORM\Column(type: 'string', nullable: true)]
+    private ?string $stripeInvoiceId = null;
+
     public function getId(): ?int
     {
         return $this->id;
@@ -99,6 +102,17 @@ class Invoice
     public function setTotal(string $total): self
     {
         $this->total = $total;
+        return $this;
+    }
+
+    public function getStripeInvoiceId(): ?string
+    {
+        return $this->stripeInvoiceId;
+    }
+
+    public function setStripeInvoiceId(?string $stripeInvoiceId): self
+    {
+        $this->stripeInvoiceId = $stripeInvoiceId;
         return $this;
     }
 }

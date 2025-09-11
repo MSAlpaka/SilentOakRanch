@@ -1,0 +1,86 @@
+{
+  "auth": {
+    "login": {
+      "title": "Anmelden",
+      "username": "Benutzername",
+      "password": "Passwort",
+      "button": "Anmelden",
+      "error": "Ungültige Anmeldedaten"
+    },
+    "register": {
+      "title": "Registrieren",
+      "username": "Benutzername",
+      "password": "Passwort",
+      "button": "Registrieren",
+      "error": "Registrierung fehlgeschlagen"
+    },
+    "invite": {
+      "title": "Passwort setzen",
+      "new_password": "Neues Passwort",
+      "button": "Einladung annehmen",
+      "error": "Einladung konnte nicht akzeptiert werden"
+    },
+    "user_error": "Benutzerdaten konnten nicht geladen werden"
+  },
+  "dashboard": {
+    "logged_in": "Angemeldet",
+    "logout": "Abmelden",
+    "title": "Dashboard"
+  },
+  "horses": {
+    "title": "Pferde",
+    "new": "Neues Pferd",
+    "name": "Name",
+    "age": "Alter",
+    "breed": "Rasse",
+    "add_reko": "Reko-Info hinzufügen",
+    "special_notes": "Besondere Hinweise",
+    "medical_history": "Krankengeschichte",
+    "medication": "Medikation",
+    "save": "Pferd speichern",
+    "error_save": "Pferd konnte nicht gespeichert werden",
+    "error_load": "Pferde konnten nicht geladen werden"
+  },
+  "bookings": {
+    "my_bookings": "Meine Buchungen",
+    "horse": "Pferd",
+    "stall": "Stall",
+    "start": "Start",
+    "end": "Ende",
+    "status": "Status",
+    "price": "Preis",
+    "actions": "Aktionen",
+    "title_new": "Neue Buchung",
+    "select_horse": "Pferd auswählen",
+    "select_package": "Paket auswählen",
+    "package": "Paket",
+    "start_date": "Startdatum",
+    "book": "Buchen",
+    "error_create": "Buchung konnte nicht erstellt werden"
+  },
+  "subscriptions": {
+    "active_title": "Aktive Abos",
+    "new": "+ Neues Abo",
+    "loading": "Lade...",
+    "error_load": "Daten konnten nicht geladen werden",
+    "type": "Typ",
+    "title": "Titel",
+    "amount": "Betrag",
+    "start": "Start",
+    "autorenew": "AutoVerlängerung",
+    "end": "Ende",
+    "new_title": "Neues Abo",
+    "assignment": "Zuweisung",
+    "please_select": "Bitte wählen",
+    "save": "Abo speichern",
+    "autoRenew": "AutoVerlängerung",
+    "start_date": "Startdatum",
+    "end_date": "Enddatum",
+    "error_save": "Abo konnte nicht gespeichert werden"
+  },
+  "common": {
+    "yes": "Ja",
+    "no": "Nein"
+  }
+}
+

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import api from '../../axios'
 import PaymentButton from './PaymentButton'
+import { useTranslation } from 'react-i18next'
 
 interface Booking {
   id: number
@@ -14,6 +15,7 @@ interface Booking {
 
 function BookingList() {
   const [bookings, setBookings] = useState<Booking[]>([])
+  const { t } = useTranslation()
 
   useEffect(() => {
     api.get('/my/bookings').then(res => setBookings(res.data))
@@ -21,17 +23,17 @@ function BookingList() {
 
   return (
     <div className="p-4">
-      <h1 className="text-2xl mb-4">My Bookings</h1>
+      <h1 className="text-2xl mb-4">{t('bookings.my_bookings')}</h1>
       <table className="w-full border">
         <thead>
           <tr className="bg-gray-100">
-            <th className="p-2 border">Horse</th>
-            <th className="p-2 border">Stall</th>
-            <th className="p-2 border">Start</th>
-            <th className="p-2 border">End</th>
-            <th className="p-2 border">Status</th>
-            <th className="p-2 border">Price</th>
-            <th className="p-2 border">Actions</th>
+            <th className="p-2 border">{t('bookings.horse')}</th>
+            <th className="p-2 border">{t('bookings.stall')}</th>
+            <th className="p-2 border">{t('bookings.start')}</th>
+            <th className="p-2 border">{t('bookings.end')}</th>
+            <th className="p-2 border">{t('bookings.status')}</th>
+            <th className="p-2 border">{t('bookings.price')}</th>
+            <th className="p-2 border">{t('bookings.actions')}</th>
           </tr>
         </thead>
         <tbody>

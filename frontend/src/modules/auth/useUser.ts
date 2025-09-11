@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import api from '../../axios'
 import { useAuth } from './AuthContext'
+import { useTranslation } from 'react-i18next'
 
 export type UserInfo = {
   id: number
@@ -19,6 +20,7 @@ export function useUser() {
   const [user, setUser] = useState<UserInfo | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const { t } = useTranslation()
 
   useEffect(() => {
     if (!token) {
@@ -33,7 +35,7 @@ export function useUser() {
       .then(res => setUser(res.data as UserInfo))
       .catch(() => {
         setUser(null)
-        setError('Failed to load user')
+        setError(t('auth.user_error'))
       })
       .finally(() => setLoading(false))
   }, [token])

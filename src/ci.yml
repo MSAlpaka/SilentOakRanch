@@ -47,4 +47,4 @@ jobs:
 
       - name: Test backend
         working-directory: backend
-        run: vendor/bin/phpunit
+        run: ./bin/phpunit

@@ -7,6 +7,8 @@ import SubscriptionList from './modules/subscriptions/SubscriptionList'
 import SubscriptionForm from './modules/subscriptions/SubscriptionForm'
 import HorseList from './modules/horses/HorseList'
 import HorseForm from './modules/horses/HorseForm'
+import BookingList from './modules/bookings/BookingList'
+import BookingForm from './modules/bookings/BookingForm'
 import AuthGuard from './modules/auth/AuthGuard'
 
 function App() {
@@ -20,6 +22,8 @@ function App() {
       <Route path="/admin/subscriptions/new" element={<AuthGuard><SubscriptionForm /></AuthGuard>} />
       <Route path="/admin/horses" element={<AuthGuard><HorseList /></AuthGuard>} />
       <Route path="/admin/horses/new" element={<AuthGuard><HorseForm /></AuthGuard>} />
+      <Route path="/bookings" element={<AuthGuard><BookingList /></AuthGuard>} />
+      <Route path="/bookings/new" element={<AuthGuard><BookingForm /></AuthGuard>} />
       <Route path="*" element={<Navigate to="/dashboard" replace />} />
     </Routes>
   )

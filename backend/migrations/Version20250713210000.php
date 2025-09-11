@@ -16,11 +16,11 @@ final class Version20250713210000 extends AbstractMigration
 
     public function up(Schema $schema): void
     {
-        $this->addSql("ALTER TABLE subscription ADD end_date DATETIME DEFAULT NULL --(DC2Type:datetime_immutable)");
+        $this->addSql('ALTER TABLE subscription ADD COLUMN end_date DATETIME DEFAULT NULL');
     }
 
     public function down(Schema $schema): void
     {
-        $this->addSql("ALTER TABLE subscription DROP end_date");
+        $this->addSql('ALTER TABLE subscription DROP COLUMN end_date');
     }
 }

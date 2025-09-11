@@ -11,3 +11,12 @@ npm run dev
 ```
 
 Der Development-Server läuft standardmäßig unter [http://localhost:5173](http://localhost:5173).
+
+## Linting
+
+```bash
+npm run lint
+```
+
+Dieser Befehl wird ebenfalls in der CI-Pipeline ausgeführt.
+

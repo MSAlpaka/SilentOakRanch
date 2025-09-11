@@ -11,6 +11,7 @@ use App\Service\ScaleBookingService;
 use App\Service\ScaleSlotService;
 use Doctrine\ORM\EntityManagerInterface;
 use PHPUnit\Framework\TestCase;
+use PHPUnit\Framework\Attributes\DataProvider;
 
 class ScaleBookingServiceTest extends TestCase
 {
@@ -65,9 +66,7 @@ class ScaleBookingServiceTest extends TestCase
         $this->assertSame('10.00', $booking->getPrice());
     }
 
-    /**
-     * @dataProvider bookingPriceProvider
-     */
+    #[DataProvider('bookingPriceProvider')]
     public function testCreateBookingSetsCorrectPrice(
         ScaleBookingType $type,
         string $expectedPrice,
@@ -103,7 +102,7 @@ class ScaleBookingServiceTest extends TestCase
         $this->assertSame($expectedPrice, $booking->getPrice());
     }
 
-    public function bookingPriceProvider(): iterable
+    public static function bookingPriceProvider(): iterable
     {
         yield [ScaleBookingType::SINGLE, '10.00', '2024-01-01 10:00'];
         yield [ScaleBookingType::PACKAGE, '45.00', '2024-01-01 10:00'];

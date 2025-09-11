@@ -14,7 +14,7 @@ class QrCodeGeneratorTest extends TestCase
 
         $data = $generator->generate($token);
 
-        $this->assertNotEmpty($data);
-        $this->assertStringStartsWith("\x89PNG", $data);
+        self::assertNotEmpty($data);
+        self::assertStringStartsWith("\x89PNG", $data);
     }
 }

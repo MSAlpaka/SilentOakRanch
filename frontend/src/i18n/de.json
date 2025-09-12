@@ -82,9 +82,18 @@
     "end_date": "Enddatum",
     "error_save": "Abo konnte nicht gespeichert werden"
   },
+  "rekoDocs": {
+    "list_heading": "Reko-Dokumente",
+    "type": "Typ",
+    "notes": "Notizen",
+    "photos": "Fotos",
+    "videos": "Videos",
+    "save": "Dokumentation speichern",
+    "no_videos_standard": "Videos sind für Standard-Dokumentationen nicht erlaubt",
+    "export": "Exportieren"
+  },
   "common": {
     "yes": "Ja",
     "no": "Nein"
   }
 }
-

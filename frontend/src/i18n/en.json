@@ -12,7 +12,11 @@
       "username": "Username",
       "password": "Password",
       "button": "Register",
-      "error": "Registration failed"
+      "error": "Registration failed",
+      "terms": "I accept the terms and conditions",
+      "privacy": "I accept the privacy policy",
+      "terms_required": "You must accept the terms and conditions",
+      "privacy_required": "You must accept the privacy policy"
     },
     "invite": {
       "title": "Set Password",

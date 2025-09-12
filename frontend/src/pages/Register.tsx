@@ -1,19 +1,38 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { register } from '../api/auth'
+import * as agreementsApi from '../api/agreements'
 import { useTranslation } from 'react-i18next'
 
 function Register() {
   const navigate = useNavigate()
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
+  const [agb, setAgb] = useState(false)
+  const [privacy, setPrivacy] = useState(false)
+  const [agbError, setAgbError] = useState(false)
+  const [privacyError, setPrivacyError] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const { t } = useTranslation()
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
+    let valid = true
+    if (!agb) {
+      setAgbError(true)
+      valid = false
+    }
+    if (!privacy) {
+      setPrivacyError(true)
+      valid = false
+    }
+    if (!valid) {
+      return
+    }
     try {
       await register(username, password)
+      await agreementsApi.giveConsent('agb')
+      await agreementsApi.giveConsent('privacy')
       navigate('/login')
     } catch (err) {
       setError(t('auth.register.error'))
@@ -33,13 +52,53 @@ function Register() {
           onChange={e => setUsername(e.target.value)}
         />
         <input
-          className="border w-full p-2 mb-4"
+          className="border w-full p-2 mb-2"
           type="password"
           placeholder={t('auth.register.password')}
           value={password}
           onChange={e => setPassword(e.target.value)}
         />
-        <button className="bg-blue-500 text-white px-4 py-2 w-full">{t('auth.register.button')}</button>
+        <div className="mb-2">
+          <input
+            id="terms"
+            type="checkbox"
+            checked={agb}
+            onChange={e => {
+              setAgb(e.target.checked)
+              if (e.target.checked) {
+                setAgbError(false)
+              }
+            }}
+          />
+          <label htmlFor="terms" className="ml-2">
+            {t('auth.register.terms')}
+          </label>
+          {agbError && (
+            <p className="text-red-500 text-sm">{t('auth.register.terms_required')}</p>
+          )}
+        </div>
+        <div className="mb-4">
+          <input
+            id="privacy"
+            type="checkbox"
+            checked={privacy}
+            onChange={e => {
+              setPrivacy(e.target.checked)
+              if (e.target.checked) {
+                setPrivacyError(false)
+              }
+            }}
+          />
+          <label htmlFor="privacy" className="ml-2">
+            {t('auth.register.privacy')}
+          </label>
+          {privacyError && (
+            <p className="text-red-500 text-sm">{t('auth.register.privacy_required')}</p>
+          )}
+        </div>
+        <button className="bg-blue-500 text-white px-4 py-2 w-full">
+          {t('auth.register.button')}
+        </button>
       </form>
     </div>
   )

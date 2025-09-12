@@ -2,6 +2,7 @@
 
 namespace App\Service;
 
+use App\Entity\Appointment;
 use App\Entity\Booking;
 use App\Entity\Invoice;
 use App\Entity\InvoiceItem;
@@ -58,6 +59,45 @@ class InvoiceService
 
         $item = new InvoiceItem();
         $item->setInvoice($invoice)
+            ->setLabel($label)
+            ->setAmount(number_format($gross, 2, '.', ''));
+        $this->em->persist($item);
+
+        $this->em->flush();
+
+        $pdfPath = $this->generatePdf($invoice, $user, [[
+            'label' => $label,
+            'amount' => $gross,
+        ]], $net, $tax, $gross);
+        $invoice->setPdfPath($pdfPath);
+
+        $this->em->flush();
+
+        $this->mailService->sendInvoice($user, $invoice, $pdfPath);
+
+        return $invoice;
+    }
+
+    public function createForAppointment(Appointment $appointment): Invoice
+    {
+        $user = $appointment->getOwner();
+        $label = sprintf('Appointment %s', $appointment->getServiceType()->getName());
+        $amount = (float) $appointment->getPrice();
+
+        $gross = $amount;
+        $net = $gross / (1 + self::TAX_RATE);
+        $tax = $gross - $net;
+
+        $invoice = (new Invoice())
+            ->setUser($user)
+            ->setStatus(InvoiceStatus::PAID)
+            ->setAmount(number_format($gross, 2, '.', ''))
+            ->setCurrency('USD');
+
+        $this->em->persist($invoice);
+
+        $item = (new InvoiceItem())
+            ->setInvoice($invoice)
             ->setLabel($label)
             ->setAmount(number_format($gross, 2, '.', ''));
         $this->em->persist($item);

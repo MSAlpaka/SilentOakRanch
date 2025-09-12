@@ -16,6 +16,7 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 use Symfony\Contracts\Translation\TranslatorInterface;
+use App\Service\AppointmentService;
 
 class AppointmentController extends AbstractController
 {
@@ -115,24 +116,9 @@ class AppointmentController extends AbstractController
     }
 
     #[Route('/api/appointments/{id}/confirm', methods: ['POST'])]
-    #[IsGranted('ROLE_USER')]
-    public function confirm(int $id, EntityManagerInterface $em, Security $security): JsonResponse
+    #[IsGranted('APPOINTMENT_EDIT', subject: 'appointment')]
+    public function confirm(Appointment $appointment, EntityManagerInterface $em): JsonResponse
     {
-        /** @var Appointment|null $appointment */
-        $appointment = $em->getRepository(Appointment::class)->find($id);
-        if (!$appointment) {
-            return $this->json(['message' => $this->translator->trans('Appointment not found', [], 'validators')], 404);
-        }
-
-        $user = $security->getUser();
-        if (!$user instanceof User) {
-            return $this->json(['message' => $this->translator->trans('Unauthorized', [], 'validators')], 401);
-        }
-        $staff = $security->isGranted('ROLE_ADMIN') || $security->isGranted('ROLE_STAFF');
-        if (!$staff && $appointment->getOwner() !== $user) {
-            return $this->json(['message' => $this->translator->trans('Forbidden', [], 'validators')], 403);
-        }
-
         $appointment->setStatus(AppointmentStatus::CONFIRMED);
         $em->flush();
 
@@ -140,40 +126,19 @@ class AppointmentController extends AbstractController
     }
 
     #[Route('/api/appointments/{id}/complete', methods: ['POST'])]
-    #[IsGranted('ROLE_ADMIN')]
-    public function complete(int $id, EntityManagerInterface $em): JsonResponse
+    #[IsGranted('APPOINTMENT_COMPLETE', subject: 'appointment')]
+    public function complete(Appointment $appointment, Request $request, AppointmentService $appointmentService): JsonResponse
     {
-        /** @var Appointment|null $appointment */
-        $appointment = $em->getRepository(Appointment::class)->find($id);
-        if (!$appointment) {
-            return $this->json(['message' => $this->translator->trans('Appointment not found', [], 'validators')], 404);
-        }
-
-        $appointment->setStatus(AppointmentStatus::DONE);
-        $em->flush();
+        $createInvoice = $request->query->getBoolean('invoice', false);
+        $appointmentService->complete($appointment, $createInvoice);
 
         return $this->json($this->serializeAppointment($appointment));
     }
 
     #[Route('/api/appointments/{id}/cancel', methods: ['POST'])]
-    #[IsGranted('ROLE_USER')]
-    public function cancel(int $id, EntityManagerInterface $em, Security $security): JsonResponse
+    #[IsGranted('APPOINTMENT_EDIT', subject: 'appointment')]
+    public function cancel(Appointment $appointment, EntityManagerInterface $em): JsonResponse
     {
-        /** @var Appointment|null $appointment */
-        $appointment = $em->getRepository(Appointment::class)->find($id);
-        if (!$appointment) {
-            return $this->json(['message' => $this->translator->trans('Appointment not found', [], 'validators')], 404);
-        }
-
-        $user = $security->getUser();
-        if (!$user instanceof User) {
-            return $this->json(['message' => $this->translator->trans('Unauthorized', [], 'validators')], 401);
-        }
-        $staff = $security->isGranted('ROLE_ADMIN') || $security->isGranted('ROLE_STAFF');
-        if (!$staff && $appointment->getOwner() !== $user) {
-            return $this->json(['message' => $this->translator->trans('Forbidden', [], 'validators')], 403);
-        }
-
         $appointment->setStatus(AppointmentStatus::CANCELED);
         $em->flush();
 

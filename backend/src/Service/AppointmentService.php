@@ -11,10 +11,16 @@ use App\Enum\AppointmentStatus;
 use DateTimeInterface;
 use Doctrine\ORM\EntityManagerInterface;
 
+/**
+ * @psalm-suppress PropertyNotSetInConstructor
+ */
+
 class AppointmentService
 {
-    public function __construct(private EntityManagerInterface $em)
-    {
+    public function __construct(
+        private EntityManagerInterface $em,
+        private InvoiceService $invoiceService,
+    ) {
     }
 
     /**
@@ -62,10 +68,14 @@ class AppointmentService
     /**
      * Marks an appointment as completed.
      */
-    public function complete(Appointment $appointment): void
+    public function complete(Appointment $appointment, bool $createInvoice = false): void
     {
         $appointment->setStatus(AppointmentStatus::DONE);
         $this->em->flush();
+
+        if ($createInvoice) {
+            $this->invoiceService->createForAppointment($appointment);
+        }
     }
 
     /**

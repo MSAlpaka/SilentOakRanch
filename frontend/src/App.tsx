@@ -13,6 +13,8 @@ import ScaleBookingForm from './modules/scale/ScaleBookingForm'
 import ScaleBookingList from './modules/scale/ScaleBookingList'
 import AdminScaleBookingList from './modules/scale/AdminScaleBookingList'
 import PrivateRoute from './modules/auth/PrivateRoute'
+import Invoices from './pages/Invoices'
+import InvoiceDetail from './pages/InvoiceDetail'
 
 function App() {
   return (
@@ -26,6 +28,8 @@ function App() {
         <Route path="/bookings/new" element={<BookingForm />} />
         <Route path="/scale/book" element={<ScaleBookingForm />} />
         <Route path="/scale/my" element={<ScaleBookingList />} />
+        <Route path="/invoices" element={<Invoices />} />
+        <Route path="/invoices/:id" element={<InvoiceDetail />} />
       </Route>
       <Route element={<PrivateRoute roles={['admin', 'staff']} />}> 
         <Route path="/admin/subscriptions" element={<SubscriptionList />} />

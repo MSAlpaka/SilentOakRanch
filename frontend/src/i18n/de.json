@@ -12,7 +12,11 @@
       "username": "Benutzername",
       "password": "Passwort",
       "button": "Registrieren",
-      "error": "Registrierung fehlgeschlagen"
+      "error": "Registrierung fehlgeschlagen",
+      "terms": "Ich akzeptiere die AGB",
+      "privacy": "Ich akzeptiere die Datenschutzbestimmungen",
+      "terms_required": "Sie müssen die AGB akzeptieren",
+      "privacy_required": "Sie müssen den Datenschutzbestimmungen zustimmen"
     },
     "invite": {
       "title": "Passwort setzen",

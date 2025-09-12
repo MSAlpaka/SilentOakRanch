@@ -27,6 +27,7 @@ services:
     App\Service\AppointmentService:
         arguments:
             $em: '@doctrine.orm.entity_manager'
+            $invoiceService: '@App\Service\InvoiceService'
 
     # add more service definitions when explicit configuration is needed
     # please note that last definitions always *replace* previous ones

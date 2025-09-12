@@ -111,6 +111,17 @@
     "filter_provider": "Anbieter filtern",
     "filter_service": "Service filtern"
   },
+  "appointment": {
+    "confirmation": {
+      "subject": "Terminbestätigung"
+    },
+    "reminder": {
+      "subject": "Terminerinnerung"
+    },
+    "cancellation": {
+      "subject": "Terminabsage"
+    }
+  },
   "common": {
     "yes": "Ja",
     "no": "Nein"

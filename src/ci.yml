@@ -24,9 +24,15 @@ jobs:
         working-directory: frontend
         run: npm run lint
 
-      - name: Test frontend
+      - name: Test frontend invoices with coverage
         working-directory: frontend
-        run: npm test
+        run: npm test -- --coverage
+
+      - name: Upload frontend coverage
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-coverage
+          path: frontend/coverage
 
       - name: Build frontend
         working-directory: frontend
@@ -45,6 +51,12 @@ jobs:
         working-directory: backend
         run: find src -name '*.php' -print0 | xargs -0 -n1 php -l
 
-      - name: Test backend
+      - name: Test backend invoices with coverage
         working-directory: backend
-        run: ./bin/phpunit
+        run: mkdir -p coverage && ./bin/phpunit --coverage-clover coverage/clover.xml
+
+      - name: Upload backend coverage
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-coverage
+          path: backend/coverage

@@ -5,6 +5,7 @@ import scaleBookingsReducer from './modules/scale/scaleBookingSlice'
 import invoicesReducer from './modules/invoices/invoiceSlice'
 import agreementsReducer from './modules/agreements/agreementsSlice'
 import rekoDocsReducer from './modules/rekoDocs/rekoDocsSlice'
+import appointmentsReducer from './store/appointmentsSlice'
 
 export const store = configureStore({
   reducer: {
@@ -13,6 +14,7 @@ export const store = configureStore({
     invoices: invoicesReducer,
     agreements: agreementsReducer,
     rekoDocs: rekoDocsReducer,
+    appointments: appointmentsReducer,
   },
 })
 

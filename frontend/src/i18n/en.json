@@ -92,6 +92,25 @@
     "no_videos_standard": "Videos are not allowed for standard documentation",
     "export": "Export"
   },
+  "appointments": {
+    "my_appointments": "My Appointments",
+    "new": "New Appointment",
+    "provider": "Provider",
+    "service_type": "Service Type",
+    "slot": "Available Slot",
+    "notes": "Notes",
+    "reminder": "Send reminder",
+    "save": "Save Appointment",
+    "date": "Date",
+    "status": "Status",
+    "actions": "Actions",
+    "confirm": "Confirm",
+    "complete": "Complete",
+    "cancel": "Cancel",
+    "admin": "Appointments",
+    "filter_provider": "Filter provider",
+    "filter_service": "Filter service"
+  },
   "common": {
     "yes": "Yes",
     "no": "No"

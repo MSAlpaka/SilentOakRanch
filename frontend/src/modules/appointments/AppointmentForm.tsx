@@ -35,6 +35,15 @@ function AppointmentForm() {
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
+    if (!providerId || !serviceTypeId || !start) {
+      return
+    }
+    const collision = appointments.some(
+      a => a.start === start && a.status !== 'available'
+    )
+    if (collision) {
+      return
+    }
     dispatch(
       create({
         providerId: parseInt(providerId, 10),

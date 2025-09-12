@@ -1,2 +1,11 @@
-<p>{{ userName }}, your appointment for {{ horseName }} ({{ serviceType }}) on {{ date }} at {{ time }} with {{ providerName }}
-at {{ stableName }} has been confirmed.</p>
+<p>
+    {{ 'appointment.confirmation.body'|trans({
+        '%userName%': userName,
+        '%horseName%': horseName,
+        '%serviceType%': serviceType,
+        '%date%': date,
+        '%time%': time,
+        '%providerName%': providerName,
+        '%stableName%': stableName
+    }) }}
+</p>

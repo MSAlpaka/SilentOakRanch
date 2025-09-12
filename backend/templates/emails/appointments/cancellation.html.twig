@@ -1,2 +1,11 @@
-<p>{{ userName }}, your appointment for {{ horseName }} ({{ serviceType }}) on {{ date }} at {{ time }}
-with {{ providerName }} at {{ stableName }} has been cancelled.</p>
+<p>
+    {{ 'appointment.cancellation.body'|trans({
+        '%userName%': userName,
+        '%horseName%': horseName,
+        '%serviceType%': serviceType,
+        '%date%': date,
+        '%time%': time,
+        '%providerName%': providerName,
+        '%stableName%': stableName
+    }) }}
+</p>

@@ -1,2 +1,11 @@
-<p>Reminder: {{ userName }}, you have an appointment for {{ horseName }} ({{ serviceType }}) on {{ date }} at {{ time }} with {{ providerName }}
-at {{ stableName }}.</p>
+<p>
+    {{ 'appointment.reminder.body'|trans({
+        '%userName%': userName,
+        '%horseName%': horseName,
+        '%serviceType%': serviceType,
+        '%date%': date,
+        '%time%': time,
+        '%providerName%': providerName,
+        '%stableName%': stableName
+    }) }}
+</p>

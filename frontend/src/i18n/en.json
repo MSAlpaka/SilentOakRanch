@@ -82,9 +82,18 @@
     "end_date": "End Date",
     "error_save": "Failed to save subscription"
   },
+  "rekoDocs": {
+    "list_heading": "Reko Documentation",
+    "type": "Type",
+    "notes": "Notes",
+    "photos": "Photos",
+    "videos": "Videos",
+    "save": "Save Documentation",
+    "no_videos_standard": "Videos are not allowed for standard documentation",
+    "export": "Export"
+  },
   "common": {
     "yes": "Yes",
     "no": "No"
   }
 }
-

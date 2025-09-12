@@ -50,3 +50,14 @@ git remote add origin <REMOTE_URL>
 git push -u origin main
 git tag v1.0.0
 git push origin v1.0.0
+
+## Rechnungen
+
+Der Rechnungsprozess umfasst folgende Schritte:
+
+1. **Payment** – Nach erfolgreicher Zahlung wird eine Rechnung erzeugt.
+2. **PDF-Erstellung** – Das System erstellt eine gebrandete PDF-Datei mit ausgewiesener Mehrwertsteuer.
+3. **E-Mail-Versand** – Die Rechnung wird an die hinterlegte Adresse versendet.
+4. **Portal-Anzeige** – Im Kundenportal steht die Rechnung zusätzlich zum Download bereit.
+
+Jede Rechnung muss konsistentes Branding tragen und die gesetzliche Umsatzsteuer klar anzeigen.

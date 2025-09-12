@@ -32,7 +32,17 @@ function AppointmentList() {
               <td className="border p-2">{a.provider.name}</td>
               <td className="border p-2">{a.serviceType.name}</td>
               <td className="border p-2">{a.status}</td>
-              <td className="border p-2">{a.notes}</td>
+              <td className="border p-2">
+                {a.status === 'confirmed' && (
+                  <div className="font-semibold">
+                    {t('appointment.confirmation.subject', {
+                      providerName: a.provider.name,
+                      date: new Date(a.start).toLocaleDateString(),
+                    })}
+                  </div>
+                )}
+                {a.notes}
+              </td>
             </tr>
           ))}
         </tbody>

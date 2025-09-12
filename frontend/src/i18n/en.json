@@ -113,7 +113,7 @@
   },
   "appointment": {
     "confirmation": {
-      "subject": "Appointment Confirmation"
+      "subject": "Appointment Confirmation with {{providerName}} on {{date}}"
     },
     "reminder": {
       "subject": "Appointment Reminder"

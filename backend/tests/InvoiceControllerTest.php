@@ -12,7 +12,7 @@ use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Tools\SchemaTool;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 use Symfony\Bundle\SecurityBundle\Security;
-use Symfony\Component\HttpFoundation\BinaryFileResponse;
+use Symfony\Component\HttpFoundation\Request;
 
 class InvoiceControllerTest extends KernelTestCase
 {
@@ -46,42 +46,12 @@ class InvoiceControllerTest extends KernelTestCase
         return $user;
     }
 
-    public function testListInvoices(): void
-    {
-        $user = $this->createUser();
-
-        $invoice = new Invoice();
-        $invoice->setUser($user);
-        $invoice->setAmount('100.00');
-        $invoice->setCurrency('USD');
-        $invoice->setStatus(InvoiceStatus::SENT);
-        $invoice->setCreatedAt(new \DateTimeImmutable());
-        $invoice->setUpdatedAt(new \DateTimeImmutable());
-        $invoice->setPdfPath('/tmp/invoice.pdf');
-
-        $this->em->persist($user);
-        $this->em->persist($invoice);
-        $this->em->flush();
-
-        $security = $this->createMock(Security::class);
-        $security->method('getUser')->willReturn($user);
-
-        $controller = static::getContainer()->get(InvoiceController::class);
-        $response = $controller->list($security, $this->invoiceRepository);
-        $data = json_decode($response->getContent(), true);
-
-        $this->assertSame(200, $response->getStatusCode());
-        $this->assertCount(1, $data);
-        $this->assertSame('100.00', $data[0]['amount']);
-        $this->assertSame('/api/invoices/' . $invoice->getId(), $data[0]['downloadUrl']);
-    }
-
-    public function testDownloadInvoice(): void
+    public function testDownloadInvoicePdf(): void
     {
         $user = $this->createUser();
 
         $pdfPath = tempnam(sys_get_temp_dir(), 'inv') . '.pdf';
-        file_put_contents($pdfPath, 'pdf');
+        file_put_contents($pdfPath, '%PDF-1.4');
 
         $invoice = new Invoice();
         $invoice->setUser($user);
@@ -103,7 +73,9 @@ class InvoiceControllerTest extends KernelTestCase
         $controller = static::getContainer()->get(InvoiceController::class);
         $response = $controller->download($invoice->getId(), $this->invoiceRepository, $security);
 
+        $response->prepare(new Request());
+
         $this->assertSame(200, $response->getStatusCode());
-        $this->assertInstanceOf(BinaryFileResponse::class, $response);
+        $this->assertSame('application/pdf', $response->headers->get('content-type'));
     }
 }

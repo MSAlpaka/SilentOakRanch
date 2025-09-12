@@ -79,3 +79,13 @@ Die Reko-Dokumentation unterteilt sich in drei Pakete:
 ### Export (nur PREMIUM)
 
 Premium-Nutzende können ihre Reko-Einträge als CSV oder Excel exportieren.
+
+## Terminverwaltung
+
+Der Terminprozess begleitet Nutzer*innen von der Anfrage bis zur optionalen Rechnungsstellung:
+
+```
+Anfrage -> Bestätigung -> Erinnerungen -> Durchführung -> (Rechnung)
+```
+
+Erinnerungen werden zwingend per E-Mail versendet. Optional können zusätzliche Hinweise per WhatsApp oder SMS erfolgen.

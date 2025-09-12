@@ -2,6 +2,7 @@ import { logout } from '../auth/authSlice'
 import { useAppDispatch } from '../../store'
 import { useTranslation } from 'react-i18next'
 import { useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
 import api from '../../axios'
 
 interface Horse {
@@ -18,9 +19,10 @@ interface Booking {
 
 interface Invoice {
   id: number
-  number: string
+  createdAt: string
   amount: string
   status: string
+  downloadUrl: string
 }
 
 function Dashboard() {
@@ -69,11 +71,18 @@ function Dashboard() {
           </ul>
         </section>
         <section>
-          <h2 className="text-xl mb-2">{t('dashboard.my_invoices', { defaultValue: 'My invoices' })}</h2>
+          <h2 className="text-xl mb-2">
+            {t('dashboard.my_invoices', { defaultValue: 'My invoices' })}
+            <Link to="/invoices" className="ml-2 text-sm underline">
+              {t('dashboard.view_all', { defaultValue: 'View all' })}
+            </Link>
+          </h2>
           <ul className="list-disc pl-5">
             {invoices.map(i => (
               <li key={i.id}>
-                {i.number} - {i.amount} ({i.status})
+                <Link to={`/invoices/${i.id}`} className="underline">
+                  {new Date(i.createdAt).toLocaleDateString()} - {i.amount} ({i.status})
+                </Link>
               </li>
             ))}
           </ul>

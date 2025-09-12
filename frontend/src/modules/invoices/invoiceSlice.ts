@@ -3,9 +3,10 @@ import api from '../../axios'
 
 export interface Invoice {
   id: number
-  number: string
+  createdAt: string
   amount: string
   status: string
+  downloadUrl: string
 }
 
 interface InvoiceState {

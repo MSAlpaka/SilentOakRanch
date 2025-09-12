@@ -92,6 +92,25 @@
     "no_videos_standard": "Videos sind für Standard-Dokumentationen nicht erlaubt",
     "export": "Exportieren"
   },
+  "appointments": {
+    "my_appointments": "Meine Termine",
+    "new": "Neuer Termin",
+    "provider": "Anbieter",
+    "service_type": "Service",
+    "slot": "Verfügbares Zeitfenster",
+    "notes": "Notizen",
+    "reminder": "Erinnerung senden",
+    "save": "Termin speichern",
+    "date": "Datum",
+    "status": "Status",
+    "actions": "Aktionen",
+    "confirm": "Bestätigen",
+    "complete": "Abschließen",
+    "cancel": "Abbrechen",
+    "admin": "Termine",
+    "filter_provider": "Anbieter filtern",
+    "filter_service": "Service filtern"
+  },
   "common": {
     "yes": "Ja",
     "no": "Nein"

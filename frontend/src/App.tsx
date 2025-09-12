@@ -12,6 +12,9 @@ import BookingForm from './modules/bookings/BookingForm'
 import ScaleBookingForm from './modules/scale/ScaleBookingForm'
 import ScaleBookingList from './modules/scale/ScaleBookingList'
 import AdminScaleBookingList from './modules/scale/AdminScaleBookingList'
+import AppointmentList from './modules/appointments/AppointmentList'
+import AppointmentForm from './modules/appointments/AppointmentForm'
+import AppointmentAdmin from './modules/appointments/AppointmentAdmin'
 import PrivateRoute from './modules/auth/PrivateRoute'
 import Invoices from './pages/Invoices'
 import InvoiceDetail from './pages/InvoiceDetail'
@@ -30,6 +33,8 @@ function App() {
         <Route path="/bookings/new" element={<BookingForm />} />
         <Route path="/scale/book" element={<ScaleBookingForm />} />
         <Route path="/scale/my" element={<ScaleBookingList />} />
+        <Route path="/appointments" element={<AppointmentList />} />
+        <Route path="/appointments/new" element={<AppointmentForm />} />
         <Route path="/invoices" element={<Invoices />} />
         <Route path="/invoices/:id" element={<InvoiceDetail />} />
         <Route path="/reko/:bookingId/docs" element={<RekoDocList />} />
@@ -41,6 +46,7 @@ function App() {
         <Route path="/admin/horses" element={<HorseList />} />
         <Route path="/admin/horses/new" element={<HorseForm />} />
         <Route path="/admin/scale" element={<AdminScaleBookingList />} />
+        <Route path="/admin/appointments" element={<AppointmentAdmin />} />
       </Route>
       <Route path="*" element={<Navigate to="/dashboard" replace />} />
     </Routes>

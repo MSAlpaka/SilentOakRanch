@@ -61,3 +61,21 @@ Der Rechnungsprozess umfasst folgende Schritte:
 4. **Portal-Anzeige** – Im Kundenportal steht die Rechnung zusätzlich zum Download bereit.
 
 Jede Rechnung muss konsistentes Branding tragen und die gesetzliche Umsatzsteuer klar anzeigen.
+
+## Reko-Dokumentation
+
+Die Reko-Dokumentation unterteilt sich in drei Pakete:
+
+- **BASIS** – einfache Erstellung und Verwaltung von Reko-Einträgen.
+- **STANDARD** – alle BASIS-Funktionen plus Kategorisierung und Filter.
+- **PREMIUM** – kompletter Funktionsumfang inklusive Export.
+
+### Einträge anlegen
+
+1. Im Bereich *Reko-Dokumentation* „Neuer Eintrag“ wählen.
+2. Pflichtfelder wie Datum, Kategorie und Beschreibung ausfüllen.
+3. Speichern.
+
+### Export (nur PREMIUM)
+
+Premium-Nutzende können ihre Reko-Einträge als CSV oder Excel exportieren.

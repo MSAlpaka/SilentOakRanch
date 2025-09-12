@@ -1,0 +1,10 @@
+appointment:
+  confirmation:
+    subject: "Terminbestätigung"
+    body: "Ihr Termin wurde bestätigt."
+  reminder:
+    subject: "Terminerinnerung"
+    body: "Dies ist eine Erinnerung an Ihren kommenden Termin."
+  cancellation:
+    subject: "Terminabsage"
+    body: "Ihr Termin wurde abgesagt."

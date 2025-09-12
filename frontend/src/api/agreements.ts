@@ -9,7 +9,6 @@ export interface Agreement {
 }
 
 export interface UploadAgreementPayload {
-  userId: string
   type: string
   version: string
   file: File
@@ -32,7 +31,6 @@ export async function giveConsent(type: string) {
 
 export async function uploadAgreement(payload: UploadAgreementPayload) {
   const form = new FormData()
-  form.append('userId', payload.userId)
   form.append('type', payload.type)
   form.append('version', payload.version)
   form.append('file', payload.file)

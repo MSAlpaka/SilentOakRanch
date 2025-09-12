@@ -26,7 +26,7 @@ jobs:
 
       - name: Test frontend modules with coverage
         working-directory: frontend
-        run: npm test src/modules/invoices src/modules/agreements -- --coverage
+        run: npm test src/modules/invoices src/modules/agreements src/modules/rekoDocs -- --coverage
 
       - name: Upload frontend coverage
         uses: actions/upload-artifact@v4
@@ -58,7 +58,9 @@ jobs:
           ./bin/phpunit --coverage-clover coverage/clover.xml \
             tests/InvoiceServiceTest.php \
             tests/AgreementServiceTest.php \
-            tests/AgreementControllerSmokeTest.php
+            tests/AgreementControllerSmokeTest.php \
+            tests/DocumentationServiceTest.php \
+            tests/DocumentationControllerSmokeTest.php
 
       - name: Upload backend coverage
         uses: actions/upload-artifact@v4

@@ -1,0 +1,10 @@
+appointment:
+  confirmation:
+    subject: "Appointment Confirmation"
+    body: "Your appointment has been confirmed."
+  reminder:
+    subject: "Appointment Reminder"
+    body: "This is a reminder for your upcoming appointment."
+  cancellation:
+    subject: "Appointment Cancellation"
+    body: "Your appointment has been cancelled."

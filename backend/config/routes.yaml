@@ -3,3 +3,15 @@ controllers:
         path: ../src/Controller/
         namespace: App\Controller
     type: attribute
+
+service_providers:
+    resource: ../src/Controller/ServiceProviderController.php
+    type: attribute
+
+service_types:
+    resource: ../src/Controller/ServiceTypeController.php
+    type: attribute
+
+appointments:
+    resource: ../src/Controller/AppointmentController.php
+    type: attribute

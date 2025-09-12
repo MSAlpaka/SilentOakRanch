@@ -15,6 +15,8 @@ import AdminScaleBookingList from './modules/scale/AdminScaleBookingList'
 import PrivateRoute from './modules/auth/PrivateRoute'
 import Invoices from './pages/Invoices'
 import InvoiceDetail from './pages/InvoiceDetail'
+import RekoDocList from './modules/rekoDocs/RekoDocList'
+import RekoDocForm from './modules/rekoDocs/RekoDocForm'
 
 function App() {
   return (
@@ -30,8 +32,10 @@ function App() {
         <Route path="/scale/my" element={<ScaleBookingList />} />
         <Route path="/invoices" element={<Invoices />} />
         <Route path="/invoices/:id" element={<InvoiceDetail />} />
+        <Route path="/reko/:bookingId/docs" element={<RekoDocList />} />
+        <Route path="/reko/:bookingId/docs/new" element={<RekoDocForm />} />
       </Route>
-      <Route element={<PrivateRoute roles={['admin', 'staff']} />}> 
+      <Route element={<PrivateRoute roles={['admin', 'staff']} />}>
         <Route path="/admin/subscriptions" element={<SubscriptionList />} />
         <Route path="/admin/subscriptions/new" element={<SubscriptionForm />} />
         <Route path="/admin/horses" element={<HorseList />} />

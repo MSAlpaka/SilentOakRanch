@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest'
 import reducer, {
   loadAll,
   giveConsent,
-} from './agreementsSlice'
+} from '../agreementsSlice'
 
 describe('agreementsSlice', () => {
   it('handles loadAll.fulfilled', () => {

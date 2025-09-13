@@ -1,14 +1,14 @@
 import { describe, it, expect, vi, afterEach } from 'vitest'
 import { render, screen, fireEvent, waitFor, cleanup } from '@testing-library/react'
 import { createElement } from 'react'
-import AdminAgreementUpload from './AdminAgreementUpload'
-import * as agreementsApi from '../../api/agreements'
+import AdminAgreementUpload from '../AdminAgreementUpload'
+import * as agreementsApi from '../../../api/agreements'
 
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({ t: (s: string) => s }),
 }))
 
-vi.mock('../../api/agreements', async actual => {
+vi.mock('../../../api/agreements', async actual => {
   const mod = await actual()
   return {
     ...mod,
@@ -43,6 +43,15 @@ describe('AdminAgreementUpload', () => {
         version: '1.0',
         file,
       })
+    })
+  })
+
+  it('does not submit without file', async () => {
+    render(createElement(AdminAgreementUpload))
+    fireEvent.click(screen.getByText('agreements.upload'))
+
+    await waitFor(() => {
+      expect(agreementsApi.uploadAgreement).not.toHaveBeenCalled()
     })
   })
 })

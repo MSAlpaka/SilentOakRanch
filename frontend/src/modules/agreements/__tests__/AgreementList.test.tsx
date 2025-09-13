@@ -2,15 +2,15 @@ import { describe, it, expect, vi, afterEach, beforeEach } from 'vitest'
 import { render, screen, fireEvent, cleanup, waitFor } from '@testing-library/react'
 import { Provider } from 'react-redux'
 import { createElement } from 'react'
-import AgreementList from './AgreementList'
-import { loadAll } from './agreementsSlice'
-import * as agreementsApi from '../../api/agreements'
+import AgreementList from '../AgreementList'
+import { loadAll } from '../agreementsSlice'
+import * as agreementsApi from '../../../api/agreements'
 
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({ t: (s: string) => s }),
 }))
 
-vi.mock('./agreementsSlice', async actual => {
+vi.mock('../agreementsSlice', async actual => {
   const mod = await actual()
   return {
     ...mod,
@@ -18,7 +18,7 @@ vi.mock('./agreementsSlice', async actual => {
   }
 })
 
-vi.mock('../../api/agreements', async actual => {
+vi.mock('../../../api/agreements', async actual => {
   const mod = await actual()
   return {
     ...mod,

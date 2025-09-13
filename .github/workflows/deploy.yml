@@ -1,0 +1,68 @@
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: 8.2
+
+      - name: Install backend dependencies
+        working-directory: backend
+        run: composer install --no-interaction --prefer-dist --ignore-platform-req=ext-sodium
+
+      - name: Test backend
+        working-directory: backend
+        run: ./bin/phpunit
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: npm ci
+
+      - name: Lint frontend
+        working-directory: frontend
+        run: npm run lint
+
+      - name: Test frontend
+        working-directory: frontend
+        run: npm test -- --run
+
+      - name: Build frontend
+        working-directory: frontend
+        run: npm run build
+
+      - name: Package backend build
+        working-directory: backend
+        run: |
+          mkdir -p var/cache
+          zip -r backend-build.zip vendor var/cache
+
+      - name: Upload backend artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-build.zip
+          path: backend/backend-build.zip
+
+      - name: Package frontend build
+        working-directory: frontend
+        run: zip -r frontend-build.zip dist
+
+      - name: Upload frontend artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-build.zip
+          path: frontend/frontend-build.zip

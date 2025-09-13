@@ -51,6 +51,19 @@ The default memory limit is `--memory-limit=512M`. Override it locally if needed
 vendor/bin/phpstan analyse --configuration=.phpstan.neon.dist --memory-limit=1G
 ```
 
+## Security Updates
+Keep dependencies current and check for known vulnerabilities regularly:
+
+```bash
+# PHP dependencies
+composer update
+composer audit
+
+# JavaScript dependencies
+npm update
+npm audit
+```
+
 ## Workaround note for `ext-sodium`
 Some environments lack the `ext-sodium` PHP extension. Use
 `composer install --ignore-platform-req=ext-sodium` to bypass the requirement during installation.

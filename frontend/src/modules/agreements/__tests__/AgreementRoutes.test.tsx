@@ -20,7 +20,7 @@ describe('Agreement routes', () => {
   it('renders AgreementList for /agreements', () => {
     render(
       <Provider store={store}>
-        <MemoryRouter initialEntries={['/agreements']}>
+        <MemoryRouter initialEntries={['/agreements']} future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
           <Routes>
             <Route path="/agreements" element={<AgreementList />} />
           </Routes>
@@ -33,7 +33,7 @@ describe('Agreement routes', () => {
   it('renders AdminAgreementUpload for /admin/agreements', () => {
     render(
       <Provider store={store}>
-        <MemoryRouter initialEntries={['/admin/agreements']}>
+        <MemoryRouter initialEntries={['/admin/agreements']} future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
           <Routes>
             <Route path="/admin/agreements" element={<AdminAgreementUpload />} />
           </Routes>

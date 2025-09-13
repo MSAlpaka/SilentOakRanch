@@ -25,6 +25,10 @@ cd backend && composer install --ignore-platform-req=ext-sodium
 cd frontend && npm ci
 ```
 
+### Frontend notes
+- React Router is configured with `future` flags (`v7_startTransition` and `v7_relativeSplatPath`) preparing the project for React Router v7.
+- The frontend `package.json` uses `"type": "module"` so tooling like PostCSS runs in ES module mode.
+
 ## Dev commands
 ```bash
 composer install

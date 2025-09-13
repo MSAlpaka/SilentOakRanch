@@ -6,6 +6,8 @@ use App\Enum\StallUnitType;
 use App\Enum\StallUnitStatus;
 use App\Repository\StallUnitRepository;
 use Doctrine\ORM\Mapping as ORM;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 
 #[ORM\Entity(repositoryClass: StallUnitRepository::class)]
 class StallUnit
@@ -30,8 +32,13 @@ class StallUnit
     #[ORM\Column(type: 'decimal', precision: 10, scale: 2, options: ['default' => '0.00'])]
     private string $monthlyRent = '0.00';
 
-    #[ORM\OneToOne(targetEntity: Horse::class, mappedBy: 'currentLocation')]
-    private ?Horse $currentHorse = null;
+    #[ORM\OneToMany(mappedBy: 'currentLocation', targetEntity: Horse::class, cascade: ['persist'])]
+    private Collection $horses;
+
+    public function __construct()
+    {
+        $this->horses = new ArrayCollection();
+    }
 
     public function getId(): ?int
     {
@@ -93,14 +100,32 @@ class StallUnit
         return $this;
     }
 
-    public function getCurrentHorse(): ?Horse
+    /**
+     * @return Collection<int, Horse>
+     */
+    public function getHorses(): Collection
     {
-        return $this->currentHorse;
+        return $this->horses;
     }
 
-    public function setCurrentHorse(?Horse $horse): self
+    public function addHorse(Horse $horse): self
     {
-        $this->currentHorse = $horse;
+        if (!$this->horses->contains($horse)) {
+            $this->horses->add($horse);
+            $horse->setCurrentLocation($this);
+        }
+
+        return $this;
+    }
+
+    public function removeHorse(Horse $horse): self
+    {
+        if ($this->horses->removeElement($horse)) {
+            if ($horse->getCurrentLocation() === $this) {
+                $horse->setCurrentLocation(null);
+            }
+        }
+
         return $this;
     }
 }

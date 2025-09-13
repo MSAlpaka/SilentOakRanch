@@ -146,13 +146,13 @@ class SubscriptionController extends AbstractController
                   return $this->json(['message' => $this->translator->trans('Stall unit not found', [], 'validators')], 404);
               }
             $subscription->setStallUnit($stall);
-            $horse = method_exists($stall, 'getCurrentHorse') ? $stall->getCurrentHorse() : null;
+            $horse = $stall->getHorses()->first() ?: null;
             $user = $horse?->getOwner();
-              if (!$user) {
-                  return $this->json(['message' => $this->translator->trans('User not found', [], 'validators')], 404);
-              }
-          $subscription->setHorse($horse);
-          $subscription->setUser($user);
+            if (!$user) {
+                return $this->json(['message' => $this->translator->trans('User not found', [], 'validators')], 404);
+            }
+            $subscription->setHorse($horse);
+            $subscription->setUser($user);
         } else {
             return $this->json(['message' => $this->translator->trans('Relation mismatch', [], 'validators')], 400);
         }
@@ -182,7 +182,7 @@ class SubscriptionController extends AbstractController
             ] : null,
             'stallUnit' => $stall ? [
                 'id' => $stall->getId(),
-                'name' => method_exists($stall, 'getName') ? $stall->getName() : '',
+                'name' => $stall->getName(),
             ] : null,
             'title' => $subscription->getTitle(),
             'description' => $subscription->getDescription(),

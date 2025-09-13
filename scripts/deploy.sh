@@ -61,7 +61,7 @@ run gh run download "$BUILD_ID" --dir "$ARTIFACT_DIR"
 
 ARCHIVE=$(find "$ARTIFACT_DIR" -maxdepth 1 -type f | head -n1 || true)
 if [[ -n "$ARCHIVE" ]]; then
-    run tar -xf "$ARCHIVE" -C "$TARGET_DIR"
+    run unzip "$ARCHIVE" -d "$TARGET_DIR"
 else
     log "No artifact archive found in $ARTIFACT_DIR" >&2
 fi

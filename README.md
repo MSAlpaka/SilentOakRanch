@@ -141,3 +141,11 @@ Erinnerungen werden zwingend per E-Mail versendet. Optional können zusätzliche
 ## Termin-Erinnerungen
 
 Bestätigungs-, Erinnerungs- und Absage-E-Mails werden mit deutschen und englischen Texten versendet.
+
+## Verträge
+
+Der Vertragsbereich unterstützt die komplette Verwaltung von Vertragsdokumenten:
+
+1. **Anlage** – Neue Verträge werden im System erfasst.
+2. **Verwaltung** – Bestehende Verträge lassen sich prüfen, bearbeiten und archivieren.
+3. **Signatur** – Optional können Verträge digital signiert werden.

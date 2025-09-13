@@ -31,6 +31,19 @@ npm test
 npm run build
 ```
 
+## Static Analysis
+Static analysis is handled by [PHPStan](https://phpstan.org/):
+
+```bash
+vendor/bin/phpstan analyse --configuration=.phpstan.neon.dist
+```
+
+The default memory limit is `--memory-limit=512M`. Override it locally if needed:
+
+```bash
+vendor/bin/phpstan analyse --configuration=.phpstan.neon.dist --memory-limit=1G
+```
+
 ## Workaround note for `ext-sodium`
 Some environments lack the `ext-sodium` PHP extension. Use
 `composer install --ignore-platform-req=ext-sodium` to bypass the requirement during installation.

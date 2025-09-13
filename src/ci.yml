@@ -26,7 +26,13 @@ jobs:
 
       - name: Test frontend modules with coverage
         working-directory: frontend
-        run: npm test src/modules/invoices src/modules/agreements src/modules/rekoDocs src/modules/appointments src/__tests__/i18n -- --coverage
+        run: |
+          npm test \
+            src/modules/invoices \
+            src/modules/agreements \
+            src/modules/rekoDocs \
+            src/modules/appointments \
+            src/__tests__/i18n -- --coverage
 
       - name: Upload frontend coverage
         uses: actions/upload-artifact@v4
@@ -45,15 +51,19 @@ jobs:
 
       - name: Install backend dependencies
         working-directory: backend
-        run: composer install --no-interaction --prefer-dist --ignore-platform-req=ext-sodium
+        run: |
+          composer install --no-interaction --prefer-dist \
+            --ignore-platform-req=ext-sodium
 
       - name: Lint backend
         working-directory: backend
         run: find src -name '*.php' -print0 | xargs -0 -n1 php -l
 
       - name: Analyse backend with PHPStan
-        working-directory: backend
-        run: mkdir -p ../var/phpstan && vendor/bin/phpstan analyse -c ../.phpstan.neon.dist src tests
+        run: |
+          vendor/bin/phpstan analyse \
+            --configuration=.phpstan.neon.dist \
+            --memory-limit=512M
 
       - name: Test backend with coverage
         working-directory: backend

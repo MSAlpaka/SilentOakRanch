@@ -3,6 +3,9 @@
 ## Project overview & tech stack
 Symfony 7.3, PHP 8.2, React, Redux Toolkit, Vite, Vitest, ESLint, i18n.
 
+## Dependencies
+Composer packages are pinned to stable versions for reproducible builds. Notable constraints include `endroid/qr-code-bundle` (^6.0) and `stripe/stripe-php` (^14.0).
+
 ## Setup
 After cloning, run:
 

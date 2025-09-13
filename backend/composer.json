@@ -1,9 +1,14 @@
 {
     "name": "silent-oak-ranch/app",
     "description": "Stall-App für Urlaubspension & Rekonvaleszenz",
+    "authors": [
+        {
+            "name": "MSAlpaka",
+            "email": "46129705+MSAlpaka@users.noreply.github.com"
+        }
+    ],
     "type": "project",
     "license": "proprietary",
-    "version": "1.0.0",
     "minimum-stability": "stable",
     "prefer-stable": true,
     "require": {
@@ -15,11 +20,11 @@
         "doctrine/doctrine-migrations-bundle": "^3.4",
         "doctrine/orm": "^3.5",
         "dompdf/dompdf": "^2.0",
-        "endroid/qr-code-bundle": ">=6",
+        "endroid/qr-code-bundle": "^6.0",
         "lexik/jwt-authentication-bundle": "^3.1",
         "phpdocumentor/reflection-docblock": "^5.6",
         "phpstan/phpdoc-parser": "^2.1",
-        "stripe/stripe-php": "*",
+        "stripe/stripe-php": "^14.0",
         "symfony/asset": "7.3.*",
         "symfony/asset-mapper": "7.3.*",
         "symfony/console": "7.3.*",

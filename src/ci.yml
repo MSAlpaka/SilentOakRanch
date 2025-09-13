@@ -53,7 +53,7 @@ jobs:
 
       - name: Analyse backend with PHPStan
         working-directory: backend
-        run: vendor/bin/phpstan analyse -c phpstan.neon
+        run: mkdir -p ../var/phpstan && vendor/bin/phpstan analyse -c ../.phpstan.neon.dist src tests
 
       - name: Test backend with coverage
         working-directory: backend

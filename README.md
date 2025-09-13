@@ -51,6 +51,15 @@ git push -u origin main
 git tag v1.0.0
 git push origin v1.0.0
 
+## Deployment
+CI builds artifacts for each successful workflow run. After verifying the build in CI, deploy the artifact manually:
+
+```bash
+scripts/deploy.sh <build-id>
+```
+
+Use `-n` or `--dry-run` to preview commands without executing them. Full automation with Docker or Kubernetes may be added later.
+
 ## Rechnungen
 
 Der Rechnungsprozess umfasst folgende Schritte:

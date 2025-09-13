@@ -51,6 +51,10 @@ jobs:
         working-directory: backend
         run: find src -name '*.php' -print0 | xargs -0 -n1 php -l
 
+      - name: Analyse backend with PHPStan
+        working-directory: backend
+        run: vendor/bin/phpstan analyse -c phpstan.neon
+
       - name: Test backend with coverage
         working-directory: backend
         run: |

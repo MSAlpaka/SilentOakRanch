@@ -3,3 +3,10 @@ dist/
 .env
 backend/config/jwt/private.pem
 !backend/.env
+
+.phpstan.neon
+
+var/*
+!var/phpstan/
+var/phpstan/*
+!var/phpstan/.gitkeep

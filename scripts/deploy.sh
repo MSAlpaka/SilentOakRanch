@@ -43,7 +43,11 @@ TARGET_DIR="$2"
 ARTIFACT_DIR="/tmp/deploy-artifacts-$BUILD_ID"
 
 log() {
-    echo "[$(date '+%Y-%m-%d %H:%M:%S')] $*"
+    local prefix=""
+    if $DRY_RUN; then
+        prefix="[DRY-RUN] "
+    fi
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] ${prefix}$*"
 }
 
 run() {
@@ -53,13 +57,24 @@ run() {
     fi
 }
 
+if $DRY_RUN; then
+    # Ensure artifact directory exists so find doesn't complain
+    log "Creating dummy artifact directory at $ARTIFACT_DIR"
+    mkdir -p "$ARTIFACT_DIR"
+fi
+
 run sudo systemctl stop app
 
 run rm -rf "$ARTIFACT_DIR"
 run mkdir -p "$ARTIFACT_DIR"
 run gh run download "$BUILD_ID" --dir "$ARTIFACT_DIR"
 
-ARCHIVE=$(find "$ARTIFACT_DIR" -maxdepth 1 -type f | head -n1 || true)
+if $DRY_RUN; then
+    ARCHIVE="$ARTIFACT_DIR/dummy.zip"
+    log "Simulating artifact archive at $ARCHIVE"
+else
+    ARCHIVE=$(find "$ARTIFACT_DIR" -maxdepth 1 -type f 2>/dev/null | head -n1 || true)
+fi
 if [[ -n "$ARCHIVE" ]]; then
     run unzip "$ARCHIVE" -d "$TARGET_DIR"
 else

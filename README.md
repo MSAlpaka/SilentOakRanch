@@ -71,14 +71,20 @@ git push -u origin main
 git tag v1.0.0
 git push origin v1.0.0
 
-## Deployment
+## Deployment-Skript
 CI builds artifacts for each successful workflow run. After verifying the build in CI, deploy the artifact manually:
 
 ```bash
-scripts/deploy.sh <build-id>
+scripts/deploy.sh <build-id> <target-dir>
 ```
 
-Use `-n` or `--dry-run` to preview commands without executing them. Full automation with Docker or Kubernetes may be added later.
+Use a dry run to test the commands without making changes:
+
+```bash
+bash scripts/deploy.sh --dry-run <build-id> <target-dir>
+```
+
+In dry-run mode the script creates a dummy artifact directory and suppresses missing-directory errors, making it safe for testing. Full automation with Docker or Kubernetes may be added later.
 
 ## Rechnungen
 

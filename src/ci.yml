@@ -20,25 +20,17 @@ jobs:
         working-directory: frontend
         run: npm ci
 
+      - name: Audit frontend dependencies
+        working-directory: frontend
+        run: npm audit --audit-level=high
+
       - name: Lint frontend
         working-directory: frontend
         run: npm run lint
 
-      - name: Test frontend modules with coverage
+      - name: Test frontend
         working-directory: frontend
-        run: |
-          npm test \
-            src/modules/invoices \
-            src/modules/agreements \
-            src/modules/rekoDocs \
-            src/modules/appointments \
-            src/__tests__/i18n -- --coverage
-
-      - name: Upload frontend coverage
-        uses: actions/upload-artifact@v4
-        with:
-          name: frontend-coverage
-          path: frontend/coverage
+        run: npm test -- --run
 
       - name: Build frontend
         working-directory: frontend

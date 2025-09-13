@@ -59,10 +59,25 @@ jobs:
         working-directory: backend
         run: find src -name '*.php' -print0 | xargs -0 -n1 php -l
 
-      - name: Analyse backend with PHPStan
+      - name: Analyse backend Entity with PHPStan
+        working-directory: backend
         run: |
-          vendor/bin/phpstan analyse \
-            --configuration=.phpstan.neon.dist \
+          vendor/bin/phpstan analyse src/Entity \
+            --configuration=../.phpstan.neon.dist \
+            --memory-limit=512M
+
+      - name: Analyse backend Service with PHPStan
+        working-directory: backend
+        run: |
+          vendor/bin/phpstan analyse src/Service \
+            --configuration=../.phpstan.neon.dist \
+            --memory-limit=512M
+
+      - name: Analyse backend Controller with PHPStan
+        working-directory: backend
+        run: |
+          vendor/bin/phpstan analyse src/Controller \
+            --configuration=../.phpstan.neon.dist \
             --memory-limit=512M
 
       - name: Test backend with coverage

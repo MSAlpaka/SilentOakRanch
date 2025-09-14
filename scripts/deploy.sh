@@ -51,8 +51,10 @@ log() {
 }
 
 run() {
-    log "$*"
-    if ! $DRY_RUN; then
+    if $DRY_RUN; then
+        log "Would execute: $*"
+    else
+        log "$*"
         "$@"
     fi
 }

@@ -20,8 +20,7 @@ final class Version20240713050000 extends AbstractMigration
     public function up(Schema $schema): void
     {
         // this up() migration is auto-generated, please modify it to your needs
-        $this->addSql('CREATE TABLE horse (id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, current_location_id INTEGER DEFAULT NULL, name VARCHAR(255) NOT NULL, notes CLOB DEFAULT NULL, CONSTRAINT FK_629A2F18B8998A57 FOREIGN KEY (current_location_id) REFERENCES stall_unit (id))');
-        $this->addSql('CREATE INDEX IDX_629A2F18B8998A57 ON horse (current_location_id)');
+        $this->addSql('CREATE TABLE horse (id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, name VARCHAR(255) NOT NULL, notes CLOB DEFAULT NULL)');
         $this->addSql('CREATE TABLE invoice (id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, user VARCHAR(255) NOT NULL, number VARCHAR(255) NOT NULL, period VARCHAR(255) NOT NULL, created_at DATETIME NOT NULL, status VARCHAR(255) NOT NULL, total NUMERIC(10, 2) NOT NULL)');
         $this->addSql('CREATE UNIQUE INDEX UNIQ_9065174496901F54 ON invoice (number)');
         $this->addSql('CREATE TABLE invoice_item (id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, invoice_id INTEGER NOT NULL, label VARCHAR(255) NOT NULL, amount NUMERIC(10, 2) NOT NULL, booking_type VARCHAR(255) DEFAULT NULL, booking_id CHAR(36) DEFAULT NULL --(DC2Type:guid)

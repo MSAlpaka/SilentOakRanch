@@ -1,6 +1,5 @@
 parameters:
   level: 6
   paths:
-    - src
+    - backend/src
   tmpDir: var/phpstan
-  memoryLimit: 512M

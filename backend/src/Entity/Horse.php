@@ -161,14 +161,14 @@ class Horse
             return $this;
         }
 
-        if ($this->stallUnit) {
-            $this->stallUnit->getHorses()->removeElement($this);
+        if ($this->stallUnit !== null) {
+            $this->stallUnit->removeHorse($this);
         }
 
         $this->stallUnit = $stallUnit;
 
-        if ($stallUnit) {
-            $stallUnit->getHorses()->add($this);
+        if ($stallUnit !== null && !$stallUnit->getHorses()->contains($this)) {
+            $stallUnit->addHorse($this);
         }
 
         return $this;

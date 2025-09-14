@@ -72,9 +72,6 @@ class ProcessSubscriptionsCommandTest extends KernelTestCase
 
     public function testProcessSubscriptions(): void
     {
-        if (!property_exists(Invoice::class, 'period')) {
-            $this->markTestSkipped('Invoice entity lacks period field');
-        }
         $user = $this->createUser();
 
         $subscription = new Subscription();
@@ -99,7 +96,7 @@ class ProcessSubscriptionsCommandTest extends KernelTestCase
         $output = $tester->getDisplay();
         $this->assertStringContainsString('1 subscriptions processed', $output);
 
-        $invoices = $this->invoiceRepository->findByUser($user->getEmail());
+        $invoices = $this->invoiceRepository->findByUser($user);
         $this->assertCount(1, $invoices);
         $invoice = $invoices[0];
         $items = $this->em->getRepository(InvoiceItem::class)->findBy(['invoice' => $invoice]);
@@ -113,9 +110,6 @@ class ProcessSubscriptionsCommandTest extends KernelTestCase
 
     public function testProcessStallSubscriptions(): void
     {
-        if (!property_exists(Invoice::class, 'period')) {
-            $this->markTestSkipped('Invoice entity lacks period field');
-        }
         $user = $this->createUser();
         $stall = $this->createStallUnit();
 
@@ -139,7 +133,7 @@ class ProcessSubscriptionsCommandTest extends KernelTestCase
         $tester = new CommandTester($command);
         $tester->execute([]);
 
-        $invoices = $this->invoiceRepository->findByUser($user->getEmail());
+        $invoices = $this->invoiceRepository->findByUser($user);
         $this->assertCount(1, $invoices);
         $invoice = $invoices[0];
         $items = $this->em->getRepository(InvoiceItem::class)->findBy(['invoice' => $invoice]);
@@ -154,9 +148,6 @@ class ProcessSubscriptionsCommandTest extends KernelTestCase
 
     public function testProcessSubscriptionsWithEndDate(): void
     {
-        if (!property_exists(Invoice::class, 'period')) {
-            $this->markTestSkipped('Invoice entity lacks period field');
-        }
         $user = $this->createUser();
 
         $subscription = new Subscription();

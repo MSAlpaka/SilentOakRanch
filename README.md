@@ -38,6 +38,16 @@ npm test
 npm run build
 ```
 
+## Testing
+The backend uses PHPUnit 12. To run the test suite without deprecations or skipped tests:
+
+```bash
+cd backend
+./bin/phpunit --testdox
+```
+
+Tests that depend on external services should be tagged with `@group external` and are excluded from the core suite by default.
+
 ## Static Analysis
 Static analysis is handled by [PHPStan](https://phpstan.org/):
 

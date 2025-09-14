@@ -48,17 +48,18 @@ class ProcessSubscriptionsCommand extends Command
             $period = $subscription->getNextDue()->format('Y-m');
 
             $invoice = $this->invoiceRepository->findOneBy([
-                'user' => $user->getEmail(),
+                'user' => $user,
                 'period' => $period,
             ]);
 
             if (!$invoice) {
                 $invoice = new Invoice();
-                $invoice->setUser($user->getEmail());
+                $invoice->setUser($user);
                 $invoice->setNumber(uniqid('INV-'));
                 $invoice->setPeriod($period);
                 $invoice->setCreatedAt(new \DateTimeImmutable());
                 $invoice->setStatus(InvoiceStatus::SENT);
+                $invoice->setCurrency('USD');
                 $invoice->setTotal('0.00');
                 $this->em->persist($invoice);
             }

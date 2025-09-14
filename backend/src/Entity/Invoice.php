@@ -29,6 +29,12 @@ class Invoice
     #[ORM\Column(type: 'string', nullable: true)]
     private ?string $stripePaymentId = null;
 
+    #[ORM\Column(type: 'string', length: 20, nullable: true)]
+    private ?string $number = null;
+
+    #[ORM\Column(type: 'string', length: 7, nullable: true)]
+    private ?string $period = null;
+
     #[ORM\Column(type: 'decimal', precision: 10, scale: 2)]
     private string $amount;
 
@@ -96,6 +102,28 @@ class Invoice
         return $this;
     }
 
+    public function getNumber(): ?string
+    {
+        return $this->number;
+    }
+
+    public function setNumber(?string $number): self
+    {
+        $this->number = $number;
+        return $this;
+    }
+
+    public function getPeriod(): ?string
+    {
+        return $this->period;
+    }
+
+    public function setPeriod(?string $period): self
+    {
+        $this->period = $period;
+        return $this;
+    }
+
     public function getAmount(): string
     {
         return $this->amount;
@@ -104,6 +132,17 @@ class Invoice
     public function setAmount(string $amount): self
     {
         $this->amount = $amount;
+        return $this;
+    }
+
+    public function getTotal(): string
+    {
+        return $this->amount;
+    }
+
+    public function setTotal(string $total): self
+    {
+        $this->amount = $total;
         return $this;
     }
 

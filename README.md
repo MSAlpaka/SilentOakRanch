@@ -78,8 +78,9 @@ php bin/console doctrine:schema:validate
 ./bin/phpunit --testdox
 ```
 
-## Security Updates
-Keep dependencies current and check for known vulnerabilities regularly:
+## Security
+All npm vulnerabilities have been resolved.
+Keep dependencies current and check for new issues regularly:
 
 ```bash
 # PHP dependencies
@@ -89,6 +90,7 @@ composer audit
 # JavaScript dependencies
 npm update
 npm audit
+npm audit fix
 ```
 
 ## Workaround note for `ext-sodium`

@@ -51,6 +51,8 @@ The default memory limit is `--memory-limit=512M`. Override it locally if needed
 vendor/bin/phpstan analyse --configuration=.phpstan.neon.dist --memory-limit=1G
 ```
 
+- PHPStan-Level 8 prüft den MeController auf korrekte Typen; Fehler durch falsche Signatur wurden korrigiert.
+
 ## Doctrine Schema Fix
 The Horse ↔ StallUnit relationship now stores a nullable `stall_unit_id` foreign key on the `horse` table. Horses reference stall units through a **ManyToOne** association, and each stall unit provides the inverse side with **OneToMany** or **OneToOne** mapping depending on configuration. Removing a stall unit automatically sets `horse.stall_unit_id` to `NULL` instead of deleting the horse. After pulling these changes, regenerate and apply migrations:
 

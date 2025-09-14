@@ -123,10 +123,10 @@ scripts/deploy.sh <build-id> <target-dir>
 Use a dry run to test the commands without making changes:
 
 ```bash
-bash scripts/deploy.sh --dry-run <build-id> <target-dir>
+bash scripts/deploy.sh --dry-run 123 /tmp/deploy
 ```
 
-In dry-run mode the script creates a dummy artifact directory and suppresses missing-directory errors, making it safe for testing. Full automation with Docker or Kubernetes may be added later.
+In dry-run mode the script logs each command instead of executing it. It also creates dummy artifact and target directories, making it safe for testing. Real deployments run the commands and apply the downloaded artifacts to the target directory. Full automation with Docker or Kubernetes may be added later.
 
 ## Rechnungen
 

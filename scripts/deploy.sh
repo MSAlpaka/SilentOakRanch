@@ -63,6 +63,10 @@ if $DRY_RUN; then
     mkdir -p "$ARTIFACT_DIR"
 fi
 
+# Ensure the target directory exists before any find/cp/rsync operations
+log "Ensuring target directory exists at $TARGET_DIR"
+mkdir -p "$TARGET_DIR"
+
 run sudo systemctl stop app
 
 run rm -rf "$ARTIFACT_DIR"
@@ -81,8 +85,13 @@ else
     log "No artifact archive found in $ARTIFACT_DIR" >&2
 fi
 
-log "Changing to target directory $TARGET_DIR"
-cd "$TARGET_DIR"
+if [[ -d "$TARGET_DIR" ]]; then
+    log "Changing to target directory $TARGET_DIR"
+    cd "$TARGET_DIR"
+else
+    log "Target directory $TARGET_DIR does not exist" >&2
+    exit 1
+fi
 run php bin/console doctrine:migrations:migrate --no-interaction
 cd - >/dev/null
 

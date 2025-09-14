@@ -42,7 +42,7 @@ class Horse
     #[ORM\JoinColumn(nullable: false)]
     private User $owner;
 
-    #[ORM\ManyToOne(targetEntity: StallUnit::class, inversedBy: 'horses')]
+    #[ORM\ManyToOne(inversedBy: 'horses')]
     #[ORM\JoinColumn(name: 'stall_unit_id', referencedColumnName: 'id', onDelete: 'SET NULL', nullable: true)]
     private ?StallUnit $stallUnit = null;
 
@@ -152,10 +152,6 @@ class Horse
 
     public function getStallUnit(): ?StallUnit
     {
-        if ($this->stallUnit && !$this->stallUnit->getHorses()->contains($this)) {
-            $this->stallUnit->addHorse($this);
-        }
-
         return $this->stallUnit;
     }
 
@@ -165,13 +161,13 @@ class Horse
             return $this;
         }
 
-        if ($this->stallUnit) {
+        if ($this->stallUnit !== null) {
             $this->stallUnit->removeHorse($this);
         }
 
         $this->stallUnit = $stallUnit;
 
-        if ($stallUnit && !$stallUnit->getHorses()->contains($this)) {
+        if ($stallUnit !== null) {
             $stallUnit->addHorse($this);
         }
 

@@ -32,6 +32,9 @@ class StallUnit
     #[ORM\Column(type: 'decimal', precision: 10, scale: 2, options: ['default' => '0.00'])]
     private string $monthlyRent = '0.00';
 
+    /**
+     * @var Collection<int, Horse>
+     */
     #[ORM\OneToMany(mappedBy: 'stallUnit', targetEntity: Horse::class)]
     private Collection $horses;
 
@@ -112,9 +115,6 @@ class StallUnit
     {
         if (!$this->horses->contains($horse)) {
             $this->horses->add($horse);
-        }
-
-        if ($horse->getStallUnit() !== $this) {
             $horse->setStallUnit($this);
         }
 
@@ -123,10 +123,8 @@ class StallUnit
 
     public function removeHorse(Horse $horse): self
     {
-        if ($this->horses->removeElement($horse)) {
-            if ($horse->getStallUnit() === $this) {
-                $horse->setStallUnit(null);
-            }
+        if ($this->horses->removeElement($horse) && $horse->getStallUnit() === $this) {
+            $horse->setStallUnit(null);
         }
 
         return $this;

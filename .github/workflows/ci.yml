@@ -1,1 +1,38 @@
-../../src/ci.yml
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install frontend dependencies
+        run: npm ci
+        working-directory: frontend
+
+      - name: Run frontend tests
+        run: npm test
+        working-directory: frontend
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+
+      - name: Install backend dependencies
+        run: composer install --no-interaction --prefer-dist --no-progress --ignore-platform-req=ext-sodium
+        working-directory: backend
+
+      - name: Run backend tests
+        run: vendor/bin/phpunit
+        working-directory: backend

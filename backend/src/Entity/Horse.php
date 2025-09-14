@@ -43,8 +43,8 @@ class Horse
     private User $owner;
 
     #[ORM\ManyToOne(targetEntity: StallUnit::class, inversedBy: 'horses')]
-    #[ORM\JoinColumn(name: 'current_location_id', referencedColumnName: 'id', onDelete: 'SET NULL', nullable: true)]
-    private ?StallUnit $currentLocation = null;
+    #[ORM\JoinColumn(name: 'stall_unit_id', referencedColumnName: 'id', onDelete: 'SET NULL', nullable: true)]
+    private ?StallUnit $stallUnit = null;
 
     public function getId(): ?int
     {
@@ -150,25 +150,25 @@ class Horse
         return $this;
     }
 
-    public function getCurrentLocation(): ?StallUnit
+    public function getStallUnit(): ?StallUnit
     {
-        return $this->currentLocation;
+        return $this->stallUnit;
     }
 
-    public function setCurrentLocation(?StallUnit $currentLocation): self
+    public function setStallUnit(?StallUnit $stallUnit): self
     {
-        if ($this->currentLocation === $currentLocation) {
+        if ($this->stallUnit === $stallUnit) {
             return $this;
         }
 
-        if ($this->currentLocation) {
-            $this->currentLocation->removeHorse($this);
+        if ($this->stallUnit) {
+            $this->stallUnit->removeHorse($this);
         }
 
-        $this->currentLocation = $currentLocation;
+        $this->stallUnit = $stallUnit;
 
-        if ($currentLocation && !$currentLocation->getHorses()->contains($this)) {
-            $currentLocation->addHorse($this);
+        if ($stallUnit && !$stallUnit->getHorses()->contains($this)) {
+            $stallUnit->addHorse($this);
         }
 
         return $this;

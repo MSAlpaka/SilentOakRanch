@@ -83,7 +83,7 @@ class BookingControllerTest extends KernelTestCase
         $horse->setGender(Gender::MARE);
         $horse->setDateOfBirth(new \DateTimeImmutable('2020-01-01'));
         $horse->setOwner($owner);
-        $horse->setCurrentLocation($stall);
+        $horse->setStallUnit($stall);
         $this->em->persist($horse);
         $this->em->flush();
         return $horse;

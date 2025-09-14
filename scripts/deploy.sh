@@ -75,12 +75,8 @@ run rm -rf "$ARTIFACT_DIR"
 run mkdir -p "$ARTIFACT_DIR"
 run gh run download "$BUILD_ID" --dir "$ARTIFACT_DIR"
 
-if $DRY_RUN; then
-    ARCHIVE="$ARTIFACT_DIR/dummy.zip"
-    log "Simulating artifact archive at $ARCHIVE"
-else
-    ARCHIVE=$(find "$ARTIFACT_DIR" -maxdepth 1 -type f 2>/dev/null | head -n1 || true)
-fi
+# Always attempt to locate an artifact archive, even in dry-run mode
+ARCHIVE=$(find "$ARTIFACT_DIR" -maxdepth 1 -type f 2>/dev/null | head -n1 || true)
 if [[ -n "$ARCHIVE" ]]; then
     run unzip "$ARCHIVE" -d "$TARGET_DIR"
 else

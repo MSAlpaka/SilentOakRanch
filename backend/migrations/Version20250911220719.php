@@ -38,17 +38,13 @@ final class Version20250911220719 extends AbstractMigration
         $this->addSql('CREATE INDEX IDX_90651744A76ED395 ON invoice (user_id)');
         $this->addSql('CREATE INDEX IDX_906517443301C60 ON invoice (booking_id)');
         $this->addSql('CREATE INDEX IDX_9065174477C02832 ON invoice (scale_booking_id)');
-        $this->addSql('ALTER TABLE invoice ADD CONSTRAINT FK_90651744A76ED395 FOREIGN KEY (user_id) REFERENCES "user" (id) NOT DEFERRABLE INITIALLY IMMEDIATE');
-        $this->addSql('ALTER TABLE invoice ADD CONSTRAINT FK_906517443301C60 FOREIGN KEY (booking_id) REFERENCES booking (id) NOT DEFERRABLE INITIALLY IMMEDIATE');
-        $this->addSql('ALTER TABLE invoice ADD CONSTRAINT FK_9065174477C02832 FOREIGN KEY (scale_booking_id) REFERENCES scale_booking (id) NOT DEFERRABLE INITIALLY IMMEDIATE');
+        // SQLite does not support adding foreign key constraints via ALTER TABLE
     }
 
     public function down(Schema $schema): void
     {
         // drop foreign keys and indexes
-        $this->addSql('ALTER TABLE invoice DROP CONSTRAINT FK_90651744A76ED395');
-        $this->addSql('ALTER TABLE invoice DROP CONSTRAINT FK_906517443301C60');
-        $this->addSql('ALTER TABLE invoice DROP CONSTRAINT FK_9065174477C02832');
+        // foreign key constraints were not added in up() due to SQLite limitations
         $this->addSql('DROP INDEX IDX_90651744A76ED395');
         $this->addSql('DROP INDEX IDX_906517443301C60');
         $this->addSql('DROP INDEX IDX_9065174477C02832');

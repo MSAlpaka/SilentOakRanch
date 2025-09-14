@@ -52,11 +52,18 @@ vendor/bin/phpstan analyse --configuration=.phpstan.neon.dist --memory-limit=1G
 ```
 
 ## Doctrine Schema Fix
-The Horse ↔ StallUnit relationship now stores a nullable `stall_unit_id` foreign key on the `horse` table. Removing a stall unit automatically sets `horse.stall_unit_id` to `NULL` instead of deleting the horse. After pulling these changes, regenerate and apply migrations:
+The Horse ↔ StallUnit relationship now stores a nullable `stall_unit_id` foreign key on the `horse` table. Horses reference stall units through a **ManyToOne** association, and each stall unit provides the inverse side with **OneToMany** or **OneToOne** mapping depending on configuration. Removing a stall unit automatically sets `horse.stall_unit_id` to `NULL` instead of deleting the horse. After pulling these changes, regenerate and apply migrations:
 
 ```bash
 php bin/console doctrine:migrations:diff
 php bin/console doctrine:migrations:migrate
+```
+
+Once migrations are applied, validate the ORM mapping and run the test suite to check for regressions:
+
+```bash
+php bin/console doctrine:schema:validate
+./bin/phpunit --testdox
 ```
 
 ## Security Updates

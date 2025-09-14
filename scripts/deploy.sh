@@ -81,6 +81,9 @@ else
     log "No artifact archive found in $ARTIFACT_DIR" >&2
 fi
 
+log "Changing to target directory $TARGET_DIR"
+cd "$TARGET_DIR"
 run php bin/console doctrine:migrations:migrate --no-interaction
+cd - >/dev/null
 
 run sudo systemctl start app

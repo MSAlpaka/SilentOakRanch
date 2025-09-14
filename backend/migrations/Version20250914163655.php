@@ -8,7 +8,7 @@ use Doctrine\DBAL\Platforms\SqlitePlatform;
 use Doctrine\DBAL\Schema\Schema;
 use Doctrine\Migrations\AbstractMigration;
 
-final class Version20250914123000 extends AbstractMigration
+final class Version20250914163655 extends AbstractMigration
 {
     public function getDescription(): string
     {

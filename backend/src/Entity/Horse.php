@@ -152,10 +152,6 @@ class Horse
 
     public function getStallUnit(): ?StallUnit
     {
-        if ($this->stallUnit && !$this->stallUnit->getHorses()->contains($this)) {
-            $this->stallUnit->addHorse($this);
-        }
-
         return $this->stallUnit;
     }
 
@@ -166,13 +162,13 @@ class Horse
         }
 
         if ($this->stallUnit) {
-            $this->stallUnit->removeHorse($this);
+            $this->stallUnit->getHorses()->removeElement($this);
         }
 
         $this->stallUnit = $stallUnit;
 
-        if ($stallUnit && !$stallUnit->getHorses()->contains($this)) {
-            $stallUnit->addHorse($this);
+        if ($stallUnit) {
+            $stallUnit->getHorses()->add($this);
         }
 
         return $this;

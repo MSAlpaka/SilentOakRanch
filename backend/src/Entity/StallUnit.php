@@ -110,24 +110,16 @@ class StallUnit
 
     public function addHorse(Horse $horse): self
     {
-        if (!$this->horses->contains($horse)) {
-            $this->horses->add($horse);
-        }
-
-        if ($horse->getStallUnit() !== $this) {
-            $horse->setStallUnit($this);
-        }
+        $this->horses->add($horse);
+        $horse->setStallUnit($this);
 
         return $this;
     }
 
     public function removeHorse(Horse $horse): self
     {
-        if ($this->horses->removeElement($horse)) {
-            if ($horse->getStallUnit() === $this) {
-                $horse->setStallUnit(null);
-            }
-        }
+        $this->horses->removeElement($horse);
+        $horse->setStallUnit(null);
 
         return $this;
     }

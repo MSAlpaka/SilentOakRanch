@@ -3,6 +3,7 @@
 namespace App\Repository;
 
 use App\Entity\Invoice;
+use App\Entity\User;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
 
@@ -19,11 +20,11 @@ class InvoiceRepository extends ServiceEntityRepository
     /**
      * @return Invoice[]
      */
-    public function findByUser(string $email): array
+    public function findByUser(User $user): array
     {
         return $this->createQueryBuilder('i')
-            ->where('i.user = :email')
-            ->setParameter('email', $email)
+            ->where('i.user = :user')
+            ->setParameter('user', $user)
             ->orderBy('i.createdAt', 'DESC')
             ->getQuery()
             ->getResult();

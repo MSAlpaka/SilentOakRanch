@@ -41,7 +41,7 @@ class ScaleBookingServiceTest extends TestCase
         $slotService->expects($this->once())->method('isSlotAvailable')->with($slot)->willReturn(true);
 
         $qr = $this->createMock(QrCodeGenerator::class);
-        $qr->expects($this->once())->method('generate')->with($this->isType('string'));
+        $qr->expects($this->once())->method('generate')->with($this->isString());
 
         $service = new ScaleBookingService($slotService, $em, $qr);
 

@@ -52,7 +52,7 @@ vendor/bin/phpstan analyse --configuration=.phpstan.neon.dist --memory-limit=1G
 ```
 
 ## Doctrine Schema Fix
-The Horse ↔ StallUnit relationship now stores a nullable `stall_unit_id` on the `horse` table. If a stall unit is removed, Doctrine sets the horse reference to `NULL` rather than deleting the horse. After pulling these changes, regenerate and apply migrations:
+The Horse ↔ StallUnit relationship now stores a nullable `stall_unit_id` foreign key on the `horse` table. Removing a stall unit automatically sets `horse.stall_unit_id` to `NULL` instead of deleting the horse. After pulling these changes, regenerate and apply migrations:
 
 ```bash
 php bin/console doctrine:migrations:diff

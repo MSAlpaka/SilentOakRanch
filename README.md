@@ -51,6 +51,14 @@ The default memory limit is `--memory-limit=512M`. Override it locally if needed
 vendor/bin/phpstan analyse --configuration=.phpstan.neon.dist --memory-limit=1G
 ```
 
+## Doctrine Schema Fix
+The Horse ↔ StallUnit relationship now stores a nullable `stall_unit_id` on the `horse` table. If a stall unit is removed, Doctrine sets the horse reference to `NULL` rather than deleting the horse. After pulling these changes, regenerate and apply migrations:
+
+```bash
+php bin/console doctrine:migrations:diff
+php bin/console doctrine:migrations:migrate
+```
+
 ## Security Updates
 Keep dependencies current and check for known vulnerabilities regularly:
 

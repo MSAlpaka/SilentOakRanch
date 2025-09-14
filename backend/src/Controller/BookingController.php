@@ -177,7 +177,7 @@ class BookingController extends AbstractController
             $booking->setEndDate($from);
         }
 
-        $stallUnit = $horse->getCurrentLocation();
+        $stallUnit = $horse->getStallUnit();
         if (!$stallUnit instanceof StallUnit) {
             $stallUnit = $stallUnitRepository->findOneBy([]);
             if (!$stallUnit) {

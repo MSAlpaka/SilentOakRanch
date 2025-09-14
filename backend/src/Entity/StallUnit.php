@@ -112,6 +112,9 @@ class StallUnit
     {
         if (!$this->horses->contains($horse)) {
             $this->horses->add($horse);
+        }
+
+        if ($horse->getStallUnit() !== $this) {
             $horse->setStallUnit($this);
         }
 

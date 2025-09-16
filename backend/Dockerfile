@@ -22,6 +22,7 @@ RUN apk add --no-cache \
     && docker-php-ext-install \
         pdo_pgsql \
         intl \
+        mbstring \
         gd \
         zip \
         sodium \

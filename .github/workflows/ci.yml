@@ -11,6 +11,15 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+
+      - name: Validate Composer configuration
+        run: composer validate
+        working-directory: backend
+
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
@@ -24,15 +33,8 @@ jobs:
         run: npm test
         working-directory: frontend
 
-      - name: Set up PHP
-        uses: shivammathur/setup-php@v2
-        with:
-          php-version: '8.2'
-
-      - name: Install backend dependencies
-        run: composer install --no-interaction --prefer-dist --no-progress --ignore-platform-req=ext-sodium
-        working-directory: backend
+      - name: Build backend image
+        run: docker build --target builder -t backend-ci backend
 
       - name: Run backend tests
-        run: vendor/bin/phpunit
-        working-directory: backend
+        run: docker run --rm backend-ci vendor/bin/phpunit --testdox

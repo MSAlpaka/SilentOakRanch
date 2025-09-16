@@ -13,10 +13,10 @@ services:
     depends_on:
       - db
     expose:
-      - "8000"
+      - "8080"
     environment:
       VIRTUAL_HOST: "${DOMAIN}"
-      VIRTUAL_PORT: "8000"
+      VIRTUAL_PORT: "8080"
       LETSENCRYPT_HOST: "${DOMAIN}"
       LETSENCRYPT_EMAIL: "${LETSENCRYPT_EMAIL}"
 

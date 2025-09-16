@@ -56,12 +56,20 @@ FROM php:8.3-fpm-alpine AS runtime
 
 WORKDIR /var/www/backend
 
-RUN apk add --no-cache libpq icu
+RUN apk add --no-cache \
+        libpq \
+        icu \
+        nginx \
+        supervisor \
+        curl \
+    && mkdir -p /run/nginx /var/log/supervisor /var/cache/nginx
 
+COPY docker/nginx.conf /etc/nginx/conf.d/default.conf
+COPY docker/supervisord.conf /etc/supervisord.conf
 COPY --from=base /usr/local/etc/php/conf.d /usr/local/etc/php/conf.d
 COPY --from=base /usr/local/lib/php/extensions /usr/local/lib/php/extensions
 COPY --from=production /var/www/backend /var/www/backend
 
-EXPOSE 9000
-HEALTHCHECK CMD ["php-fpm", "-t"]
-CMD ["php-fpm", "-F"]
+EXPOSE 8080
+HEALTHCHECK CMD curl -sS -o /dev/null http://127.0.0.1:8080/ || exit 1
+CMD ["/usr/bin/supervisord", "-c", "/etc/supervisord.conf"]

@@ -119,8 +119,11 @@ To deploy with Docker Compose:
 
 ```bash
 cp .env.example .env
-docker compose up -d
+docker compose up -d --build
 ```
+
+- All Composer and NPM dependencies are installed automatically during the image build.
+- The frontend is served as an Nginx static server.
 
 The included `nginx-proxy` and `acme-companion` automatically request and renew TLS certificates via Let's Encrypt.
 

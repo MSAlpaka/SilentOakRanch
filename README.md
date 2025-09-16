@@ -135,7 +135,7 @@ To deploy with Docker Compose:
 
 The included `nginx-proxy` and `acme-companion` automatically request and renew TLS certificates via Let's Encrypt. The proxy routes requests based on the path:
 
-- https://app.silent-oak-ranch.de → Frontend (Port 3000)
+- https://app.silent-oak-ranch.de → Frontend (Port 80)
 - https://app.silent-oak-ranch.de/api → Backend (Port 8000)
 
 ## Deployment-Skript

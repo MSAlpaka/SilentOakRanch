@@ -52,7 +52,7 @@ RUN if [ -f bin/console ]; then \
         echo "Skipping cache warmup during build"; \
     fi
 
-FROM php:8.2-fpm-alpine AS runtime
+FROM php:8.3-fpm-alpine AS runtime
 
 WORKDIR /var/www/backend
 

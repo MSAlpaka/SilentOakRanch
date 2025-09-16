@@ -16,3 +16,19 @@ The backend service is built with a multi-stage Dockerfile that compiles applica
   ```sh
   docker compose exec backend php bin/console doctrine:migrations:migrate --no-interaction
   ```
+
+## Frontend Build & Run
+
+The frontend is containerized with a multi-stage Dockerfile.
+Build and start the full stack:
+
+```bash
+cp .env.example .env   # if applicable
+docker compose up -d --build
+```
+
+* The frontend builds automatically inside the container and is served via Nginx.
+* All routes fall back to `index.html` for SPA compatibility.
+* Security headers and hidden-file protection are enabled in the Nginx config.
+* If the proxy + SSL companion is active, traffic will be served over HTTPS with Let’s Encrypt certificates.
+

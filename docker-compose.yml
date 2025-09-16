@@ -1,0 +1,52 @@
+version: '3.9'
+
+services:
+  db:
+    image: postgres:15
+    env_file: .env
+    volumes:
+      - ./db/data:/var/lib/postgresql/data
+
+  backend:
+    build: ./backend
+    env_file: .env
+    depends_on:
+      - db
+    expose:
+      - "8000"
+    environment:
+      VIRTUAL_HOST: "${DOMAIN}"
+      VIRTUAL_PORT: "8000"
+      LETSENCRYPT_HOST: "${DOMAIN}"
+      LETSENCRYPT_EMAIL: "${LETSENCRYPT_EMAIL}"
+
+  frontend:
+    build: ./frontend
+    expose:
+      - "3000"
+    environment:
+      VIRTUAL_HOST: "${DOMAIN}"
+      VIRTUAL_PORT: "3000"
+      LETSENCRYPT_HOST: "${DOMAIN}"
+      LETSENCRYPT_EMAIL: "${LETSENCRYPT_EMAIL}"
+
+  proxy:
+    image: nginxproxy/nginx-proxy:latest
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - /var/run/docker.sock:/tmp/docker.sock:ro
+      - ./proxy/certs:/etc/nginx/certs:rw
+      - ./proxy/vhost.d:/etc/nginx/vhost.d
+      - ./proxy/html:/usr/share/nginx/html
+
+  letsencrypt:
+    image: nginxproxy/acme-companion
+    depends_on:
+      - proxy
+    volumes_from:
+      - proxy
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./proxy/certs:/etc/nginx/certs:rw

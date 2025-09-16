@@ -113,6 +113,17 @@ git push -u origin main
 git tag v1.0.0
 git push origin v1.0.0
 
+## Deployment
+
+To deploy with Docker Compose:
+
+```bash
+cp .env.example .env
+docker compose up -d
+```
+
+The included `nginx-proxy` and `acme-companion` automatically request and renew TLS certificates via Let's Encrypt.
+
 ## Deployment-Skript
 CI builds artifacts for each successful workflow run. After verifying the build in CI, deploy the artifact manually:
 

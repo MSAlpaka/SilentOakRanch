@@ -117,15 +117,26 @@ git push origin v1.0.0
 
 To deploy with Docker Compose:
 
-```bash
-cp .env.example .env
-docker compose up -d --build
-```
+1. Copy `.env.example` to `.env` and set the domain and email address used for certificates:
+
+   ```
+   DOMAIN=app.silent-oak-ranch.de
+   LETSENCRYPT_EMAIL=info@silent-oak-ranch.de
+   ```
+
+2. Start the stack:
+
+   ```bash
+   docker compose up -d --build
+   ```
 
 - All Composer and NPM dependencies are installed automatically during the image build.
 - The frontend is served as an Nginx static server.
 
-The included `nginx-proxy` and `acme-companion` automatically request and renew TLS certificates via Let's Encrypt.
+The included `nginx-proxy` and `acme-companion` automatically request and renew TLS certificates via Let's Encrypt. The proxy routes requests based on the path:
+
+- https://app.silent-oak-ranch.de → Frontend (Port 3000)
+- https://app.silent-oak-ranch.de/api → Backend (Port 8000)
 
 ## Deployment-Skript
 CI builds artifacts for each successful workflow run. After verifying the build in CI, deploy the artifact manually:

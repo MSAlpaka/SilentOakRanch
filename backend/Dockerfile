@@ -1,16 +1,60 @@
-FROM php:8.3-fpm
+# syntax=docker/dockerfile:1
 
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    git unzip libpq-dev libicu-dev libzip-dev \
-    && docker-php-ext-install intl pdo_pgsql zip \
-    && rm -rf /var/lib/apt/lists/*
+FROM php:8.2-fpm-alpine AS builder
+
+RUN apk add --no-cache \
+        git \
+        unzip \
+        libpq \
+        libzip-dev \
+        icu-dev \
+        bash \
+        make \
+        oniguruma-dev \
+        zlib-dev \
+        postgresql-dev \
+        freetype-dev \
+        libpng-dev \
+        libjpeg-turbo-dev \
+        libsodium-dev \
+        build-base \
+    && docker-php-ext-configure gd --with-freetype --with-jpeg \
+    && docker-php-ext-install \
+        pdo_pgsql \
+        intl \
+        gd \
+        zip \
+        sodium \
+        opcache
 
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
-WORKDIR /app
+WORKDIR /var/www/backend
+
+COPY composer.json composer.lock ./
+RUN composer install --no-dev --prefer-dist --no-scripts --no-progress
+
 COPY . .
+RUN if [ -f bin/console ]; then \
+        php bin/console doctrine:migrations:migrate --no-interaction || \
+        echo "Skipping migrations during build"; \
+    fi
+RUN if [ -f vendor/bin/phpunit ]; then ./vendor/bin/phpunit; fi
+RUN if [ -f bin/console ]; then \
+        php bin/console cache:warmup --env=prod || \
+        echo "Skipping cache warmup during build"; \
+    fi
 
-RUN composer install --no-interaction --optimize-autoloader
+FROM php:8.2-fpm-alpine AS runtime
 
-EXPOSE 8000
-CMD ["php", "-S", "0.0.0.0:8000", "-t", "public"]
+WORKDIR /var/www/backend
+
+RUN apk add --no-cache libpq icu
+
+COPY --from=builder /usr/local/etc/php/conf.d /usr/local/etc/php/conf.d
+COPY --from=builder /usr/local/lib/php/extensions /usr/local/lib/php/extensions
+COPY --from=builder /var/www/backend /var/www/backend
+
+EXPOSE 9000
+HEALTHCHECK CMD ["php-fpm", "-t"]
+CMD ["php-fpm", "-F"]

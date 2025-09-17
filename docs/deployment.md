@@ -17,6 +17,21 @@ The backend service is built with a multi-stage Dockerfile that compiles applica
   docker compose exec backend php bin/console doctrine:migrations:migrate --no-interaction
   ```
 
+### Reverse proxy headers
+
+If the application is deployed behind a load balancer or ingress controller, configure
+trusted proxies and hosts via environment variables so Symfony can rely on forwarded
+headers for the original request metadata:
+
+```bash
+TRUSTED_PROXIES=10.0.0.0/8,192.168.0.0/16
+TRUSTED_HOSTS=^app\\.example\\.com$,^api\\.example\\.com$
+```
+
+The proxy list accepts comma-separated CIDR ranges or IP addresses, and host patterns use
+regular expressions. These values ensure HTTPS detection and host validation work correctly
+once the app runs behind the proxy tier.
+
 ## Frontend Build & Run
 
 The frontend is containerized with a multi-stage Dockerfile.

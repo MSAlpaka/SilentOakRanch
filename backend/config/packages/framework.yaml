@@ -2,6 +2,9 @@
 framework:
     secret: '%env(APP_SECRET)%'
     default_locale: 'de'
+    trusted_proxies: '%env(default::TRUSTED_PROXIES)%'
+    trusted_hosts:
+        - '%env(default::TRUSTED_HOSTS)%'
 
     # Note that the session will be started ONLY if you read or write from it.
     session: true

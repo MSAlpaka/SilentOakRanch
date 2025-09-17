@@ -73,8 +73,9 @@ RUN apk add --no-cache \
         curl \
     && mkdir -p /run/nginx /var/log/supervisor /var/cache/nginx
 
-COPY docker/app.conf /etc/nginx/conf.d/app.conf
-COPY docker/supervisord.conf /etc/supervisord.conf
+COPY docker/ /docker/
+RUN cp /docker/app.conf /etc/nginx/conf.d/app.conf \
+    && cp /docker/supervisord.conf /etc/supervisord.conf
 COPY --from=production /var/www/backend /var/www/backend
 
 EXPOSE 8080

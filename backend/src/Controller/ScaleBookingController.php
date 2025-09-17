@@ -3,6 +3,7 @@
 namespace App\Controller;
 
 use App\Entity\Horse;
+use App\Entity\ScaleBooking;
 use App\Enum\ScaleBookingStatus;
 use App\Enum\ScaleBookingType;
 use App\Repository\ScaleBookingRepository;
@@ -31,6 +32,38 @@ class ScaleBookingController extends AbstractController
         $slots = array_map(fn(\DateTimeImmutable $slot) => $slot->format('c'), $slotService->getAvailableSlots($day));
 
         return $this->json($slots);
+    }
+
+    #[Route('/api/scale/bookings', name: 'api_scale_bookings', methods: ['GET'])]
+    #[IsGranted('ROLE_ADMIN')]
+    public function bookings(ScaleBookingRepository $repository, ScaleBookingService $bookingService): JsonResponse
+    {
+        $bookings = array_map(
+            fn(ScaleBooking $booking) => $bookingService->serializeBooking($booking),
+            $repository->findAll()
+        );
+
+        return $this->json($bookings);
+    }
+
+    #[Route('/api/scale/bookings/my', name: 'api_scale_my_bookings', methods: ['GET'])]
+    #[IsGranted('ROLE_USER')]
+    public function myBookings(
+        ScaleBookingRepository $repository,
+        ScaleBookingService $bookingService,
+        Security $security
+    ): JsonResponse {
+        $user = $security->getUser();
+        if (!$user instanceof \App\Entity\User) {
+            return $this->json(['message' => 'Unauthorized'], 401);
+        }
+
+        $bookings = array_map(
+            fn(ScaleBooking $booking) => $bookingService->serializeBooking($booking),
+            $repository->findBy(['owner' => $user], ['slot' => 'ASC'])
+        );
+
+        return $this->json($bookings);
     }
 
     #[Route('/api/scale/bookings', name: 'api_scale_create_booking', methods: ['POST'])]

@@ -6,7 +6,8 @@ interface ScaleBooking {
   horse?: { name: string } | string | null
   slot: string
   status: string
-  qrToken: string
+  qrToken?: string
+  qrImage?: string
   weight?: number | null
 }
 
@@ -37,13 +38,7 @@ function ScaleBookingList() {
               <td className="border p-2">{new Date(b.slot).toLocaleString()}</td>
               <td className="border p-2">{b.status}</td>
               <td className="border p-2">
-                {b.qrToken && (
-                  <img
-                    src={`https://api.qrserver.com/v1/create-qr-code/?size=80x80&data=${b.qrToken}`}
-                    alt="QR"
-                    className="mx-auto"
-                  />
-                )}
+                {b.qrImage && <img src={b.qrImage} alt="QR" className="mx-auto" />}
               </td>
               <td className="border p-2">{b.weight ?? '-'}</td>
             </tr>

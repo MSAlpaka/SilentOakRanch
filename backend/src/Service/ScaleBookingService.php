@@ -76,4 +76,25 @@ class ScaleBookingService
 
         return $booking;
     }
+
+    /**
+     * Creates a normalized payload for API responses including a QR code image.
+     */
+    public function serializeBooking(ScaleBooking $booking): array
+    {
+        $qrBinary = $this->qrCodeGenerator->generate($booking->getQrToken());
+
+        return [
+            'id' => $booking->getId(),
+            'horse' => [
+                'name' => $booking->getHorse()->getName(),
+            ],
+            'slot' => $booking->getSlot()->format('c'),
+            'status' => $booking->getStatus()->value,
+            'price' => $booking->getPrice(),
+            'weight' => $booking->getWeight(),
+            'qrToken' => $booking->getQrToken(),
+            'qrImage' => sprintf('data:image/png;base64,%s', base64_encode($qrBinary)),
+        ];
+    }
 }

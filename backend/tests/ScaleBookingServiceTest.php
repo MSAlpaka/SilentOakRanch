@@ -3,7 +3,9 @@
 namespace App\Tests;
 
 use App\Entity\Horse;
+use App\Entity\ScaleBooking;
 use App\Entity\User;
+use App\Enum\ScaleBookingStatus;
 use App\Enum\ScaleBookingType;
 use App\Enum\UserRole;
 use App\Service\QrCodeGenerator;
@@ -64,6 +66,61 @@ class ScaleBookingServiceTest extends TestCase
 
         $this->assertNotEmpty($booking->getQrToken());
         $this->assertSame('10.00', $booking->getPrice());
+    }
+
+    public function testSerializeBookingIncludesBase64QrImage(): void
+    {
+        $slotService = $this->createStub(ScaleSlotService::class);
+        $em = $this->createStub(EntityManagerInterface::class);
+
+        $qr = $this->createMock(QrCodeGenerator::class);
+        $qr->expects($this->once())
+            ->method('generate')
+            ->with('token123')
+            ->willReturn('png-binary');
+
+        $service = new ScaleBookingService($slotService, $em, $qr);
+
+        $owner = (new User())
+            ->setEmail('a@b.c')
+            ->setPassword('pw')
+            ->setRole(UserRole::CUSTOMER)
+            ->setFirstName('A')
+            ->setLastName('B')
+            ->setActive(true)
+            ->setCreatedAt(new \DateTimeImmutable());
+
+        $horse = (new Horse())
+            ->setName('Star')
+            ->setAge(5)
+            ->setBreed('Arab')
+            ->setOwner($owner);
+
+        $slot = new \DateTimeImmutable('2024-01-01 10:00:00');
+
+        $booking = (new ScaleBooking())
+            ->setId('booking-id')
+            ->setHorse($horse)
+            ->setOwner($owner)
+            ->setSlot($slot)
+            ->setBookingType(ScaleBookingType::SINGLE)
+            ->setPrice('10.00')
+            ->setStatus(ScaleBookingStatus::PENDING)
+            ->setWeight(500)
+            ->setQrToken('token123')
+            ->setCreatedAt(new \DateTimeImmutable())
+            ->setUpdatedAt(new \DateTimeImmutable());
+
+        $result = $service->serializeBooking($booking);
+
+        $this->assertSame('booking-id', $result['id']);
+        $this->assertSame(['name' => 'Star'], $result['horse']);
+        $this->assertSame($slot->format('c'), $result['slot']);
+        $this->assertSame('pending', $result['status']);
+        $this->assertSame('10.00', $result['price']);
+        $this->assertSame(500.0, $result['weight']);
+        $this->assertSame('token123', $result['qrToken']);
+        $this->assertSame('data:image/png;base64,' . base64_encode('png-binary'), $result['qrImage']);
     }
 
     #[DataProvider('bookingPriceProvider')]

@@ -117,9 +117,13 @@ git push origin v1.0.0
 
 To deploy with Docker Compose:
 
-1. Copy `.env.example` to `.env` and set the domain and email address used for certificates:
+1. Copy `.env.example` to `.env` and review the environment variables consumed by Docker Compose. Adapt the values to your deployment (user, password, database name) and ensure that the `DATABASE_URL` references the `db` service hostname:
 
    ```
+   POSTGRES_USER=stallapp
+   POSTGRES_PASSWORD=stallapp123
+   POSTGRES_DB=stallapp
+   DATABASE_URL=postgresql://stallapp:stallapp123@db:5432/stallapp
    DOMAIN=app.silent-oak-ranch.de
    LETSENCRYPT_EMAIL=info@silent-oak-ranch.de
    ```
@@ -129,6 +133,14 @@ To deploy with Docker Compose:
    ```bash
    docker compose up -d --build
    ```
+
+3. Verify that Symfony can connect to PostgreSQL from inside the backend container:
+
+   ```bash
+   docker compose run --rm backend php bin/console doctrine:query:sql 'SELECT 1'
+   ```
+
+   The command executes a lightweight SQL query via Doctrine and confirms that the configured credentials work end to end.
 
 - All Composer and NPM dependencies are installed automatically during the image build.
 - The frontend is served as an Nginx static server.

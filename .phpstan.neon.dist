@@ -1,9 +1,2 @@
-parameters:
-  level: 6
-  paths:
-    - backend/src
-  excludePaths:
-    - */tests/*
-    - backend/config
-    - backend/public
-  tmpDir: var/phpstan
+includes:
+  - backend/phpstan.neon.dist

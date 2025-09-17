@@ -36,5 +36,8 @@ jobs:
       - name: Build backend image
         run: docker build --target builder -t backend-ci backend
 
+      - name: Run PHPStan
+        run: docker run --rm backend-ci vendor/bin/phpstan analyse
+
       - name: Run backend tests
         run: docker run --rm backend-ci vendor/bin/phpunit --testdox

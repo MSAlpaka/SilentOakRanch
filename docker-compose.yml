@@ -20,6 +20,8 @@ services:
       VIRTUAL_PORT: "8080"
       LETSENCRYPT_HOST: "${DOMAIN}"
       LETSENCRYPT_EMAIL: "${LETSENCRYPT_EMAIL}"
+    volumes:
+      - ./shared/jwt/backend:/var/www/backend/config/jwt
 
   frontend:
     image: silentoakranch/frontend:latest

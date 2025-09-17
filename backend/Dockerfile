@@ -75,9 +75,11 @@ RUN apk add --no-cache \
 
 COPY docker/ /docker/
 RUN cp /docker/app.conf /etc/nginx/conf.d/app.conf \
-    && cp /docker/supervisord.conf /etc/supervisord.conf
+    && cp /docker/supervisord.conf /etc/supervisord.conf \
+    && chmod +x /docker/entrypoint.sh
 COPY --from=production /var/www/backend /var/www/backend
 
 EXPOSE 8080
 HEALTHCHECK CMD curl -fsS http://127.0.0.1:8080/ || exit 1
+ENTRYPOINT ["/docker/entrypoint.sh"]
 CMD ["/usr/bin/supervisord", "-c", "/etc/supervisord.conf"]

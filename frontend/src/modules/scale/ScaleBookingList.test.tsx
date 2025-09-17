@@ -25,7 +25,7 @@ describe('ScaleBookingList', () => {
         horse: { name: 'Star' },
         slot: '2024-01-01T10:00:00Z',
         status: 'pending',
-        qrToken: 'token123',
+        qrImage: 'data:image/png;base64,token123',
         weight: null,
       },
       {
@@ -33,7 +33,7 @@ describe('ScaleBookingList', () => {
         horse: 'Ghost',
         slot: '2024-01-02T12:00:00Z',
         status: 'completed',
-        qrToken: 'token456',
+        qrImage: 'data:image/png;base64,token456',
         weight: 500,
       },
     ]
@@ -50,8 +50,8 @@ describe('ScaleBookingList', () => {
 
     const images = await screen.findAllByAltText('QR')
     expect(images).toHaveLength(2)
-    expect(images[0].getAttribute('src')).toContain('token123')
-    expect(images[1].getAttribute('src')).toContain('token456')
+    expect(images[0].getAttribute('src')).toBe('data:image/png;base64,token123')
+    expect(images[1].getAttribute('src')).toBe('data:image/png;base64,token456')
 
     expect(await screen.findByText('-')).toBeTruthy()
     expect(await screen.findByText('500')).toBeTruthy()

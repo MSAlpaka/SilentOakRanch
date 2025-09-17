@@ -119,16 +119,25 @@ git push origin v1.0.0
 
 To deploy with Docker Compose:
 
-1. Copy `.env.example` to `.env` and review the environment variables consumed by Docker Compose. Adapt the values to your deployment (user, password, database name) and ensure that the `DATABASE_URL` references the `db` service hostname:
+1. Copy `.env.example` to `.env`. Docker Compose loads this file via `env_file`, so every container receives the same credentials and secrets:
 
+   ```bash
+   cp .env.example .env
    ```
-   POSTGRES_USER=stallapp
-   POSTGRES_PASSWORD=stallapp123
-   POSTGRES_DB=stallapp
-   DATABASE_URL=postgresql://stallapp:stallapp123@db:5432/stallapp
-   DOMAIN=app.silent-oak-ranch.de
-   LETSENCRYPT_EMAIL=info@silent-oak-ranch.de
-   ```
+
+   Replace all placeholders with production values:
+
+   - Set the PostgreSQL credentials (`POSTGRES_*`) and keep `DATABASE_URL` pointing to the internal `db` service.
+   - Generate an application secret: `php -r 'echo bin2hex(random_bytes(32));'` and paste the output into `APP_SECRET`.
+   - Create the JWT key pair inside the backend container. The command will prompt you for the passphrase that must also be stored in `JWT_PASSPHRASE`:
+
+     ```bash
+     docker compose run --rm backend php bin/console lexik:jwt:generate-keypair --overwrite
+     ```
+
+     The keys are written to `/var/www/backend/config/jwt/private.pem` and `/var/www/backend/config/jwt/public.pem`; keep these paths in `.env`.
+   - Provide live credentials for `STRIPE_SECRET_KEY`, the SMTP transport (`SMTP_HOST`, `SMTP_PORT`, `SMTP_USERNAME`, `SMTP_PASSWORD`), and the messenger integrations (`WHATSAPP_DSN`, `SMS_DSN`).
+   - Update `DOMAIN` and `LETSENCRYPT_EMAIL` to match your public endpoint.
 
 2. Start the stack:
 
@@ -150,7 +159,7 @@ To deploy with Docker Compose:
 The included `nginx-proxy` and `acme-companion` automatically request and renew TLS certificates via Let's Encrypt. The proxy routes requests based on the path:
 
 - https://app.silent-oak-ranch.de → Frontend (Port 80)
-- https://app.silent-oak-ranch.de/api → Backend (Port 8000)
+- https://app.silent-oak-ranch.de/api → Backend (Port 8080)
 
 ## JWT key management
 

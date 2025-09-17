@@ -1,0 +1,17 @@
+includes:
+  - phpstan-baseline.neon
+
+parameters:
+  level: 6
+  analysedPathsFromConfig: true
+  paths:
+    - src
+  excludePaths:
+    - */tests/*
+    - config
+    - public
+  tmpDir: var/phpstan
+  bootstrapFiles:
+    - phpstan-bootstrap.php
+  parallel:
+    maximumNumberOfProcesses: 1

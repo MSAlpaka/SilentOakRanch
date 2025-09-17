@@ -49,16 +49,18 @@ cd backend
 Tests that depend on external services should be tagged with `@group external` and are excluded from the core suite by default.
 
 ## Static Analysis
-Static analysis is handled by [PHPStan](https://phpstan.org/):
+Static analysis is handled by [PHPStan](https://phpstan.org/). Run it from the backend directory so the bundled configuration is picked up automatically:
 
 ```bash
-vendor/bin/phpstan analyse --configuration=.phpstan.neon.dist
+cd backend
+vendor/bin/phpstan analyse
 ```
 
 The default memory limit is `--memory-limit=512M`. Override it locally if needed:
 
 ```bash
-vendor/bin/phpstan analyse --configuration=.phpstan.neon.dist --memory-limit=1G
+cd backend
+vendor/bin/phpstan analyse --memory-limit=1G
 ```
 
 - PHPStan-Level 8 prüft den MeController auf korrekte Typen; Fehler durch falsche Signatur wurden korrigiert.

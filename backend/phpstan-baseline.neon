@@ -1,0 +1,307 @@
+parameters:
+	ignoreErrors:
+		-
+			message: '#^Method App\\Controller\\Api\\SubscriptionController\:\:serializeSubscription\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Controller/Api/SubscriptionController.php
+
+		-
+			message: '#^Method App\\Controller\\AppointmentController\:\:serializeAppointment\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Controller/AppointmentController.php
+
+		-
+			message: '#^Call to function method_exists\(\) with App\\Entity\\User and ''getEmail'' will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 1
+			path: src/Controller/BookingController.php
+
+		-
+			message: '#^Method App\\Controller\\DocumentationController\:\:serializeDoc\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Controller/DocumentationController.php
+
+		-
+			message: '#^Method App\\Controller\\HorseController\:\:serializeHorse\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Controller/HorseController.php
+
+		-
+			message: '#^Call to function method_exists\(\) with App\\Entity\\User and ''getFirstName'' will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 1
+			path: src/Controller/MeController.php
+
+		-
+			message: '#^Call to function method_exists\(\) with App\\Entity\\User and ''getLastName'' will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 1
+			path: src/Controller/MeController.php
+
+		-
+			message: '#^Call to function method_exists\(\) with App\\Entity\\Horse and ''getName'' will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 1
+			path: src/Controller/MyBookingsController.php
+
+		-
+			message: '#^Property App\\Entity\\AddOn\:\:\$id \(int\|null\) is never assigned int so it can be removed from the property type\.$#'
+			identifier: property.unusedType
+			count: 1
+			path: src/Entity/AddOn.php
+
+		-
+			message: '#^Property App\\Entity\\Agreement\:\:\$id \(int\|null\) is never assigned int so it can be removed from the property type\.$#'
+			identifier: property.unusedType
+			count: 1
+			path: src/Entity/Agreement.php
+
+		-
+			message: '#^Property App\\Entity\\Appointment\:\:\$id \(int\|null\) is never assigned int so it can be removed from the property type\.$#'
+			identifier: property.unusedType
+			count: 1
+			path: src/Entity/Appointment.php
+
+		-
+			message: '#^Method App\\Entity\\Booking\:\:setAddOns\(\) has parameter \$addOns with generic interface Doctrine\\Common\\Collections\\Collection but does not specify its types\: TKey, T$#'
+			identifier: missingType.generics
+			count: 1
+			path: src/Entity/Booking.php
+
+		-
+			message: '#^Property App\\Entity\\Booking\:\:\$addOns with generic interface Doctrine\\Common\\Collections\\Collection does not specify its types\: TKey, T$#'
+			identifier: missingType.generics
+			count: 1
+			path: src/Entity/Booking.php
+
+		-
+			message: '#^Property App\\Entity\\Booking\:\:\$id \(int\|null\) is never assigned int so it can be removed from the property type\.$#'
+			identifier: property.unusedType
+			count: 1
+			path: src/Entity/Booking.php
+
+		-
+			message: '#^Method App\\Entity\\Documentation\:\:getMetrics\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Entity/Documentation.php
+
+		-
+			message: '#^Method App\\Entity\\Documentation\:\:getPhotos\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Entity/Documentation.php
+
+		-
+			message: '#^Method App\\Entity\\Documentation\:\:getVideos\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Entity/Documentation.php
+
+		-
+			message: '#^Method App\\Entity\\Documentation\:\:setMetrics\(\) has parameter \$metrics with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Entity/Documentation.php
+
+		-
+			message: '#^Method App\\Entity\\Documentation\:\:setPhotos\(\) has parameter \$photos with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Entity/Documentation.php
+
+		-
+			message: '#^Method App\\Entity\\Documentation\:\:setVideos\(\) has parameter \$videos with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Entity/Documentation.php
+
+		-
+			message: '#^Property App\\Entity\\Documentation\:\:\$id \(int\|null\) is never assigned int so it can be removed from the property type\.$#'
+			identifier: property.unusedType
+			count: 1
+			path: src/Entity/Documentation.php
+
+		-
+			message: '#^Property App\\Entity\\Documentation\:\:\$metrics type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Entity/Documentation.php
+
+		-
+			message: '#^Property App\\Entity\\Documentation\:\:\$photos type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Entity/Documentation.php
+
+		-
+			message: '#^Property App\\Entity\\Documentation\:\:\$videos type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Entity/Documentation.php
+
+		-
+			message: '#^Property App\\Entity\\Horse\:\:\$id \(int\|null\) is never assigned int so it can be removed from the property type\.$#'
+			identifier: property.unusedType
+			count: 1
+			path: src/Entity/Horse.php
+
+		-
+			message: '#^Property App\\Entity\\Invitation\:\:\$id \(int\|null\) is never assigned int so it can be removed from the property type\.$#'
+			identifier: property.unusedType
+			count: 1
+			path: src/Entity/Invitation.php
+
+		-
+			message: '#^Property App\\Entity\\Invoice\:\:\$id \(int\|null\) is never assigned int so it can be removed from the property type\.$#'
+			identifier: property.unusedType
+			count: 1
+			path: src/Entity/Invoice.php
+
+		-
+			message: '#^Property App\\Entity\\InvoiceItem\:\:\$id \(int\|null\) is never assigned int so it can be removed from the property type\.$#'
+			identifier: property.unusedType
+			count: 1
+			path: src/Entity/InvoiceItem.php
+
+		-
+			message: '#^Property App\\Entity\\Package\:\:\$id \(int\|null\) is never assigned int so it can be removed from the property type\.$#'
+			identifier: property.unusedType
+			count: 1
+			path: src/Entity/Package.php
+
+		-
+			message: '#^Property App\\Entity\\PricingRule\:\:\$id \(int\|null\) is never assigned int so it can be removed from the property type\.$#'
+			identifier: property.unusedType
+			count: 1
+			path: src/Entity/PricingRule.php
+
+		-
+			message: '#^Property App\\Entity\\ServiceProvider\:\:\$id \(int\|null\) is never assigned int so it can be removed from the property type\.$#'
+			identifier: property.unusedType
+			count: 1
+			path: src/Entity/ServiceProvider.php
+
+		-
+			message: '#^Property App\\Entity\\ServiceType\:\:\$id \(int\|null\) is never assigned int so it can be removed from the property type\.$#'
+			identifier: property.unusedType
+			count: 1
+			path: src/Entity/ServiceType.php
+
+		-
+			message: '#^Property App\\Entity\\StallUnit\:\:\$horses with generic interface Doctrine\\Common\\Collections\\Collection does not specify its types\: TKey, T$#'
+			identifier: missingType.generics
+			count: 1
+			path: src/Entity/StallUnit.php
+
+		-
+			message: '#^Property App\\Entity\\StallUnit\:\:\$id \(int\|null\) is never assigned int so it can be removed from the property type\.$#'
+			identifier: property.unusedType
+			count: 1
+			path: src/Entity/StallUnit.php
+
+		-
+			message: '#^Property App\\Entity\\Subscription\:\:\$id \(int\|null\) is never assigned int so it can be removed from the property type\.$#'
+			identifier: property.unusedType
+			count: 1
+			path: src/Entity/Subscription.php
+
+		-
+			message: '#^Property App\\Entity\\Task\:\:\$id \(int\|null\) is never assigned int so it can be removed from the property type\.$#'
+			identifier: property.unusedType
+			count: 1
+			path: src/Entity/Task.php
+
+		-
+			message: '#^Property App\\Entity\\TaskAssignment\:\:\$id \(int\|null\) is never assigned int so it can be removed from the property type\.$#'
+			identifier: property.unusedType
+			count: 1
+			path: src/Entity/TaskAssignment.php
+
+		-
+			message: '#^Method App\\Entity\\User\:\:setRoles\(\) has parameter \$roles with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Entity/User.php
+
+		-
+			message: '#^Property App\\Entity\\User\:\:\$id \(int\|null\) is never assigned int so it can be removed from the property type\.$#'
+			identifier: property.unusedType
+			count: 1
+			path: src/Entity/User.php
+
+		-
+			message: '#^Property App\\Entity\\User\:\:\$roles type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Entity/User.php
+
+		-
+			message: '#^Class App\\Repository\\AgreementRepository extends generic class Doctrine\\Bundle\\DoctrineBundle\\Repository\\ServiceEntityRepository but does not specify its types\: T$#'
+			identifier: missingType.generics
+			count: 1
+			path: src/Repository/AgreementRepository.php
+
+		-
+			message: '#^Class App\\Repository\\InvitationRepository extends generic class Doctrine\\Bundle\\DoctrineBundle\\Repository\\ServiceEntityRepository but does not specify its types\: T$#'
+			identifier: missingType.generics
+			count: 1
+			path: src/Repository/InvitationRepository.php
+
+		-
+			message: '#^Strict comparison using \=\=\= between null and App\\Enum\\PricingRuleType\:\:FACILITY\|App\\Enum\\PricingRuleType\:\:OTHER\|App\\Enum\\PricingRuleType\:\:SERVICE\|App\\Enum\\PricingRuleType\:\:SPECIAL will always evaluate to false\.$#'
+			identifier: identical.alwaysFalse
+			count: 1
+			path: src/Repository/PricingRuleRepository.php
+
+		-
+			message: '#^Class App\\Security\\AppointmentVoter extends generic class Symfony\\Component\\Security\\Core\\Authorization\\Voter\\Voter but does not specify its types\: TAttribute, TSubject$#'
+			identifier: missingType.generics
+			count: 1
+			path: src/Security/AppointmentVoter.php
+
+		-
+			message: '#^Call to an undefined method DateTimeInterface\:\:modify\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: src/Service/AppointmentService.php
+
+		-
+			message: '#^Call to an undefined method DateTimeInterface\:\:modify\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: src/Service/BookingService.php
+
+		-
+			message: '#^Method App\\Service\\DocumentationService\:\:createDocumentation\(\) has parameter \$payload with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Service/DocumentationService.php
+
+		-
+			message: '#^Call to an undefined method App\\Entity\\ScaleBooking\:\:getCustomerEmail\(\)\.$#'
+			identifier: method.notFound
+			count: 3
+			path: src/Service/HorseScaleMailer.php
+
+		-
+			message: '#^Call to an undefined method App\\Entity\\ScaleBooking\:\:getCustomerName\(\)\.$#'
+			identifier: method.notFound
+			count: 3
+			path: src/Service/HorseScaleMailer.php
+
+		-
+			message: '#^Method App\\Service\\StripeService\:\:createInvoiceDraft\(\) has parameter \$params with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Service/StripeService.php
+
+		-
+			message: '#^Method App\\Service\\StripeService\:\:createPaymentIntent\(\) has parameter \$metadata with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Service/StripeService.php

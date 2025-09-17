@@ -56,9 +56,9 @@ class ReminderService
 
         $this->logger->info(
             sprintf(
-                'WhatsApp reminder for booking %d would be sent via %s.',
+                'WhatsApp reminder for booking %d (%d h) triggered for sending.',
                 $booking->getId(),
-                $this->whatsappDsn
+                $hoursBefore
             )
         );
     }
@@ -79,9 +79,9 @@ class ReminderService
 
         $this->logger->info(
             sprintf(
-                'SMS reminder for booking %d would be sent via %s.',
+                'SMS reminder for booking %d (%d h) triggered for sending.',
                 $booking->getId(),
-                $this->smsDsn
+                $hoursBefore
             )
         );
     }

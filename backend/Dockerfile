@@ -80,6 +80,6 @@ RUN cp /docker/app.conf /etc/nginx/conf.d/app.conf \
 COPY --from=production /var/www/backend /var/www/backend
 
 EXPOSE 8080
-HEALTHCHECK CMD curl -fsS http://127.0.0.1:8080/ || exit 1
+HEALTHCHECK CMD curl -fsS http://127.0.0.1:8080/healthz || exit 1
 ENTRYPOINT ["/docker/entrypoint.sh"]
 CMD ["/usr/bin/supervisord", "-c", "/etc/supervisord.conf"]

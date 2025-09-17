@@ -152,6 +152,29 @@ The included `nginx-proxy` and `acme-companion` automatically request and renew 
 - https://app.silent-oak-ranch.de → Frontend (Port 80)
 - https://app.silent-oak-ranch.de/api → Backend (Port 8000)
 
+## JWT key management
+
+The backend expects the LexikJWT keys in `config/jwt`. To keep them outside of the Docker image the directory is bind-mounted from the host (`./shared/jwt/backend` ↔ `/var/www/backend/config/jwt`). The mount point is ignored by Git so generated keys never end up in the repository.
+
+### Local development
+
+- Ensure that `.env` contains a `JWT_PASSPHRASE`. The default value is only meant for local testing – change it before exposing the stack.
+- Start the containers with `docker compose up -d --build`. The runtime entrypoint checks for `config/jwt/private.pem` and `config/jwt/public.pem`. If either file is missing, `php bin/console lexik:jwt:generate-keypair --overwrite --no-interaction` is executed automatically and the freshly generated pair is stored on the mounted volume.
+- To rotate keys manually run `docker compose run --rm backend php bin/console lexik:jwt:generate-keypair --overwrite --no-interaction` and restart the backend container.
+
+### Production
+
+- Keep the `shared/jwt/backend` mount (or a similar host path) persistent so that redeployments reuse the existing key pair. Adjust ownership/permissions on the host to restrict access to the files.
+- Alternatively, load the keys via container secrets. For example:
+
+  ```bash
+  docker secret create backend_jwt_private config/jwt/private.pem
+  docker secret create backend_jwt_public config/jwt/public.pem
+  ```
+
+  Mount the secrets into the container and point `JWT_SECRET_KEY`/`JWT_PUBLIC_KEY` to the secret paths before starting the stack.
+- Whenever the passphrase or keys change, restart the backend service so Symfony reloads the credentials.
+
 ## Deployment-Skript
 CI builds artifacts for each successful workflow run. After verifying the build in CI, deploy the artifact manually:
 

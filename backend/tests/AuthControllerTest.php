@@ -90,6 +90,42 @@ class AuthControllerTest extends KernelTestCase
         $this->assertSame(0, $this->em->getRepository(User::class)->count([]));
     }
 
+    public function testInviteRequiresEmail(): void
+    {
+        $controller = $this->createController();
+        $invitationService = $this->createMock(InvitationService::class);
+        $invitationService->expects($this->never())
+            ->method('sendInvitation');
+
+        $request = new Request([], [], [], [], [], [], json_encode([]));
+
+        $response = $controller->invite($request, $invitationService);
+
+        $this->assertSame(400, $response->getStatusCode());
+    }
+
+    public function testInviteSendsInvitation(): void
+    {
+        $controller = $this->createController();
+        $invitationService = $this->createMock(InvitationService::class);
+        $invitationService->expects($this->once())
+            ->method('sendInvitation')
+            ->with('invitee@example.com');
+
+        $request = new Request([], [], [], [], [], [], json_encode([
+            'email' => 'invitee@example.com',
+        ]));
+
+        $response = $controller->invite($request, $invitationService);
+
+        $this->assertSame(200, $response->getStatusCode());
+        $data = json_decode($response->getContent(), true);
+        $this->assertSame(
+            $this->translator->trans('Invitation sent', [], 'validators'),
+            $data['message']
+        );
+    }
+
     public function testAcceptInviteUpdatesPasswordAndReturnsToken(): void
     {
         $controller = $this->createController();

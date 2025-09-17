@@ -19,6 +19,11 @@ export async function login(email: string, password: string) {
   return response.data
 }
 
+export async function inviteUser(email: string) {
+  const response = await api.post('/invite', { email })
+  return response.data
+}
+
 export async function acceptInvite(token: string, password: string) {
   const response = await api.post(`/accept-invite/${token}`, { password })
   return response.data

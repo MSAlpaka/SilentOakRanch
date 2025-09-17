@@ -118,7 +118,7 @@ class AuthController extends AbstractController
         return $this->json(['token' => $token]);
     }
 
-    #[Route('/invite', name: 'invite', methods: ['POST'])]
+    #[Route('/api/invite', name: 'api_invite', methods: ['POST'])]
     public function invite(Request $request, InvitationService $invitationService): JsonResponse
     {
         $data = json_decode($request->getContent(), true);

@@ -6,7 +6,9 @@ import { useTranslation } from 'react-i18next'
 
 function Register() {
   const navigate = useNavigate()
-  const [username, setUsername] = useState('')
+  const [firstName, setFirstName] = useState('')
+  const [lastName, setLastName] = useState('')
+  const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [agb, setAgb] = useState(false)
   const [privacy, setPrivacy] = useState(false)
@@ -18,6 +20,12 @@ function Register() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     let valid = true
+    if (!firstName || !lastName || !email || !password) {
+      setError(t('auth.register.missing_fields'))
+      valid = false
+    } else {
+      setError(null)
+    }
     if (!agb) {
       setAgbError(true)
       valid = false
@@ -30,7 +38,13 @@ function Register() {
       return
     }
     try {
-      await register(username, password)
+      await register({
+        firstName,
+        lastName,
+        email,
+        password,
+        role: 'customer',
+      })
       await agreementsApi.giveConsent('agb')
       await agreementsApi.giveConsent('privacy')
       navigate('/login')
@@ -47,9 +61,23 @@ function Register() {
         <input
           className="border w-full p-2 mb-2"
           type="text"
-          placeholder={t('auth.register.username')}
-          value={username}
-          onChange={e => setUsername(e.target.value)}
+          placeholder={t('auth.register.first_name')}
+          value={firstName}
+          onChange={e => setFirstName(e.target.value)}
+        />
+        <input
+          className="border w-full p-2 mb-2"
+          type="text"
+          placeholder={t('auth.register.last_name')}
+          value={lastName}
+          onChange={e => setLastName(e.target.value)}
+        />
+        <input
+          className="border w-full p-2 mb-2"
+          type="email"
+          placeholder={t('auth.register.email')}
+          value={email}
+          onChange={e => setEmail(e.target.value)}
         />
         <input
           className="border w-full p-2 mb-2"

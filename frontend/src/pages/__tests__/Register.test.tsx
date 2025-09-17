@@ -38,8 +38,14 @@ describe('Register', () => {
 
     render(<Register />)
 
-    fireEvent.change(screen.getByPlaceholderText('auth.register.username'), {
-      target: { value: 'john' },
+    fireEvent.change(screen.getByPlaceholderText('auth.register.first_name'), {
+      target: { value: 'John' },
+    })
+    fireEvent.change(screen.getByPlaceholderText('auth.register.last_name'), {
+      target: { value: 'Doe' },
+    })
+    fireEvent.change(screen.getByPlaceholderText('auth.register.email'), {
+      target: { value: 'john@example.com' },
     })
     fireEvent.change(screen.getByPlaceholderText('auth.register.password'), {
       target: { value: 'secret' },
@@ -49,7 +55,13 @@ describe('Register', () => {
     fireEvent.click(screen.getByRole('button'))
 
     await waitFor(() => {
-      expect(registerMock).toHaveBeenCalledWith('john', 'secret')
+      expect(registerMock).toHaveBeenCalledWith({
+        firstName: 'John',
+        lastName: 'Doe',
+        email: 'john@example.com',
+        password: 'secret',
+        role: 'customer',
+      })
       expect(consentMock).toHaveBeenNthCalledWith(1, 'agb')
       expect(consentMock).toHaveBeenNthCalledWith(2, 'privacy')
       expect(mockNavigate).toHaveBeenCalledWith('/login')
@@ -65,5 +77,16 @@ describe('Register', () => {
     expect(screen.getByText('auth.register.privacy_required')).toBeTruthy()
     expect(registerMock).not.toHaveBeenCalled()
     expect(consentMock).not.toHaveBeenCalled()
+  })
+
+  it('validates required fields before submitting', async () => {
+    render(<Register />)
+
+    fireEvent.click(screen.getByLabelText('auth.register.terms'))
+    fireEvent.click(screen.getByLabelText('auth.register.privacy'))
+    fireEvent.click(screen.getByRole('button'))
+
+    expect(screen.getByText('auth.register.missing_fields')).toBeTruthy()
+    expect(registerMock).not.toHaveBeenCalled()
   })
 })

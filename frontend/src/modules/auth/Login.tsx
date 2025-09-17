@@ -6,7 +6,7 @@ import { useTranslation } from 'react-i18next'
 function Login() {
   const navigate = useNavigate()
   const { login } = useAuth()
-  const [username, setUsername] = useState('')
+  const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
   const { t } = useTranslation()
@@ -14,7 +14,7 @@ function Login() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     try {
-      await login(username, password)
+      await login(email, password)
       navigate('/dashboard')
     } catch (err) {
       setError(t('auth.login.error'))
@@ -28,10 +28,10 @@ function Login() {
         {error && <p className="text-red-500 mb-2">{error}</p>}
         <input
           className="border w-full p-2 mb-2"
-          type="text"
-          placeholder={t('auth.login.username')}
-          value={username}
-          onChange={e => setUsername(e.target.value)}
+          type="email"
+          placeholder={t('auth.login.email')}
+          value={email}
+          onChange={e => setEmail(e.target.value)}
         />
         <input
           className="border w-full p-2 mb-4"

@@ -2,21 +2,24 @@
   "auth": {
     "login": {
       "title": "Login",
-      "username": "Username",
+      "email": "Email",
       "password": "Password",
       "button": "Login",
       "error": "Invalid credentials"
     },
     "register": {
       "title": "Register",
-      "username": "Username",
+      "first_name": "First Name",
+      "last_name": "Last Name",
+      "email": "Email",
       "password": "Password",
       "button": "Register",
       "error": "Registration failed",
       "terms": "I accept the terms and conditions",
       "privacy": "I accept the privacy policy",
       "terms_required": "You must accept the terms and conditions",
-      "privacy_required": "You must accept the privacy policy"
+      "privacy_required": "You must accept the privacy policy",
+      "missing_fields": "Please fill in all required fields"
     },
     "invite": {
       "title": "Set Password",

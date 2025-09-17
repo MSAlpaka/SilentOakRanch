@@ -6,7 +6,7 @@ type AuthState = {
   user: UserInfo | null
   role: 'admin' | 'staff' | 'customer' | null
   token: string | null
-  login: (username: string, password: string) => Promise<void>
+  login: (email: string, password: string) => Promise<void>
   logout: () => void
 }
 
@@ -25,8 +25,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.getItem('token')
   )
 
-  async function login(username: string, password: string) {
-    const response = await api.post('/login', { username, password })
+  async function login(email: string, password: string) {
+    const response = await api.post('/login', { email, password })
     const { token: newToken, role: newRole } = response.data
 
     try {

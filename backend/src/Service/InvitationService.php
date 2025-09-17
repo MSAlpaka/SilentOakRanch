@@ -29,18 +29,17 @@ class InvitationService
         return $token;
     }
 
-    public function acceptInvitation(string $token): bool
+    public function acceptInvitation(string $token): ?Invitation
     {
         $invitation = $this->entityManager->getRepository(Invitation::class)
             ->findOneBy(['token' => $token]);
 
         if (!$invitation || $invitation->isAccepted()) {
-            return false;
+            return null;
         }
 
         $invitation->setAccepted(true);
-        $this->entityManager->flush();
 
-        return true;
+        return $invitation;
     }
 }

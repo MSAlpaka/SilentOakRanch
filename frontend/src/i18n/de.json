@@ -2,21 +2,24 @@
   "auth": {
     "login": {
       "title": "Anmelden",
-      "username": "Benutzername",
+      "email": "E-Mail",
       "password": "Passwort",
       "button": "Anmelden",
       "error": "Ungültige Anmeldedaten"
     },
     "register": {
       "title": "Registrieren",
-      "username": "Benutzername",
+      "first_name": "Vorname",
+      "last_name": "Nachname",
+      "email": "E-Mail",
       "password": "Passwort",
       "button": "Registrieren",
       "error": "Registrierung fehlgeschlagen",
       "terms": "Ich akzeptiere die AGB",
       "privacy": "Ich akzeptiere die Datenschutzbestimmungen",
       "terms_required": "Sie müssen die AGB akzeptieren",
-      "privacy_required": "Sie müssen den Datenschutzbestimmungen zustimmen"
+      "privacy_required": "Sie müssen den Datenschutzbestimmungen zustimmen",
+      "missing_fields": "Bitte füllen Sie alle Pflichtfelder aus"
     },
     "invite": {
       "title": "Passwort setzen",

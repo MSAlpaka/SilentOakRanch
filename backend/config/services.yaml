@@ -18,7 +18,8 @@ services:
 
     Stripe\StripeClient:
         arguments:
-            $config: '%env(STRIPE_SECRET_KEY)%'
+            $config:
+                api_key: '%env(STRIPE_SECRET_KEY)%'
 
     App\Service\AvailabilityService:
         arguments:

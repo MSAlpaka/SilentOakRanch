@@ -79,6 +79,17 @@ class ScaleBookingService
 
     /**
      * Creates a normalized payload for API responses including a QR code image.
+     *
+     * @return array{
+     *     id: string,
+     *     horse: array{name: string},
+     *     slot: string,
+     *     status: string,
+     *     price: string,
+     *     weight: float|null,
+     *     qrToken: string,
+     *     qrImage: string,
+     * }
      */
     public function serializeBooking(ScaleBooking $booking): array
     {

@@ -10,7 +10,7 @@ interface Booking {
   startDate: string
   endDate: string
   status: string
-  price?: string
+  price?: string | null
 }
 
 function BookingList() {
@@ -37,17 +37,27 @@ function BookingList() {
           </tr>
         </thead>
         <tbody>
-          {bookings.map(b => (
-            <tr key={b.id} className="text-center">
-              <td className="border p-2">{b.horse || '-'}</td>
-              <td className="border p-2">{b.stallUnit?.label}</td>
-              <td className="border p-2">{new Date(b.startDate).toLocaleDateString()}</td>
-              <td className="border p-2">{new Date(b.endDate).toLocaleDateString()}</td>
-              <td className="border p-2">{b.status}</td>
-              <td className="border p-2">{b.price}</td>
-              <td className="border p-2">{b.price && <PaymentButton bookingId={b.id} />}</td>
-            </tr>
-          ))}
+          {bookings.map(b => {
+            const hasPrice = typeof b.price === 'string' && b.price.trim() !== ''
+
+            return (
+              <tr key={b.id} className="text-center">
+                <td className="border p-2">{b.horse || '-'}</td>
+                <td className="border p-2">{b.stallUnit?.label ?? '-'}</td>
+                <td className="border p-2">{new Date(b.startDate).toLocaleDateString()}</td>
+                <td className="border p-2">{new Date(b.endDate).toLocaleDateString()}</td>
+                <td className="border p-2">{b.status}</td>
+                <td className="border p-2">{hasPrice ? b.price : '-'}</td>
+                <td className="border p-2">
+                  {hasPrice ? (
+                    <PaymentButton bookingId={b.id} />
+                  ) : (
+                    <span className="text-gray-400">-</span>
+                  )}
+                </td>
+              </tr>
+            )
+          })}
         </tbody>
       </table>
     </div>

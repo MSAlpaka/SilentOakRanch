@@ -78,7 +78,7 @@ class AuthController extends AbstractController
 
         return $this->json([
             'token' => $token,
-            'role' => $user->getRole()?->value,
+            'role' => $user->getRole()->value,
             'roles' => $user->getRoles(),
         ], 201);
     }
@@ -107,7 +107,7 @@ class AuthController extends AbstractController
 
         return $this->json([
             'token' => $token,
-            'role' => $user->getRole()?->value,
+            'role' => $user->getRole()->value,
             'roles' => $user->getRoles(),
         ]);
     }
@@ -167,7 +167,7 @@ class AuthController extends AbstractController
 
         return $this->json([
             'token' => $token,
-            'role' => $user->getRole()?->value,
+            'role' => $user->getRole()->value,
             'roles' => $user->getRoles(),
         ]);
     }

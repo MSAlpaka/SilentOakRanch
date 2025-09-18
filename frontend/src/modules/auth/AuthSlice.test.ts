@@ -1,25 +1,22 @@
-import { describe, it, expect, beforeEach } from 'vitest'
-import reducer, { setToken, logout } from './authSlice'
+import { describe, it, expect } from 'vitest'
+import reducer, { setAuthenticated, logout } from './authSlice'
 
 describe('authSlice reducers', () => {
-  beforeEach(() => {
-    localStorage.clear()
-  })
-
-  it('setToken stores token and marks user as logged in', () => {
-    const initial = { token: null, isLoggedIn: false }
-    const state = reducer(initial, setToken('abc123'))
-    expect(state.token).toBe('abc123')
+  it('setAuthenticated marks user as logged in by default', () => {
+    const initial = { isLoggedIn: false }
+    const state = reducer(initial, setAuthenticated())
     expect(state.isLoggedIn).toBe(true)
-    expect(localStorage.getItem('token')).toBe('abc123')
   })
 
-  it('logout clears token and marks user as logged out', () => {
-    localStorage.setItem('token', 'abc123')
-    const initial = { token: 'abc123', isLoggedIn: true }
-    const state = reducer(initial, logout())
-    expect(state.token).toBeNull()
+  it('setAuthenticated respects explicit payload', () => {
+    const initial = { isLoggedIn: true }
+    const state = reducer(initial, setAuthenticated(false))
     expect(state.isLoggedIn).toBe(false)
-    expect(localStorage.getItem('token')).toBeNull()
+  })
+
+  it('logout marks user as logged out', () => {
+    const initial = { isLoggedIn: true }
+    const state = reducer(initial, logout())
+    expect(state.isLoggedIn).toBe(false)
   })
 })

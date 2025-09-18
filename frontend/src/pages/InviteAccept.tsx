@@ -2,14 +2,16 @@ import { useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { acceptInvite } from '../api/auth'
 import { useAppDispatch } from '../store'
-import { setToken } from '../modules/auth/authSlice'
+import { setAuthenticated } from '../modules/auth/authSlice'
 import { useTranslation } from 'react-i18next'
+import { useAuth } from '../modules/auth/AuthContext'
 
 function InviteAccept() {
   const [searchParams] = useSearchParams()
   const inviteToken = searchParams.get('token') || ''
   const dispatch = useAppDispatch()
   const navigate = useNavigate()
+  const { refresh } = useAuth()
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
   const { t } = useTranslation()
@@ -18,7 +20,8 @@ function InviteAccept() {
     e.preventDefault()
     try {
       const data = await acceptInvite(inviteToken, password)
-      dispatch(setToken(data.token))
+      await refresh({ role: data.role, roles: data.roles })
+      dispatch(setAuthenticated(true))
       navigate('/dashboard')
     } catch (err) {
       setError(t('auth.invite.error'))

@@ -1,9 +1,10 @@
-import { logout } from '../auth/authSlice'
+import { logout as logoutAction } from '../auth/authSlice'
 import { useAppDispatch } from '../../store'
 import { useTranslation } from 'react-i18next'
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import api from '../../axios'
+import { useAuth } from '../auth/AuthContext'
 
 interface Horse {
   id: number
@@ -28,6 +29,7 @@ interface Invoice {
 function Dashboard() {
   const dispatch = useAppDispatch()
   const { t } = useTranslation()
+  const { logout } = useAuth()
   const [horses, setHorses] = useState<Horse[]>([])
   const [bookings, setBookings] = useState<Booking[]>([])
   const [invoices, setInvoices] = useState<Invoice[]>([])
@@ -38,8 +40,12 @@ function Dashboard() {
     api.get('/my/invoices').then(res => setInvoices(res.data))
   }, [])
 
-  function handleLogout() {
-    dispatch(logout())
+  async function handleLogout() {
+    try {
+      await logout()
+    } finally {
+      dispatch(logoutAction())
+    }
   }
 
   return (

@@ -30,7 +30,7 @@ class MailService
     ): void {
         $message = (new TemplatedEmail())
             ->to(new Address($email))
-            ->subject($this->translator->trans('appointment.confirmation.subject'))
+            ->subject($this->translator->trans('appointment.confirmation.subject', [], 'emails'))
             ->htmlTemplate('emails/appointments/confirmation.html.twig')
             ->context([
                 'userName' => $userName,
@@ -57,7 +57,7 @@ class MailService
     ): void {
         $message = (new TemplatedEmail())
             ->to(new Address($email))
-            ->subject($this->translator->trans('appointment.reminder.subject'))
+            ->subject($this->translator->trans('appointment.reminder.subject', [], 'emails'))
             ->htmlTemplate('emails/appointments/reminder.html.twig')
             ->context([
                 'userName' => $userName,
@@ -84,7 +84,7 @@ class MailService
     ): void {
         $message = (new TemplatedEmail())
             ->to(new Address($email))
-            ->subject($this->translator->trans('appointment.cancellation.subject'))
+            ->subject($this->translator->trans('appointment.cancellation.subject', [], 'emails'))
             ->htmlTemplate('emails/appointments/cancellation.html.twig')
             ->context([
                 'userName' => $userName,

@@ -3,6 +3,7 @@
 namespace App\Tests;
 
 use App\Service\MailService;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Symfony\Bridge\Twig\Mime\TemplatedEmail;
 use Symfony\Component\Mailer\MailerInterface;
@@ -10,25 +11,33 @@ use Symfony\Contracts\Translation\TranslatorInterface;
 
 class MailServiceTest extends TestCase
 {
-    public function testSendAppointmentConfirmation(): void
-    {
+    #[DataProvider('appointmentEmailProvider')]
+    public function testAppointmentEmailsUseLocalizedSubjects(
+        string $method,
+        string $translationKey,
+        string $template
+    ): void {
+        $expectedSubject = sprintf('Localized %s', $translationKey);
+
         $mailer = $this->createMock(MailerInterface::class);
         $mailer->expects($this->once())
             ->method('send')
-            ->with($this->callback(function (TemplatedEmail $email) {
-                $this->assertSame('Confirmation', $email->getSubject());
-                $this->assertSame('emails/appointments/confirmation.html.twig', $email->getHtmlTemplate());
+            ->with($this->callback(function (TemplatedEmail $email) use ($expectedSubject, $template) {
+                $this->assertSame($expectedSubject, $email->getSubject());
+                $this->assertSame($template, $email->getHtmlTemplate());
+
                 return true;
             }));
 
         $translator = $this->createMock(TranslatorInterface::class);
         $translator->expects($this->once())
             ->method('trans')
-            ->with('appointment.confirmation.subject')
-            ->willReturn('Confirmation');
+            ->with($translationKey, [], 'emails')
+            ->willReturn($expectedSubject);
 
         $service = new MailService($mailer, $translator);
-        $service->sendAppointmentConfirmation(
+
+        $service->{$method}(
             'user@example.com',
             'User',
             'Horse',
@@ -40,63 +49,24 @@ class MailServiceTest extends TestCase
         );
     }
 
-    public function testSendAppointmentReminder(): void
+    public static function appointmentEmailProvider(): iterable
     {
-        $mailer = $this->createMock(MailerInterface::class);
-        $mailer->expects($this->once())
-            ->method('send')
-            ->with($this->callback(function (TemplatedEmail $email) {
-                $this->assertSame('Reminder', $email->getSubject());
-                $this->assertSame('emails/appointments/reminder.html.twig', $email->getHtmlTemplate());
-                return true;
-            }));
+        yield 'confirmation' => [
+            'sendAppointmentConfirmation',
+            'appointment.confirmation.subject',
+            'emails/appointments/confirmation.html.twig',
+        ];
 
-        $translator = $this->createMock(TranslatorInterface::class);
-        $translator->expects($this->once())
-            ->method('trans')
-            ->with('appointment.reminder.subject')
-            ->willReturn('Reminder');
+        yield 'reminder' => [
+            'sendAppointmentReminder',
+            'appointment.reminder.subject',
+            'emails/appointments/reminder.html.twig',
+        ];
 
-        $service = new MailService($mailer, $translator);
-        $service->sendAppointmentReminder(
-            'user@example.com',
-            'User',
-            'Horse',
-            'Service',
-            '2024-01-01',
-            '10:00',
-            'Provider',
-            'Stable'
-        );
-    }
-
-    public function testSendAppointmentCancellation(): void
-    {
-        $mailer = $this->createMock(MailerInterface::class);
-        $mailer->expects($this->once())
-            ->method('send')
-            ->with($this->callback(function (TemplatedEmail $email) {
-                $this->assertSame('Cancellation', $email->getSubject());
-                $this->assertSame('emails/appointments/cancellation.html.twig', $email->getHtmlTemplate());
-                return true;
-            }));
-
-        $translator = $this->createMock(TranslatorInterface::class);
-        $translator->expects($this->once())
-            ->method('trans')
-            ->with('appointment.cancellation.subject')
-            ->willReturn('Cancellation');
-
-        $service = new MailService($mailer, $translator);
-        $service->sendAppointmentCancellation(
-            'user@example.com',
-            'User',
-            'Horse',
-            'Service',
-            '2024-01-01',
-            '10:00',
-            'Provider',
-            'Stable'
-        );
+        yield 'cancellation' => [
+            'sendAppointmentCancellation',
+            'appointment.cancellation.subject',
+            'emails/appointments/cancellation.html.twig',
+        ];
     }
 }

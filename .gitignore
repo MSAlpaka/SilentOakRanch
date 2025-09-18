@@ -1,6 +1,7 @@
 node_modules/
 dist/
 .env
+db/
 backend/config/jwt/private.pem
 !backend/.env
 

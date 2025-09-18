@@ -1,19 +1,49 @@
 # SilentOakRanch
 
 ## Project overview & tech stack
-Symfony 7.3, PHP 8.2, React, Redux Toolkit, Vite, Vitest, ESLint, i18n.
+- Symfony 7.3 backend running on PHP 8.3 FPM.
+- React with Redux Toolkit on Node.js 20, built via Vite, Vitest, ESLint, and the i18n tooling.
+- Docker Compose orchestrates the PHP backend, PostgreSQL 15, the static frontend, and the nginx-proxy/Let's Encrypt companions used in production.
 
 ## Dependencies
 Composer packages are pinned to stable versions for reproducible builds. Notable constraints include `endroid/qr-code-bundle` (^6.0) and `stripe/stripe-php` (^14.0).
 
 ## Setup
-After cloning, run:
+After cloning, align your local tooling with the containers and CI pipeline (PHP 8.3 and Node.js 20) before installing dependencies:
 
 ```bash
+cd backend
 composer install --ignore-platform-req=ext-sodium
+cd ../frontend
 npm ci
 npm run build
 ```
+
+If you want Composer to run inside the PHP 8.3 container instead of installing PHP locally, execute:
+
+```bash
+docker compose run --rm backend composer install --ignore-platform-req=ext-sodium
+```
+
+## Environment configuration
+
+Create a project-wide `.env` file from the template before starting Docker Compose or running Symfony commands:
+
+```bash
+cp .env.example .env
+```
+
+Populate every mandatory entry from `.env.example`:
+
+- `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB`, `DATABASE_URL` – configure the PostgreSQL 15 service that the backend reaches via the internal host `db:5432`.
+- `APP_ENV`, `APP_SECRET` – choose the Symfony environment (`dev` for local, `prod` for deployments) and generate a 64-character secret, e.g. `php -r 'echo bin2hex(random_bytes(32));'`.
+- `DOMAIN`, `LETSENCRYPT_EMAIL`, `TRUSTED_PROXIES`, `TRUSTED_HOSTS` – define the public hostname and proxy settings consumed by the nginx-proxy and Let's Encrypt companion containers.
+- `STRIPE_SECRET_KEY` – supply the live Stripe API key used during checkout.
+- `JWT_SECRET_KEY`, `JWT_PUBLIC_KEY`, `JWT_PASSPHRASE` – point to the LexikJWT key pair and provide the matching passphrase (generate the keys with `docker compose run --rm backend php bin/console lexik:jwt:generate-keypair --overwrite`).
+- `MESSENGER_TRANSPORT_DSN`, `WHATSAPP_DSN`, `SMS_DSN` – configure the messenger transports for asynchronous processing and notifications.
+- `SMTP_HOST`, `SMTP_PORT`, `SMTP_USERNAME`, `SMTP_PASSWORD` – configure outbound mail delivery.
+
+Optional development helpers such as `VAR_DUMPER_SERVER` can stay commented out or be set as needed. Docker Compose loads `.env` via `env_file` so every container receives the same credentials.
 
 ## Backend setup
 ```bash
@@ -117,27 +147,20 @@ git push origin v1.0.0
 
 ## Deployment
 
-To deploy with Docker Compose:
+GitHub Actions automates the Docker workflows:
 
-1. Copy `.env.example` to `.env`. Docker Compose loads this file via `env_file`, so every container receives the same credentials and secrets:
+- `.github/workflows/ci.yml` builds the PHP 8.3 backend image, runs PHPStan and PHPUnit inside it, and lints/tests the frontend with Node.js 20.
+- `.github/workflows/deploy.yml` uses Docker Buildx to build the backend and frontend images, exports them as artifacts, and synchronises them to the target host before running `docker compose up -d`.
+
+To deploy with Docker Compose manually:
+
+1. Prepare `.env` as described in [Environment configuration](#environment-configuration). For production ensure PostgreSQL credentials remain pointed at the internal `db` service, replace the secret/API placeholders (Stripe, SMTP, messenger DSNs, domain settings), and generate the LexikJWT key pair inside the backend container:
 
    ```bash
-   cp .env.example .env
+   docker compose run --rm backend php bin/console lexik:jwt:generate-keypair --overwrite
    ```
 
-   Replace all placeholders with production values:
-
-   - Set the PostgreSQL credentials (`POSTGRES_*`) and keep `DATABASE_URL` pointing to the internal `db` service.
-   - Generate an application secret: `php -r 'echo bin2hex(random_bytes(32));'` and paste the output into `APP_SECRET`.
-   - Create the JWT key pair inside the backend container. The command will prompt you for the passphrase that must also be stored in `JWT_PASSPHRASE`:
-
-     ```bash
-     docker compose run --rm backend php bin/console lexik:jwt:generate-keypair --overwrite
-     ```
-
-     The keys are written to `/var/www/backend/config/jwt/private.pem` and `/var/www/backend/config/jwt/public.pem`; keep these paths in `.env`.
-   - Provide live credentials for `STRIPE_SECRET_KEY`, the SMTP transport (`SMTP_HOST`, `SMTP_PORT`, `SMTP_USERNAME`, `SMTP_PASSWORD`), and the messenger integrations (`WHATSAPP_DSN`, `SMS_DSN`).
-   - Update `DOMAIN` and `LETSENCRYPT_EMAIL` to match your public endpoint.
+   The keys are written to `/var/www/backend/config/jwt/private.pem` and `/var/www/backend/config/jwt/public.pem`; keep the corresponding paths and `JWT_PASSPHRASE` in sync inside `.env`.
 
 2. Start the stack:
 

@@ -76,7 +76,11 @@ class AuthController extends AbstractController
 
         $token = $jwtManager->create($user);
 
-        return $this->json(['token' => $token], 201);
+        return $this->json([
+            'token' => $token,
+            'role' => $user->getRole()?->value,
+            'roles' => $user->getRoles(),
+        ], 201);
     }
 
     #[Route('/api/login', name: 'api_login', methods: ['POST'])]
@@ -101,7 +105,11 @@ class AuthController extends AbstractController
 
         $token = $jwtManager->create($user);
 
-        return $this->json(['token' => $token]);
+        return $this->json([
+            'token' => $token,
+            'role' => $user->getRole()?->value,
+            'roles' => $user->getRoles(),
+        ]);
     }
 
     #[Route('/api/invite', name: 'api_invite', methods: ['POST'])]
@@ -157,6 +165,10 @@ class AuthController extends AbstractController
 
         $token = $jwtManager->create($user);
 
-        return $this->json(['token' => $token]);
+        return $this->json([
+            'token' => $token,
+            'role' => $user->getRole()?->value,
+            'roles' => $user->getRoles(),
+        ]);
     }
 }

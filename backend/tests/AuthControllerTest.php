@@ -62,6 +62,8 @@ class AuthControllerTest extends KernelTestCase
         $this->assertSame(201, $response->getStatusCode());
         $data = json_decode($response->getContent(), true);
         $this->assertSame('jwt-token', $data['token']);
+        $this->assertSame('customer', $data['role']);
+        $this->assertSame(['ROLE_CUSTOMER', 'ROLE_USER'], $data['roles']);
 
         $user = $this->em->getRepository(User::class)->findOneBy(['email' => 'john@example.com']);
         $this->assertInstanceOf(User::class, $user);
@@ -98,6 +100,11 @@ class AuthControllerTest extends KernelTestCase
 
         $this->assertSame(201, $response->getStatusCode());
 
+        $data = json_decode($response->getContent(), true);
+        $this->assertSame('jwt-token', $data['token']);
+        $this->assertSame('customer', $data['role']);
+        $this->assertSame(['ROLE_CUSTOMER', 'ROLE_USER'], $data['roles']);
+
         $user = $this->em->getRepository(User::class)->findOneBy(['email' => 'jane@example.com']);
         $this->assertInstanceOf(User::class, $user);
         $this->assertSame(UserRole::CUSTOMER, $user->getRole());
@@ -120,6 +127,42 @@ class AuthControllerTest extends KernelTestCase
 
         $this->assertSame(400, $response->getStatusCode());
         $this->assertSame(0, $this->em->getRepository(User::class)->count([]));
+    }
+
+    public function testLoginReturnsTokenRoleAndRoles(): void
+    {
+        $controller = $this->createController();
+
+        $user = new User();
+        $user->setEmail('john@example.com');
+        $user->setFirstName('John');
+        $user->setLastName('Doe');
+        $user->setRole(UserRole::ADMIN);
+        $user->setRoles(['ROLE_ADMIN']);
+        $user->setActive(true);
+        $user->setCreatedAt(new \DateTimeImmutable());
+        $user->setPassword($this->passwordHasher->hashPassword($user, 'secret123'));
+        $this->em->persist($user);
+        $this->em->flush();
+
+        $jwtManager = $this->createMock(JWTTokenManagerInterface::class);
+        $jwtManager->expects($this->once())
+            ->method('create')
+            ->with($this->isInstanceOf(User::class))
+            ->willReturn('jwt-token');
+
+        $request = new Request([], [], [], [], [], [], json_encode([
+            'email' => 'john@example.com',
+            'password' => 'secret123',
+        ]));
+
+        $response = $controller->login($request, $this->em, $this->passwordHasher, $jwtManager);
+
+        $this->assertSame(200, $response->getStatusCode());
+        $data = json_decode($response->getContent(), true);
+        $this->assertSame('jwt-token', $data['token']);
+        $this->assertSame('admin', $data['role']);
+        $this->assertSame(['ROLE_ADMIN', 'ROLE_USER'], $data['roles']);
     }
 
     public function testInviteRequiresEmail(): void
@@ -195,6 +238,8 @@ class AuthControllerTest extends KernelTestCase
         $this->assertSame(200, $response->getStatusCode());
         $data = json_decode($response->getContent(), true);
         $this->assertSame('new-token', $data['token']);
+        $this->assertSame('customer', $data['role']);
+        $this->assertSame(['ROLE_CUSTOMER', 'ROLE_USER'], $data['roles']);
 
         $this->em->clear();
 

@@ -90,6 +90,14 @@ else
     log "Target directory $TARGET_DIR does not exist" >&2
     exit 1
 fi
+
+VHOST_SCRIPT="$TARGET_DIR/scripts/update-vhost.sh"
+if [[ -x "$VHOST_SCRIPT" ]]; then
+    run "$VHOST_SCRIPT" "$TARGET_DIR/.env"
+else
+    log "VHost update script $VHOST_SCRIPT not found or not executable; skipping"
+fi
+
 run php bin/console doctrine:migrations:migrate --no-interaction
 cd - >/dev/null
 

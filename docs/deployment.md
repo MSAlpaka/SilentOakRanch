@@ -47,3 +47,13 @@ docker compose up -d --build
 * Security headers and hidden-file protection are enabled in the Nginx config.
 * If the proxy + SSL companion is active, traffic will be served over HTTPS with Let’s Encrypt certificates.
 
+### Proxy VHost configuration
+
+The default VHost override under `proxy/vhost.d/vhost.conf.template` wires `/api` requests to the backend container and forwards everything else to the frontend. Generate (or refresh) the concrete file for your domain via
+
+```bash
+./scripts/update-vhost.sh
+```
+
+The script reads `DOMAIN` from `.env` and writes the override to `proxy/vhost.d/<DOMAIN>`, removing outdated domain files in the process. The deployment helper `scripts/deploy.sh` invokes the same step automatically after extracting a release artifact, so updating `.env` before the next deployment is sufficient to switch domains.
+

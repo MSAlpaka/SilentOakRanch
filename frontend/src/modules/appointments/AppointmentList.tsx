@@ -29,11 +29,11 @@ function AppointmentList() {
           {appointments.map(a => (
             <tr key={a.id} className="text-center">
               <td className="border p-2">{new Date(a.start).toLocaleString()}</td>
-              <td className="border p-2">{a.provider.name}</td>
+              <td className="border p-2">{a.provider?.name ?? '-'}</td>
               <td className="border p-2">{a.serviceType.name}</td>
               <td className="border p-2">{a.status}</td>
               <td className="border p-2">
-                {a.status === 'confirmed' && (
+                {a.status === 'confirmed' && a.provider && (
                   <div className="font-semibold">
                     {t('appointment.confirmation.subject', {
                       providerName: a.provider.name,

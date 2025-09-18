@@ -28,11 +28,15 @@ function AppointmentAdmin() {
     dispatch(loadAppointments())
   }, [dispatch])
 
-  const filtered = appointments.filter(
-    a =>
-      (providerFilter ? a.provider.id === parseInt(providerFilter, 10) : true) &&
-      (serviceFilter ? a.serviceType.id === parseInt(serviceFilter, 10) : true)
-  )
+  const filtered = appointments.filter(a => {
+    const providerMatches = providerFilter
+      ? a.provider?.id === parseInt(providerFilter, 10)
+      : true
+    const serviceMatches = serviceFilter
+      ? a.serviceType.id === parseInt(serviceFilter, 10)
+      : true
+    return providerMatches && serviceMatches
+  })
 
   return (
     <div className="p-4">
@@ -77,7 +81,7 @@ function AppointmentAdmin() {
           {filtered.map(a => (
             <tr key={a.id} className="text-center">
               <td className="border p-2">{new Date(a.start).toLocaleString()}</td>
-              <td className="border p-2">{a.provider.name}</td>
+              <td className="border p-2">{a.provider?.name ?? '-'}</td>
               <td className="border p-2">{a.serviceType.name}</td>
               <td className="border p-2">{a.status}</td>
               <td className="border p-2 space-x-2">

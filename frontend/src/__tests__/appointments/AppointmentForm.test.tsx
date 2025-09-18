@@ -36,36 +36,29 @@ describe('AppointmentForm', () => {
     expect(dispatch.mock.calls.length).toBe(initialCalls)
   })
 
-  it('shows only available slots to prevent collisions', () => {
-    const available = {
-      id: 1,
-      start: '2024-01-01T10:00:00Z',
-      status: 'available',
-      provider: { id: 1, name: 'Vet' },
-      serviceType: { id: 1, name: 'Checkup' },
-    }
-    const booked = {
-      id: 2,
-      start: '2024-01-01T11:00:00Z',
-      status: 'booked',
-      provider: { id: 1, name: 'Vet' },
-      serviceType: { id: 1, name: 'Checkup' },
-    }
+  it('prefills the end time based on the selected service duration', () => {
     const state = {
       appointments: {
         providers: [{ id: 1, name: 'Vet' }],
-        serviceTypes: [{ id: 1, name: 'Checkup' }],
-        appointments: [available, booked],
+        serviceTypes: [
+          { id: 1, name: 'Checkup', defaultDurationMinutes: 60 },
+          { id: 2, name: 'Short', defaultDurationMinutes: 15 },
+        ],
+        appointments: [],
       },
     }
     const store = { getState: () => state, dispatch: vi.fn(), subscribe: vi.fn() }
 
     render(createElement(Provider, { store }, createElement(AppointmentForm)))
 
-    const slotSelect = screen.getAllByRole('combobox')[2] as HTMLSelectElement
-    const options = Array.from(slotSelect.querySelectorAll('option'))
-    expect(options.length).toBe(2)
-    expect(options[1].value).toBe(available.start)
+    const [, serviceTypeSelect] = screen.getAllByRole('combobox') as HTMLSelectElement[]
+    fireEvent.change(serviceTypeSelect, { target: { value: '1' } })
+
+    const startInput = screen.getByLabelText('appointments.slot') as HTMLInputElement
+    fireEvent.change(startInput, { target: { value: '2024-01-01T10:00' } })
+
+    const endInput = screen.getByLabelText('appointments.end_time') as HTMLInputElement
+    expect(endInput.value).toBe('2024-01-01T11:00')
   })
 })
 

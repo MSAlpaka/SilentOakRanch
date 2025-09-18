@@ -78,4 +78,42 @@ class InvoiceControllerTest extends KernelTestCase
         $this->assertSame(200, $response->getStatusCode());
         $this->assertSame('application/pdf', $response->headers->get('content-type'));
     }
+
+    public function testGetInvoiceMetadata(): void
+    {
+        $user = $this->createUser();
+
+        $invoice = new Invoice();
+        $invoice->setUser($user);
+        $invoice->setAmount('75.00');
+        $invoice->setCurrency('USD');
+        $invoice->setStatus(InvoiceStatus::PAID);
+        $createdAt = new \DateTimeImmutable('2024-05-01T12:00:00Z');
+        $invoice->setCreatedAt($createdAt);
+        $invoice->setUpdatedAt($createdAt);
+
+        $this->em->persist($user);
+        $this->em->persist($invoice);
+        $this->em->flush();
+
+        $security = $this->createMock(Security::class);
+        $security->method('getUser')->willReturn($user);
+        $security->method('isGranted')->willReturn(false);
+
+        $controller = static::getContainer()->get(InvoiceController::class);
+        $response = $controller->meta($invoice->getId(), $this->invoiceRepository, $security);
+
+        $response->prepare(new Request());
+
+        $this->assertSame(200, $response->getStatusCode());
+        $this->assertSame('application/json', $response->headers->get('content-type'));
+
+        $data = json_decode($response->getContent(), true, 512, JSON_THROW_ON_ERROR);
+
+        $this->assertSame($invoice->getId(), $data['id']);
+        $this->assertSame($invoice->getAmount(), $data['amount']);
+        $this->assertSame($invoice->getStatus()->name, $data['status']);
+        $this->assertSame($invoice->getCreatedAt()->format('c'), $data['createdAt']);
+        $this->assertSame('/api/invoices/' . $invoice->getId(), $data['downloadUrl']);
+    }
 }

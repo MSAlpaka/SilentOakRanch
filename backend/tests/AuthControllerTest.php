@@ -13,6 +13,8 @@ use Doctrine\ORM\Tools\SchemaTool;
 use Lexik\Bundle\JWTAuthenticationBundle\Services\JWTTokenManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 use Symfony\Component\DependencyInjection\ContainerInterface;
+use Symfony\Component\HttpFoundation\Cookie;
+use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use Symfony\Contracts\Translation\TranslatorInterface;
@@ -61,9 +63,28 @@ class AuthControllerTest extends KernelTestCase
 
         $this->assertSame(201, $response->getStatusCode());
         $data = json_decode($response->getContent(), true);
-        $this->assertSame('jwt-token', $data['token']);
+
+        $this->assertArrayNotHasKey('token', $data);
         $this->assertSame('customer', $data['role']);
         $this->assertSame(['ROLE_CUSTOMER', 'ROLE_USER'], $data['roles']);
+        $this->assertArrayHasKey('expiresAt', $data);
+        $this->assertArrayHasKey('expiresIn', $data);
+        $this->assertIsInt($data['expiresIn']);
+        $this->assertGreaterThan(0, $data['expiresIn']);
+        $this->assertNotFalse(
+            \DateTimeImmutable::createFromFormat(\DateTimeInterface::ATOM, $data['expiresAt'])
+        );
+
+        $cookie = $this->findCookie('sor_token', $response);
+        $this->assertInstanceOf(Cookie::class, $cookie);
+        $this->assertSame('jwt-token', $cookie->getValue());
+        $this->assertTrue($cookie->isSecure());
+        $this->assertTrue($cookie->isHttpOnly());
+        $this->assertSame(Cookie::SAMESITE_STRICT, $cookie->getSameSite());
+
+        if (null !== $cookie->getExpiresTime()) {
+            $this->assertGreaterThan(time(), $cookie->getExpiresTime());
+        }
 
         $user = $this->em->getRepository(User::class)->findOneBy(['email' => 'john@example.com']);
         $this->assertInstanceOf(User::class, $user);
@@ -101,9 +122,13 @@ class AuthControllerTest extends KernelTestCase
         $this->assertSame(201, $response->getStatusCode());
 
         $data = json_decode($response->getContent(), true);
-        $this->assertSame('jwt-token', $data['token']);
+        $this->assertArrayNotHasKey('token', $data);
         $this->assertSame('customer', $data['role']);
         $this->assertSame(['ROLE_CUSTOMER', 'ROLE_USER'], $data['roles']);
+
+        $cookie = $this->findCookie('sor_token', $response);
+        $this->assertInstanceOf(Cookie::class, $cookie);
+        $this->assertSame('jwt-token', $cookie->getValue());
 
         $user = $this->em->getRepository(User::class)->findOneBy(['email' => 'jane@example.com']);
         $this->assertInstanceOf(User::class, $user);
@@ -129,7 +154,7 @@ class AuthControllerTest extends KernelTestCase
         $this->assertSame(0, $this->em->getRepository(User::class)->count([]));
     }
 
-    public function testLoginReturnsTokenRoleAndRoles(): void
+    public function testLoginSetsCookieAndReturnsRoleData(): void
     {
         $controller = $this->createController();
 
@@ -160,9 +185,16 @@ class AuthControllerTest extends KernelTestCase
 
         $this->assertSame(200, $response->getStatusCode());
         $data = json_decode($response->getContent(), true);
-        $this->assertSame('jwt-token', $data['token']);
+        $this->assertArrayNotHasKey('token', $data);
         $this->assertSame('admin', $data['role']);
         $this->assertSame(['ROLE_ADMIN', 'ROLE_USER'], $data['roles']);
+        $this->assertArrayHasKey('expiresAt', $data);
+        $this->assertArrayHasKey('expiresIn', $data);
+        $this->assertGreaterThan(0, $data['expiresIn']);
+
+        $cookie = $this->findCookie('sor_token', $response);
+        $this->assertInstanceOf(Cookie::class, $cookie);
+        $this->assertSame('jwt-token', $cookie->getValue());
     }
 
     public function testInviteRequiresEmail(): void
@@ -201,7 +233,7 @@ class AuthControllerTest extends KernelTestCase
         );
     }
 
-    public function testAcceptInviteUpdatesPasswordAndReturnsToken(): void
+    public function testAcceptInviteUpdatesPasswordAndSetsCookie(): void
     {
         $controller = $this->createController();
 
@@ -237,9 +269,13 @@ class AuthControllerTest extends KernelTestCase
 
         $this->assertSame(200, $response->getStatusCode());
         $data = json_decode($response->getContent(), true);
-        $this->assertSame('new-token', $data['token']);
+        $this->assertArrayNotHasKey('token', $data);
         $this->assertSame('customer', $data['role']);
         $this->assertSame(['ROLE_CUSTOMER', 'ROLE_USER'], $data['roles']);
+
+        $cookie = $this->findCookie('sor_token', $response);
+        $this->assertInstanceOf(Cookie::class, $cookie);
+        $this->assertSame('new-token', $cookie->getValue());
 
         $this->em->clear();
 
@@ -266,11 +302,45 @@ class AuthControllerTest extends KernelTestCase
         $this->assertSame(400, $response->getStatusCode());
     }
 
+    public function testLogoutClearsTokenCookie(): void
+    {
+        $controller = $this->createController();
+
+        $response = $controller->logout();
+
+        $this->assertSame(200, $response->getStatusCode());
+        $data = json_decode($response->getContent(), true);
+        $this->assertSame(
+            $this->translator->trans('Logged out', [], 'validators'),
+            $data['message']
+        );
+
+        $cookie = $this->findCookie('sor_token', $response);
+        $this->assertInstanceOf(Cookie::class, $cookie);
+        $this->assertNull($cookie->getValue());
+        $this->assertNotNull($cookie->getExpiresTime());
+        $this->assertLessThan(time(), $cookie->getExpiresTime());
+        $this->assertTrue($cookie->isSecure());
+        $this->assertTrue($cookie->isHttpOnly());
+        $this->assertSame(Cookie::SAMESITE_STRICT, $cookie->getSameSite());
+    }
+
     private function createController(): AuthController
     {
         $controller = new AuthController($this->translator);
         $controller->setContainer($this->container);
 
         return $controller;
+    }
+
+    private function findCookie(string $name, JsonResponse $response): ?Cookie
+    {
+        foreach ($response->headers->getCookies() as $cookie) {
+            if ($cookie->getName() === $name) {
+                return $cookie;
+            }
+        }
+
+        return null;
     }
 }

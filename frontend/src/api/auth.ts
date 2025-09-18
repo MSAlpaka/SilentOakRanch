@@ -9,12 +9,19 @@ export type RegisterPayload = {
   roles?: string[]
 }
 
-export async function register(payload: RegisterPayload) {
+export type AuthMetadata = {
+  role?: string | null
+  roles?: string[]
+  expiresAt?: string
+  expiresIn?: number
+}
+
+export async function register(payload: RegisterPayload): Promise<AuthMetadata> {
   const response = await api.post('/register', payload)
   return response.data
 }
 
-export async function login(email: string, password: string) {
+export async function login(email: string, password: string): Promise<AuthMetadata> {
   const response = await api.post('/login', { email, password })
   return response.data
 }
@@ -24,7 +31,7 @@ export async function inviteUser(email: string) {
   return response.data
 }
 
-export async function acceptInvite(token: string, password: string) {
+export async function acceptInvite(token: string, password: string): Promise<AuthMetadata> {
   const response = await api.post(`/accept-invite/${token}`, { password })
   return response.data
 }

@@ -1,12 +1,14 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { login } from '../api/auth'
+import { login as loginRequest } from '../api/auth'
 import { useAppDispatch } from '../store'
-import { setToken } from '../modules/auth/authSlice'
+import { setAuthenticated } from '../modules/auth/authSlice'
 import { useTranslation } from 'react-i18next'
+import { useAuth } from '../modules/auth/AuthContext'
 
 function Login() {
   const dispatch = useAppDispatch()
+  const { refresh } = useAuth()
   const navigate = useNavigate()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -16,8 +18,9 @@ function Login() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     try {
-      const data = await login(email, password)
-      dispatch(setToken(data.token))
+      const data = await loginRequest(email, password)
+      await refresh({ role: data.role, roles: data.roles })
+      dispatch(setAuthenticated(true))
       navigate('/dashboard')
     } catch (err) {
       setError(t('auth.login.error'))

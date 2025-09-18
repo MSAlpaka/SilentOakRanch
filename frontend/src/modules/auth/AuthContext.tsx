@@ -1,15 +1,24 @@
-import { createContext, useContext, useState, ReactNode } from 'react'
+import { createContext, useContext, useState, ReactNode, useEffect, useCallback } from 'react'
 import api from '../../axios'
 import { UserInfo } from './useUser'
 
 type RoleName = 'admin' | 'staff' | 'customer'
 
+type AuthHints = {
+  role?: string | null
+  roles?: string[]
+}
+
 type AuthState = {
   user: UserInfo | null
   role: RoleName | null
-  token: string | null
+  isAuthenticated: boolean
+  isLoading: boolean
+  initialized: boolean
+  error: Error | null
   login: (email: string, password: string) => Promise<void>
-  logout: () => void
+  logout: () => Promise<void>
+  refresh: (hints?: AuthHints) => Promise<void>
 }
 
 function normalizeRole(value: unknown): RoleName | null {
@@ -31,73 +40,94 @@ function normalizeRole(value: unknown): RoleName | null {
   return null
 }
 
+function isUnauthorizedError(error: unknown): boolean {
+  if (typeof error !== 'object' || error === null) {
+    return false
+  }
+
+  const response = (error as { response?: { status?: number } }).response
+  return typeof response?.status === 'number' && response.status === 401
+}
+
 const AuthContext = createContext<AuthState | undefined>(undefined)
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<UserInfo | null>(() => {
-    const raw = localStorage.getItem('user')
-    return raw ? (JSON.parse(raw) as UserInfo) : null
-  })
-  const [role, setRole] = useState<RoleName | null>(() =>
-    (localStorage.getItem('role') as RoleName | null) || null
-  )
-  const [token, setToken] = useState<string | null>(() =>
-    localStorage.getItem('token')
-  )
+  const [user, setUser] = useState<UserInfo | null>(null)
+  const [role, setRole] = useState<RoleName | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
+  const [initialized, setInitialized] = useState(false)
+  const [error, setError] = useState<Error | null>(null)
 
-  async function login(email: string, password: string) {
-    const response = await api.post('/login', { email, password })
-    const {
-      token: newToken,
-      role: responseRole,
-      roles: responseRoles,
-    }: {
-      token: string
-      role?: string | null
-      roles?: string[]
-    } = response.data
-
+  const refresh = useCallback(async (hints?: AuthHints) => {
+    setIsLoading(true)
     try {
-      const me = await api.get('/me', {
-        headers: { Authorization: `Bearer ${newToken}` },
-      })
-
+      const me = await api.get('/me')
       const meData = me.data as UserInfo
+
       const resolvedRole =
-        normalizeRole(responseRole) ??
-        normalizeRole(responseRoles?.[0]) ??
-        normalizeRole(meData.roles?.[0])
+        normalizeRole(hints?.role) ??
+        normalizeRole(hints?.roles?.[0]) ??
+        normalizeRole(meData.roles?.[0]) ??
+        null
 
       setUser(meData)
-      setToken(newToken)
       setRole(resolvedRole)
-      localStorage.setItem('token', newToken)
-      if (resolvedRole) {
-        localStorage.setItem('role', resolvedRole)
-      } else {
-        localStorage.removeItem('role')
-      }
-      localStorage.setItem('user', JSON.stringify(meData))
+      setError(null)
     } catch (err) {
-      setToken(null)
+      setUser(null)
       setRole(null)
-      localStorage.removeItem('token')
-      localStorage.removeItem('role')
+      if (isUnauthorizedError(err)) {
+        setError(null)
+      } else {
+        setError(err instanceof Error ? err : new Error('Authentication refresh failed'))
+      }
       throw err
+    } finally {
+      setIsLoading(false)
+      setInitialized(true)
     }
-  }
+  }, [])
 
-  function logout() {
-    setUser(null)
-    setToken(null)
-    setRole(null)
-    localStorage.removeItem('user')
-    localStorage.removeItem('token')
-    localStorage.removeItem('role')
-  }
+  useEffect(() => {
+    refresh().catch(() => undefined)
+  }, [refresh])
+
+  const login = useCallback(
+    async (email: string, password: string) => {
+      const response = await api.post('/login', { email, password })
+      const { role: responseRole, roles: responseRoles }: { role?: string | null; roles?: string[] } =
+        response.data ?? {}
+      await refresh({ role: responseRole, roles: responseRoles })
+    },
+    [refresh]
+  )
+
+  const logout = useCallback(async () => {
+    try {
+      await api.post('/logout')
+    } finally {
+      setUser(null)
+      setRole(null)
+      setInitialized(true)
+      setIsLoading(false)
+      setError(null)
+    }
+  }, [])
 
   return (
-    <AuthContext.Provider value={{ user, role, token, login, logout }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        role,
+        isAuthenticated: !!user,
+        isLoading,
+        initialized,
+        error,
+        login,
+        logout,
+        refresh,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   )

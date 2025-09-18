@@ -6,9 +6,13 @@ interface PrivateRouteProps {
 }
 
 export default function PrivateRoute({ roles }: PrivateRouteProps) {
-  const { token, role } = useAuth()
+  const { isAuthenticated, role, isLoading } = useAuth()
 
-  if (!token) {
+  if (isLoading) {
+    return null
+  }
+
+  if (!isAuthenticated) {
     return <Navigate to="/login" replace />
   }
 

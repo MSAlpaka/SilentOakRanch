@@ -5,18 +5,22 @@ namespace App\Controller;
 use App\Entity\User;
 use App\Enum\UserRole;
 use App\Service\InvitationService;
+use DateTimeImmutable;
+use DateTimeInterface;
 use Doctrine\ORM\EntityManagerInterface;
 use Lexik\Bundle\JWTAuthenticationBundle\Services\JWTTokenManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\Cookie;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Contracts\Translation\TranslatorInterface;
-use DateTimeImmutable;
 
 class AuthController extends AbstractController
 {
+    private const TOKEN_COOKIE_NAME = 'sor_token';
+
     public function __construct(private TranslatorInterface $translator)
     {
     }
@@ -76,11 +80,7 @@ class AuthController extends AbstractController
 
         $token = $jwtManager->create($user);
 
-        return $this->json([
-            'token' => $token,
-            'role' => $user->getRole()->value,
-            'roles' => $user->getRoles(),
-        ], 201);
+        return $this->createAuthenticatedResponse($user, $token, 201);
     }
 
     #[Route('/api/login', name: 'api_login', methods: ['POST'])]
@@ -105,11 +105,7 @@ class AuthController extends AbstractController
 
         $token = $jwtManager->create($user);
 
-        return $this->json([
-            'token' => $token,
-            'role' => $user->getRole()->value,
-            'roles' => $user->getRoles(),
-        ]);
+        return $this->createAuthenticatedResponse($user, $token);
     }
 
     #[Route('/api/invite', name: 'api_invite', methods: ['POST'])]
@@ -165,10 +161,75 @@ class AuthController extends AbstractController
 
         $token = $jwtManager->create($user);
 
-        return $this->json([
-            'token' => $token,
+        return $this->createAuthenticatedResponse($user, $token);
+    }
+
+    #[Route('/api/logout', name: 'api_logout', methods: ['POST'])]
+    public function logout(): JsonResponse
+    {
+        $response = $this->json([
+            'message' => $this->translator->trans('Logged out', [], 'validators'),
+        ]);
+        $response->headers->setCookie($this->createClearedTokenCookie());
+
+        return $response;
+    }
+
+    private function createAuthenticatedResponse(User $user, string $token, int $statusCode = 200): JsonResponse
+    {
+        $cookie = $this->createTokenCookie($token);
+        $expiresAt = $cookie->getExpiresTime();
+
+        $data = [
             'role' => $user->getRole()->value,
             'roles' => $user->getRoles(),
-        ]);
+        ];
+
+        if ($expiresAt) {
+            $data['expiresAt'] = gmdate(DateTimeInterface::ATOM, $expiresAt);
+            $data['expiresIn'] = max(0, $expiresAt - time());
+        }
+
+        $response = $this->json($data, $statusCode);
+        $response->headers->setCookie($cookie);
+
+        return $response;
+    }
+
+    private function createTokenCookie(string $token): Cookie
+    {
+        $ttl = (int) $this->getParameter('lexik_jwt_authentication.token_ttl');
+        $expiresAt = null;
+
+        if ($ttl > 0) {
+            $expiresAt = (new DateTimeImmutable())->modify(sprintf('+%d seconds', $ttl));
+        }
+
+        return Cookie::create(
+            self::TOKEN_COOKIE_NAME,
+            $token,
+            $expiresAt,
+            '/',
+            null,
+            true,
+            true,
+            false,
+            Cookie::SAMESITE_STRICT
+        );
+    }
+
+    private function createClearedTokenCookie(): Cookie
+    {
+        return Cookie::create(
+            self::TOKEN_COOKIE_NAME,
+            null,
+            new DateTimeImmutable('-1 hour'),
+            '/',
+            null,
+            true,
+            true,
+            false,
+            Cookie::SAMESITE_STRICT
+        );
     }
 }

@@ -179,7 +179,7 @@ To deploy with Docker Compose manually:
 - All Composer and NPM dependencies are installed automatically during the image build.
 - The frontend is served as an Nginx static server.
 
-The included `nginx-proxy` and `acme-companion` automatically request and renew TLS certificates via Let's Encrypt. The proxy routes requests based on the path:
+The included `nginx-proxy` and `acme-companion` automatically request and renew TLS certificates via Let's Encrypt. Ensure the companion sees the proxy by exporting `NGINX_PROXY_CONTAINER=proxy` (as done in `docker-compose.yml`) or by giving the proxy container that name before starting the stack; otherwise certificate discovery fails. The proxy routes requests based on the path:
 
 - https://app.silent-oak-ranch.de → Frontend (Port 80)
 - https://app.silent-oak-ranch.de/api → Backend (Port 8080)

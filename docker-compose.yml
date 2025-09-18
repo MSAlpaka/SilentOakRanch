@@ -31,7 +31,10 @@ services:
 
   frontend:
     image: silentoakranch/frontend:latest
-    build: ./frontend
+    build:
+      context: ./frontend
+      args:
+        VITE_STRIPE_PUBLISHABLE_KEY: ${VITE_STRIPE_PUBLISHABLE_KEY}
     expose:
       - "80"
     environment:

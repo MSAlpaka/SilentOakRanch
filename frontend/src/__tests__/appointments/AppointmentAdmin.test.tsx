@@ -44,10 +44,13 @@ describe('AppointmentAdmin', () => {
     const appointments = [
       {
         id: 1,
+        horse: { id: 1, name: 'Star' },
+        owner: { id: 1, name: 'Rider' },
         provider: { id: 1, name: 'Vet' },
         serviceType: { id: 1, name: 'Checkup' },
         start: '2024-01-01T10:00:00Z',
-        status: 'pending',
+        end: '2024-01-01T11:00:00Z',
+        status: 'requested',
       },
     ]
     const state = {

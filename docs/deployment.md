@@ -17,6 +17,8 @@ The backend service is built with a multi-stage Dockerfile that compiles applica
   docker compose exec backend php bin/console doctrine:migrations:migrate --no-interaction
   ```
 
+Ensure the agreement-signing material referenced by `AGREEMENT_SIGNATURE_CERTIFICATE_PATH` and `AGREEMENT_SIGNATURE_PRIVATE_KEY_PATH` exists before you run the stack. Mount the certificate/private key directory (for example `./shared/agreements/signing`) into the backend container so the files appear at `/var/www/backend/config/agreements/`, or inject them via Docker secrets in production.
+
 ### Reverse proxy headers
 
 If the application is deployed behind a load balancer or ingress controller, configure

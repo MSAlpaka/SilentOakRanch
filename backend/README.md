@@ -14,12 +14,22 @@ composer install --ignore-platform-req=ext-sodium
 
 ## Datenbank
 
-Standardmäßig wird eine SQLite-Datenbank verwendet. Die Verbindungszeichenfolge
-ist in `.env` hinterlegt und lautet:
+Standardmäßig wird eine PostgreSQL-Datenbank verwendet – exakt so, wie es in
+`.env.example` vorkonfiguriert ist:
 
 ```text
-DATABASE_URL="sqlite:///%kernel.project_dir%/var/data.db"
+DATABASE_URL="postgresql://your-db-user:your-db-password@db:5432/your-db-name"
 ```
 
-Die Datei `var/data.db` befindet sich im Projektverzeichnis und wird
-automatisch angelegt, falls sie nicht existiert.
+Zusätzlich lesen die Container die Werte `POSTGRES_USER`, `POSTGRES_PASSWORD`
+und `POSTGRES_DB` aus derselben `.env` Datei. Im Docker-Setup erreicht Symfony
+die Datenbank über den Host `db` und Port `5432`. Passe die Variablen bei
+lokalen Installationen entsprechend an oder verknüpfe sie mit einem externen
+PostgreSQL-Server.
+
+Nach dem Start der Container (`docker compose up`) können Doctrine-Migrationen
+ausgeführt werden, zum Beispiel:
+
+```bash
+docker compose run --rm backend php bin/console doctrine:migrations:migrate --no-interaction
+```

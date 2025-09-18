@@ -72,7 +72,11 @@ class AgreementServiceTest extends TestCase
             });
         $em->expects($this->exactly(2))->method('flush');
 
-        $projectDir = sys_get_temp_dir();
+        $projectDir = sys_get_temp_dir() . '/agreement_service_' . uniqid('', true);
+        if (!mkdir($projectDir) && !is_dir($projectDir)) {
+            $this->fail(sprintf('Unable to create temporary project directory "%s"', $projectDir));
+        }
+
         $service = new AgreementService($em, $repo, $projectDir);
 
         $tmp = tempnam(sys_get_temp_dir(), 'pdf');
@@ -81,9 +85,15 @@ class AgreementServiceTest extends TestCase
 
         $agreement = $service->uploadContract($user, $uploaded, AgreementType::BOARDING_CONTRACT, 'v1');
 
-        $expectedPath = $projectDir . '/public/agreements/10/5.pdf';
+        $expectedPath = $projectDir . '/var/agreements/10/5.pdf';
         $this->assertFileExists($expectedPath);
         $this->assertSame('agreements/10/5.pdf', $agreement->getFilePath());
+
+        @unlink($expectedPath);
+        @rmdir($projectDir . '/var/agreements/10');
+        @rmdir($projectDir . '/var/agreements');
+        @rmdir($projectDir . '/var');
+        @rmdir($projectDir);
     }
 
     private function createUser(int $id): User

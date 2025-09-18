@@ -91,6 +91,14 @@ else
     exit 1
 fi
 
+LEGACY_AGREEMENTS_DIR="$TARGET_DIR/public/agreements"
+if [[ -d "$LEGACY_AGREEMENTS_DIR" ]]; then
+    log "Removing legacy agreements directory at $LEGACY_AGREEMENTS_DIR"
+    run rm -rf "$LEGACY_AGREEMENTS_DIR"
+else
+    log "Legacy agreements directory $LEGACY_AGREEMENTS_DIR not found; skipping removal"
+fi
+
 VHOST_SCRIPT="$TARGET_DIR/scripts/update-vhost.sh"
 if [[ -x "$VHOST_SCRIPT" ]]; then
     run "$VHOST_SCRIPT" "$TARGET_DIR/.env"

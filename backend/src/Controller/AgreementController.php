@@ -11,9 +11,11 @@ use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Bundle\SecurityBundle\Security;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpFoundation\ResponseHeaderBag;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 
@@ -141,11 +143,23 @@ class AgreementController extends AbstractController
             return $this->json(['message' => 'File not found'], 404);
         }
 
-        $absolute = $this->projectDir . '/public/' . $filePath;
-        if (!file_exists($absolute)) {
+        $relativePath = ltrim($filePath, '/');
+        if (!str_starts_with($relativePath, 'agreements/')) {
             return $this->json(['message' => 'File not found'], 404);
         }
 
-        return $this->file($absolute);
+        $absolute = $this->projectDir . '/var/' . $relativePath;
+        if (!is_file($absolute)) {
+            return $this->json(['message' => 'File not found'], 404);
+        }
+
+        $response = new BinaryFileResponse($absolute);
+        $response->headers->set('Content-Type', 'application/pdf');
+        $response->setContentDisposition(
+            ResponseHeaderBag::DISPOSITION_ATTACHMENT,
+            basename($absolute)
+        );
+
+        return $response;
     }
 }

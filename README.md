@@ -38,7 +38,7 @@ Populate every mandatory entry from `.env.example`:
 - `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB`, `DATABASE_URL` – configure the PostgreSQL 15 service that the backend reaches via the internal host `db:5432`.
 - `APP_ENV`, `APP_SECRET` – choose the Symfony environment (`dev` for local, `prod` for deployments) and generate a 64-character secret, e.g. `php -r 'echo bin2hex(random_bytes(32));'`.
 - `DOMAIN`, `LETSENCRYPT_EMAIL`, `TRUSTED_PROXIES`, `TRUSTED_HOSTS` – define the public hostname and proxy settings consumed by the nginx-proxy and Let's Encrypt companion containers.
-- `STRIPE_SECRET_KEY` – supply the live Stripe API key used during checkout.
+- `STRIPE_SECRET_KEY`, `VITE_STRIPE_PUBLISHABLE_KEY` – supply the backend secret key and frontend publishable key used during Stripe Checkout.
 - `JWT_SECRET_KEY`, `JWT_PUBLIC_KEY`, `JWT_PASSPHRASE` – point to the LexikJWT key pair and provide the matching passphrase (generate the keys with `docker compose run --rm backend php bin/console lexik:jwt:generate-keypair --overwrite`).
 - `MESSENGER_TRANSPORT_DSN`, `WHATSAPP_DSN`, `SMS_DSN` – configure the messenger transports for asynchronous processing and notifications.
 - `SMTP_HOST`, `SMTP_PORT`, `SMTP_USERNAME`, `SMTP_PASSWORD` – configure outbound mail delivery.

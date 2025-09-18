@@ -4,6 +4,7 @@ namespace App\Controller;
 
 use App\Entity\Horse;
 use App\Entity\ScaleBooking;
+use App\Entity\User;
 use App\Enum\ScaleBookingStatus;
 use App\Enum\ScaleBookingType;
 use App\Repository\ScaleBookingRepository;
@@ -54,7 +55,7 @@ class ScaleBookingController extends AbstractController
         Security $security
     ): JsonResponse {
         $user = $security->getUser();
-        if (!$user instanceof \App\Entity\User) {
+        if (!$user instanceof User) {
             return $this->json(['message' => 'Unauthorized'], 401);
         }
 
@@ -85,8 +86,12 @@ class ScaleBookingController extends AbstractController
         }
 
         $user = $security->getUser();
-        if (!$user instanceof \App\Entity\User) {
+        if (!$user instanceof User) {
             return $this->json(['message' => 'Unauthorized'], 401);
+        }
+
+        if (!$this->isPrivileged($security) && !$this->isHorseOwnedByUser($horse, $user)) {
+            return $this->json(['message' => 'Forbidden'], 403);
         }
 
         try {
@@ -158,5 +163,28 @@ class ScaleBookingController extends AbstractController
             'status' => $booking->getStatus()->value,
             'weight' => $booking->getWeight(),
         ]);
+    }
+
+    private function isPrivileged(Security $security): bool
+    {
+        return $security->isGranted('ROLE_ADMIN') || $security->isGranted('ROLE_STAFF');
+    }
+
+    private function isHorseOwnedByUser(Horse $horse, User $user): bool
+    {
+        $owner = $horse->getOwner();
+
+        if ($owner === $user) {
+            return true;
+        }
+
+        $ownerId = $owner->getId();
+        $userId = $user->getId();
+
+        if (null !== $ownerId && null !== $userId) {
+            return $ownerId === $userId;
+        }
+
+        return false;
     }
 }

@@ -2,6 +2,7 @@
 
 namespace App\Controller\Api;
 
+use App\Entity\Invoice;
 use App\Repository\InvoiceRepository;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Bundle\SecurityBundle\Security;
@@ -41,8 +42,46 @@ class InvoiceController extends AbstractController
         return $this->json($data);
     }
 
+    #[Route('/api/invoices/{id}/meta', methods: ['GET'])]
+    public function meta(int $id, InvoiceRepository $invoiceRepository, Security $security): JsonResponse
+    {
+        $invoiceOrResponse = $this->getInvoiceForUser($id, $invoiceRepository, $security);
+        if ($invoiceOrResponse instanceof JsonResponse) {
+            return $invoiceOrResponse;
+        }
+
+        $invoice = $invoiceOrResponse;
+
+        return $this->json([
+            'id' => $invoice->getId(),
+            'createdAt' => $invoice->getCreatedAt()->format('c'),
+            'amount' => $invoice->getAmount(),
+            'status' => $invoice->getStatus()->name,
+            'downloadUrl' => '/api/invoices/' . $invoice->getId(),
+        ]);
+    }
+
     #[Route('/api/invoices/{id}', methods: ['GET'])]
     public function download(int $id, InvoiceRepository $invoiceRepository, Security $security): Response
+    {
+        $invoiceOrResponse = $this->getInvoiceForUser($id, $invoiceRepository, $security);
+        if ($invoiceOrResponse instanceof JsonResponse) {
+            return $invoiceOrResponse;
+        }
+
+        $invoice = $invoiceOrResponse;
+
+        $pdfPath = $invoice->getPdfPath();
+        if (!$pdfPath || !is_file($pdfPath)) {
+            return $this->json(['message' => $this->translator->trans('File not found', [], 'validators')], 404);
+        }
+
+        $response = new BinaryFileResponse($pdfPath);
+        $response->setContentDisposition(ResponseHeaderBag::DISPOSITION_INLINE, basename($pdfPath));
+        return $response;
+    }
+
+    private function getInvoiceForUser(int $id, InvoiceRepository $invoiceRepository, Security $security): Invoice|JsonResponse
     {
         $invoice = $invoiceRepository->find($id);
         if (!$invoice) {
@@ -58,13 +97,6 @@ class InvoiceController extends AbstractController
             return $this->json(['message' => $this->translator->trans('Forbidden', [], 'validators')], 403);
         }
 
-        $pdfPath = $invoice->getPdfPath();
-        if (!$pdfPath || !is_file($pdfPath)) {
-            return $this->json(['message' => $this->translator->trans('File not found', [], 'validators')], 404);
-        }
-
-        $response = new BinaryFileResponse($pdfPath);
-        $response->setContentDisposition(ResponseHeaderBag::DISPOSITION_INLINE, basename($pdfPath));
-        return $response;
+        return $invoice;
     }
 }

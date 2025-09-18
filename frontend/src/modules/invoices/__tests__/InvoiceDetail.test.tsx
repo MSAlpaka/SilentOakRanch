@@ -23,7 +23,7 @@ describe('InvoiceDetail', () => {
       createdAt: '2024-01-01T00:00:00Z',
       amount: '100',
       status: 'paid',
-      downloadUrl: '/one.pdf',
+      downloadUrl: '/api/invoices/1',
     }
 
     const store = {
@@ -39,7 +39,7 @@ describe('InvoiceDetail', () => {
     )
 
     fireEvent.click(screen.getByText('invoices.download'))
-    expect(open).toHaveBeenCalledWith('/one.pdf', '_blank')
+    expect(open).toHaveBeenCalledWith('/api/invoices/1', '_blank')
   })
 })
 

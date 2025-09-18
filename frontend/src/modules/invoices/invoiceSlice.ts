@@ -24,7 +24,7 @@ export const fetchAll = createAsyncThunk('invoices/fetchAll', async () => {
 })
 
 export const fetchById = createAsyncThunk('invoices/fetchById', async (id: number) => {
-  const response = await api.get<Invoice>(`/invoices/${id}`)
+  const response = await api.get<Invoice>(`/invoices/${id}/meta`)
   return response.data
 })
 

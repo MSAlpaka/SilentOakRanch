@@ -11,8 +11,31 @@ type PayResponse = {
   sessionId: string
 }
 
-function PaymentButton({ bookingId }: { bookingId: number }) {
+interface PaymentButtonProps {
+  bookingId: number
+  disabled?: boolean
+}
+
+function PaymentButton({ bookingId, disabled = false }: PaymentButtonProps) {
+  const isStripeConfigured = Boolean(publishableKey)
+  const buttonDisabled = disabled || !isStripeConfigured
+  const buttonTitle = disabled
+    ? 'Payment not available'
+    : !isStripeConfigured
+      ? 'Stripe publishable key missing'
+      : undefined
+
   async function handlePay() {
+    if (!Number.isFinite(bookingId)) {
+      console.error('Booking ID is required to start the payment process.')
+      return
+    }
+
+    if (buttonDisabled) {
+      console.warn('Payment cannot be initiated while the button is disabled.')
+      return
+    }
+
     const stripe = await stripePromise
     if (!stripe) {
       console.error('Stripe publishable key is not configured.')
@@ -44,8 +67,8 @@ function PaymentButton({ bookingId }: { bookingId: number }) {
     <button
       onClick={handlePay}
       className="bg-green-500 text-white px-4 py-2"
-      disabled={!publishableKey}
-      title={publishableKey ? undefined : 'Stripe publishable key missing'}
+      disabled={buttonDisabled}
+      title={buttonTitle}
     >
       Pay
     </button>

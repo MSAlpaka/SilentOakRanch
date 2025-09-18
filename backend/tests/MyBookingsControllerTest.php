@@ -115,8 +115,44 @@ class MyBookingsControllerTest extends KernelTestCase
 
         $this->assertSame(200, $response->getStatusCode());
         $this->assertCount(1, $data);
+        $this->assertSame($booking->getId(), $data[0]['id']);
         $this->assertSame('Box 1', $data[0]['stallUnit']['label']);
         $this->assertSame('PENDING', $data[0]['status']);
+        $this->assertSame('12.34', $data[0]['price']);
+    }
+
+    public function testMyBookingsWithoutPrice(): void
+    {
+        $stall = $this->createStallUnit();
+        $user = $this->createUser();
+        $horse = $this->createHorse($user, $stall);
+
+        $booking = new Booking();
+        $booking->setStallUnit($stall)
+            ->setStartDate(new \DateTimeImmutable('2024-02-01'))
+            ->setEndDate(new \DateTimeImmutable('2024-02-10'))
+            ->setUser($user->getEmail())
+            ->setHorse($horse)
+            ->setType(BookingType::OTHER)
+            ->setLabel('test-optional')
+            ->setDateFrom(new \DateTimeImmutable('2024-02-01'))
+            ->setDateTo(new \DateTimeImmutable('2024-02-10'));
+        $this->em->persist($booking);
+        $this->em->flush();
+
+        $security = $this->createMock(Security::class);
+        $security->method('getUser')->willReturn($user);
+
+        $controller = static::getContainer()->get(MyBookingsController::class);
+
+        $response = $controller->__invoke($this->bookingRepository, $security);
+        $data = json_decode($response->getContent(), true);
+
+        $this->assertSame(200, $response->getStatusCode());
+        $this->assertCount(1, $data);
+        $this->assertSame($booking->getId(), $data[0]['id']);
+        $this->assertSame('Box 1', $data[0]['stallUnit']['label']);
+        $this->assertArrayNotHasKey('price', $data[0]);
     }
 }
 

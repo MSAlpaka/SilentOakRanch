@@ -44,7 +44,8 @@ class MyBookingsController extends AbstractController
                 $horseName = $horse->getName();
             }
 
-            $data[] = [
+            $bookingData = [
+                'id' => $booking->getId(),
                 'stallUnit' => [
                     'label' => $label,
                 ],
@@ -53,6 +54,12 @@ class MyBookingsController extends AbstractController
                 'endDate' => $booking->getEndDate()->format('c'),
                 'status' => $booking->getStatus()->name,
             ];
+
+            if (null !== $booking->getPrice()) {
+                $bookingData['price'] = $booking->getPrice();
+            }
+
+            $data[] = $bookingData;
         }
 
         return $this->json($data);

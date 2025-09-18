@@ -3,38 +3,112 @@
 namespace App\Tests\Service;
 
 use App\Service\StripeService;
-use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
+use PHPUnit\Framework\TestCase;
+use Stripe\Checkout\Session;
+use Stripe\PaymentIntent;
+use Stripe\Service\Checkout\SessionService as CheckoutSessionService;
+use Stripe\Service\PaymentIntentService;
+use Stripe\StripeClient;
 
-class StripeServiceTest extends KernelTestCase
+final class StripeServiceTest extends TestCase
 {
-    public function testCreatePaymentIntentWithConfiguredApiKey(): void
+    public function testCreatePaymentIntentReturnsStripeResponse(): void
     {
-        $this->ensureStripeApiKeyOrSkip();
-
-        self::bootKernel();
-
-        /** @var StripeService $service */
-        $service = self::getContainer()->get(StripeService::class);
-
-        $intent = $service->createPaymentIntent(123, 'usd', [
+        $metadata = [
             'test_case' => static::class,
-            'created_at' => (new \DateTimeImmutable())->format(\DateTimeInterface::ATOM),
+            'created_at' => '2024-01-01T00:00:00+00:00',
+        ];
+
+        $expectedIntent = PaymentIntent::constructFrom([
+            'id' => 'pi_test',
+            'amount' => 123,
+            'currency' => 'usd',
+            'metadata' => $metadata,
         ]);
 
-        self::assertSame(123, $intent->amount);
-        self::assertSame('usd', $intent->currency);
-        self::assertNotEmpty($intent->id);
-        self::assertSame(static::class, $intent->metadata['test_case']);
+        $paymentIntents = $this->createMock(PaymentIntentService::class);
+        $paymentIntents
+            ->expects(self::once())
+            ->method('create')
+            ->with([
+                'amount' => 123,
+                'currency' => 'usd',
+                'metadata' => $metadata,
+            ])
+            ->willReturn($expectedIntent);
+
+        $client = $this->createMock(StripeClient::class);
+        $client
+            ->expects(self::once())
+            ->method('__get')
+            ->with('paymentIntents')
+            ->willReturn($paymentIntents);
+
+        $service = new StripeService($client);
+
+        $intent = $service->createPaymentIntent(123, 'usd', $metadata);
+
+        self::assertSame($expectedIntent, $intent);
     }
 
-    public function testCreateCheckoutSessionWithConfiguredApiKey(): void
+    public function testCreateCheckoutSessionReturnsStripeResponse(): void
     {
-        $this->ensureStripeApiKeyOrSkip();
+        $metadata = [
+            'booking_id' => 'test-checkout',
+            'test_case' => static::class,
+        ];
 
-        self::bootKernel();
+        $expectedMetadata = array_map(static fn($value): string => (string) $value, $metadata);
 
-        /** @var StripeService $service */
-        $service = self::getContainer()->get(StripeService::class);
+        $expectedSession = Session::constructFrom([
+            'id' => 'cs_test',
+            'mode' => 'payment',
+            'success_url' => 'https://example.com/success',
+            'cancel_url' => 'https://example.com/cancel',
+            'client_reference_id' => $expectedMetadata['booking_id'],
+        ]);
+
+        $sessions = $this->createMock(CheckoutSessionService::class);
+        $sessions
+            ->expects(self::once())
+            ->method('create')
+            ->with([
+                'mode' => 'payment',
+                'success_url' => 'https://example.com/success',
+                'cancel_url' => 'https://example.com/cancel',
+                'line_items' => [[
+                    'price_data' => [
+                        'currency' => 'usd',
+                        'unit_amount' => 123,
+                        'product_data' => [
+                            'name' => 'Test checkout session',
+                        ],
+                    ],
+                    'quantity' => 1,
+                ]],
+                'metadata' => $expectedMetadata,
+                'payment_intent_data' => [
+                    'metadata' => $expectedMetadata,
+                ],
+                'client_reference_id' => $expectedMetadata['booking_id'],
+                'customer_email' => 'customer@example.com',
+            ])
+            ->willReturn($expectedSession);
+
+        $checkoutFactory = new class($sessions) {
+            public function __construct(public CheckoutSessionService $sessions)
+            {
+            }
+        };
+
+        $client = $this->createMock(StripeClient::class);
+        $client
+            ->expects(self::once())
+            ->method('__get')
+            ->with('checkout')
+            ->willReturn($checkoutFactory);
+
+        $service = new StripeService($client);
 
         $session = $service->createCheckoutSession(
             123,
@@ -42,28 +116,10 @@ class StripeServiceTest extends KernelTestCase
             'https://example.com/success',
             'https://example.com/cancel',
             'Test checkout session',
-            [
-                'booking_id' => 'test-checkout',
-                'test_case' => static::class,
-            ],
+            $metadata,
             'customer@example.com'
         );
 
-        self::assertNotEmpty($session->id);
-        self::assertSame('payment', $session->mode);
-        self::assertSame('https://example.com/success', $session->success_url);
-        self::assertSame('https://example.com/cancel', $session->cancel_url);
-        self::assertSame('test-checkout', $session->client_reference_id);
-    }
-
-    private function ensureStripeApiKeyOrSkip(): void
-    {
-        $apiKey = $_ENV['STRIPE_SECRET_KEY']
-            ?? $_SERVER['STRIPE_SECRET_KEY']
-            ?? getenv('STRIPE_SECRET_KEY');
-
-        if (empty($apiKey) || str_contains((string) $apiKey, 'replace-me')) {
-            self::markTestSkipped('No Stripe API key configured for integration testing.');
-        }
+        self::assertSame($expectedSession, $session);
     }
 }

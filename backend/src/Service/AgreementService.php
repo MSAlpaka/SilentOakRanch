@@ -58,9 +58,9 @@ class AgreementService
         $this->em->persist($agreement);
         $this->em->flush();
 
-        $dir = sprintf('%s/public/agreements/%d', $this->projectDir, $user->getId());
-        if (!is_dir($dir)) {
-            mkdir($dir, 0777, true);
+        $dir = sprintf('%s/var/agreements/%d', $this->projectDir, $user->getId());
+        if (!is_dir($dir) && !mkdir($dir, 0777, true) && !is_dir($dir)) {
+            throw new \RuntimeException(sprintf('Unable to create agreements directory "%s"', $dir));
         }
         $filename = sprintf('%d.pdf', $agreement->getId());
         $pdf->move($dir, $filename);

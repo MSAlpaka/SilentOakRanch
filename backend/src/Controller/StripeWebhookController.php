@@ -27,9 +27,8 @@ class StripeWebhookController extends AbstractController
             return $this->json(['message' => $this->translator->trans('Booking not found', [], 'validators')], 404);
         }
 
-        try {
-            $payload = $request->toArray();
-        } catch (\JsonException) {
+        $payload = json_decode($request->getContent(), true);
+        if (!is_array($payload)) {
             return $this->json(['message' => $this->translator->trans('Invalid payload', [], 'validators')], 400);
         }
 

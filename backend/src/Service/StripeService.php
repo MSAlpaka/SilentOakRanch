@@ -10,6 +10,9 @@ class StripeService
     {
     }
 
+    /**
+     * @param array<string, scalar|\Stringable> $metadata
+     */
     public function createPaymentIntent(int $amount, string $currency = 'usd', array $metadata = []): \Stripe\PaymentIntent
     {
         return $this->client->paymentIntents->create([
@@ -19,6 +22,9 @@ class StripeService
         ]);
     }
 
+    /**
+     * @param array<string, scalar|\Stringable> $metadata
+     */
     public function createCheckoutSession(
         int $amount,
         string $currency,
@@ -61,6 +67,9 @@ class StripeService
         return $this->client->checkout->sessions->create($payload);
     }
 
+    /**
+     * @param array<string, mixed> $params
+     */
     public function createInvoiceDraft(string $customerId, array $params = []): \Stripe\Invoice
     {
         return $this->client->invoices->create(array_merge([

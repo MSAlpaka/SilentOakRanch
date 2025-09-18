@@ -45,8 +45,8 @@ export interface CreateAppointmentPayload {
   serviceTypeId: number
   start: string
   end: string
+  horseId: number
   providerId?: number
-  horseId?: number
   notes?: string
   reminderOptIn?: boolean
 }
@@ -133,13 +133,11 @@ export async function createAppointment(payload: CreateAppointmentPayload) {
     serviceTypeId: payload.serviceTypeId,
     startTime: payload.start,
     endTime: payload.end,
+    horseId: payload.horseId,
   }
 
   if (payload.providerId !== undefined) {
     body.serviceProviderId = payload.providerId
-  }
-  if (payload.horseId !== undefined) {
-    body.horseId = payload.horseId
   }
   if (payload.notes !== undefined) {
     body.notes = payload.notes

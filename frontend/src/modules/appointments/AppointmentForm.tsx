@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useAppDispatch, useAppSelector } from '../../store'
+import { useHorses } from './useHorses'
 import {
   loadProviders,
   loadServiceTypes,
@@ -27,6 +28,8 @@ function AppointmentForm() {
   const providers = useAppSelector(selectProviders)
   const serviceTypes = useAppSelector(selectServiceTypes)
   const appointments = useAppSelector(selectAppointments)
+  const [horseId, setHorseId] = useState('')
+  const { horses, loading: horsesLoading, error: horsesError } = useHorses()
   const [providerId, setProviderId] = useState('')
   const [serviceTypeId, setServiceTypeId] = useState('')
   const [start, setStart] = useState('')
@@ -82,12 +85,13 @@ function AppointmentForm() {
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    if (!providerId || !serviceTypeId || !start || !end) {
+    if (!horseId || !providerId || !serviceTypeId || !start || !end) {
       return
     }
+    const horse = Number.parseInt(horseId, 10)
     const provider = Number.parseInt(providerId, 10)
     const serviceType = Number.parseInt(serviceTypeId, 10)
-    if (Number.isNaN(provider) || Number.isNaN(serviceType)) {
+    if (Number.isNaN(horse) || Number.isNaN(provider) || Number.isNaN(serviceType)) {
       return
     }
     const startDate = new Date(start)
@@ -121,6 +125,7 @@ function AppointmentForm() {
 
     dispatch(
       create({
+        horseId: horse,
         providerId: provider,
         serviceTypeId: serviceType,
         start: startDate.toISOString(),
@@ -134,6 +139,34 @@ function AppointmentForm() {
   return (
     <form onSubmit={handleSubmit} className="p-4 space-y-4 bg-white">
       <h1 className="text-2xl">{t('appointments.new')}</h1>
+      <div>
+        <label className="block mb-1" htmlFor="appointment-horse">
+          {t('appointments.horse', {
+            defaultValue: t('bookings.horse', { defaultValue: 'Horse' }),
+          })}
+        </label>
+        <select
+          id="appointment-horse"
+          value={horseId}
+          onChange={e => setHorseId(e.target.value)}
+          className="border p-2 w-full"
+          disabled={horsesLoading}
+        >
+          <option value="">
+            {t('appointments.select_horse', {
+              defaultValue: t('bookings.select_horse', { defaultValue: 'Select horse' }),
+            })}
+          </option>
+          {horses.map(horse => (
+            <option key={horse.id} value={horse.id}>
+              {horse.name}
+            </option>
+          ))}
+        </select>
+        {horsesError && (
+          <p className="text-red-500 mt-1">{t(horsesError)}</p>
+        )}
+      </div>
       <div>
         <label className="block mb-1" htmlFor="appointment-provider">
           {t('appointments.provider')}

@@ -4,6 +4,9 @@
 # Put parameters here that don't need to change on each machine where the app is deployed
 # https://symfony.com/doc/current/best_practices.html#use-parameters-for-application-configuration
 parameters:
+    agreement_signature_certificate_path: '%env(string:AGREEMENT_SIGNATURE_CERTIFICATE_PATH)%'
+    agreement_signature_private_key_path: '%env(string:AGREEMENT_SIGNATURE_PRIVATE_KEY_PATH)%'
+    agreement_signature_private_key_passphrase: '%env(string:AGREEMENT_SIGNATURE_PRIVATE_KEY_PASSPHRASE)%'
 
 services:
     # default configuration for services in *this* file
@@ -29,6 +32,12 @@ services:
         arguments:
             $em: '@doctrine.orm.entity_manager'
             $invoiceService: '@App\Service\InvoiceService'
+
+    App\Service\AgreementService:
+        arguments:
+            $signatureCertificatePath: '%agreement_signature_certificate_path%'
+            $signaturePrivateKeyPath: '%agreement_signature_private_key_path%'
+            $signaturePrivateKeyPassphrase: '%agreement_signature_private_key_passphrase%'
 
     # add more service definitions when explicit configuration is needed
     # please note that last definitions always *replace* previous ones

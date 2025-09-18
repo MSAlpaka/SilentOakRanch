@@ -57,23 +57,9 @@ class AuthController extends AbstractController
             return $this->json(['message' => $this->translator->trans('Last name is required', [], 'validators')], 400);
         }
 
-        $roleValue = $data['role'] ?? UserRole::CUSTOMER->value;
-        if (!is_string($roleValue) || !($role = UserRole::tryFrom($roleValue))) {
-            return $this->json(['message' => $this->translator->trans('Invalid role', [], 'validators')], 400);
-        }
-
-        $roles = $data['roles'] ?? [sprintf('ROLE_%s', strtoupper($role->value))];
-        if (isset($data['roles']) && !is_array($data['roles'])) {
-            return $this->json(['message' => $this->translator->trans('Roles must be an array', [], 'validators')], 400);
-        }
-
-        if (!is_array($roles)) {
-            $roles = [sprintf('ROLE_%s', strtoupper($role->value))];
-        }
-
-        $roles = array_values(array_map(static fn ($roleName) => (string) $roleName, $roles));
-
-        $active = array_key_exists('active', $data) ? (bool) $data['active'] : true;
+        $role = UserRole::CUSTOMER;
+        $roles = [sprintf('ROLE_%s', strtoupper($role->value))];
+        $active = true;
 
         $user = new User();
         $user->setEmail($email);

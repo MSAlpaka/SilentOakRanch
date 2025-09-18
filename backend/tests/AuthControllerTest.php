@@ -74,6 +74,38 @@ class AuthControllerTest extends KernelTestCase
         $this->assertTrue($this->passwordHasher->isPasswordValid($user, 'secret123'));
     }
 
+    public function testRegisterIgnoresProvidedRoleFields(): void
+    {
+        $controller = $this->createController();
+
+        $jwtManager = $this->createMock(JWTTokenManagerInterface::class);
+        $jwtManager->expects($this->once())
+            ->method('create')
+            ->with($this->isInstanceOf(User::class))
+            ->willReturn('jwt-token');
+
+        $request = new Request([], [], [], [], [], [], json_encode([
+            'email' => 'jane@example.com',
+            'password' => 'secret123',
+            'firstName' => 'Jane',
+            'lastName' => 'Doe',
+            'role' => UserRole::ADMIN->value,
+            'roles' => ['ROLE_ADMIN', 'ROLE_SUPER_ADMIN'],
+            'active' => false,
+        ]));
+
+        $response = $controller->register($request, $this->em, $this->passwordHasher, $jwtManager);
+
+        $this->assertSame(201, $response->getStatusCode());
+
+        $user = $this->em->getRepository(User::class)->findOneBy(['email' => 'jane@example.com']);
+        $this->assertInstanceOf(User::class, $user);
+        $this->assertSame(UserRole::CUSTOMER, $user->getRole());
+        $this->assertContains('ROLE_CUSTOMER', $user->getRoles());
+        $this->assertNotContains('ROLE_ADMIN', $user->getRoles());
+        $this->assertTrue($user->isActive());
+    }
+
     public function testRegisterRejectsInvalidData(): void
     {
         $controller = $this->createController();

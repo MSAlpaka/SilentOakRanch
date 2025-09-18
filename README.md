@@ -179,6 +179,14 @@ To deploy with Docker Compose manually:
 - All Composer and NPM dependencies are installed automatically during the image build.
 - The frontend is served as an Nginx static server.
 
+### PostgreSQL data persistence
+
+PostgreSQL stores its data in the named Docker volume `db-data` declared in `docker-compose.yml`. The former `./db/data` bind
+mount is no longer used; remove any legacy `db/` directory after switching to the volume so stale files do not confuse local
+setups. Named volumes are managed by Docker and survive `docker compose down`, meaning database contents persist across
+redeployments. Only prune them intentionally—for example with `docker volume prune` or `docker volume rm db-data`—after
+creating a backup (e.g. via `pg_dump`) to avoid losing production data.
+
 The included `nginx-proxy` and `acme-companion` automatically request and renew TLS certificates via Let's Encrypt. Ensure the companion sees the proxy by exporting `NGINX_PROXY_CONTAINER=proxy` (as done in `docker-compose.yml`) or by giving the proxy container that name before starting the stack; otherwise certificate discovery fails. The proxy routes requests based on the path:
 
 - https://app.silent-oak-ranch.de → Frontend (Port 80)

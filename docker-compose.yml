@@ -28,6 +28,8 @@ services:
       VIRTUAL_PORT: "8080"
     volumes:
       - ./shared/jwt/backend:/var/www/backend/config/jwt
+      - ./shared/backend/var:/var/www/backend/var
+      - ./shared/agreements/signing:/var/www/backend/config/agreements
 
   frontend:
     image: silentoakranch/frontend:latest

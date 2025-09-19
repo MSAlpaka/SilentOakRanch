@@ -159,11 +159,14 @@ HTML;
         $pdfContent = $this->pdfGenerator->generatePdf($html);
 
         $dir = $this->projectDir . '/var/invoices';
-        if (!is_dir($dir)) {
-            mkdir($dir, 0777, true);
+        if (!is_dir($dir) && !mkdir($dir, 0777, true) && !is_dir($dir)) {
+            throw new \RuntimeException(sprintf('Unable to create invoices directory "%s"', $dir));
         }
+
         $file = sprintf('%s/invoice_%s.pdf', $dir, $invoice->getId());
-        file_put_contents($file, $pdfContent);
+        if (@file_put_contents($file, $pdfContent) === false) {
+            throw new \RuntimeException(sprintf('Unable to write invoice PDF "%s"', $file));
+        }
 
         return $file;
     }

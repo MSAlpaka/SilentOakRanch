@@ -3,6 +3,7 @@
 namespace App\Controller;
 
 use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 
 class HealthCheckController
@@ -11,5 +12,11 @@ class HealthCheckController
     public function __invoke(): JsonResponse
     {
         return new JsonResponse(['status' => 'ok']);
+    }
+
+    #[Route('/health', name: 'health', methods: ['GET'])]
+    public function health(): Response
+    {
+        return new Response('', Response::HTTP_OK);
     }
 }

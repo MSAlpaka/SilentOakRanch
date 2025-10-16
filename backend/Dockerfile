@@ -71,7 +71,10 @@ RUN apk add --no-cache \
         nginx \
         supervisor \
         curl \
-    && mkdir -p /run/nginx /var/log/supervisor /var/cache/nginx
+        su-exec \
+    && mkdir -p /run/nginx /var/log/supervisor /var/cache/nginx /var/www/html
+
+RUN sed -i 's|listen = 9000|listen = 9001|' /usr/local/etc/php-fpm.d/zz-docker.conf
 
 COPY docker/ /docker/
 RUN cp /docker/app.conf /etc/nginx/conf.d/app.conf \
@@ -79,7 +82,11 @@ RUN cp /docker/app.conf /etc/nginx/conf.d/app.conf \
     && chmod +x /docker/entrypoint.sh
 COPY --from=production /var/www/backend /var/www/backend
 
-EXPOSE 8080
-HEALTHCHECK CMD curl -fsS http://127.0.0.1:8080/healthz || exit 1
+RUN adduser -D appuser \
+    && chown -R appuser /var/www/html /var/www/backend \
+    && chown -R appuser /run/nginx /var/log/supervisor /var/cache/nginx
+
+EXPOSE 8080 9000
+HEALTHCHECK CMD curl -fsS http://127.0.0.1:9000/health || exit 1
 ENTRYPOINT ["/docker/entrypoint.sh"]
 CMD ["/usr/bin/supervisord", "-c", "/etc/supervisord.conf"]

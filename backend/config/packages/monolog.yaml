@@ -4,7 +4,7 @@ monolog:
     handlers:
         main:
             type: stream
-            path: '/var/log/app.log'
+            path: '%kernel.logs_dir%/app.log'
             level: info
             channels: ['!event']
     processors:
@@ -29,7 +29,7 @@ when@test:
                 channels: ["!event"]
             nested:
                 type: stream
-                path: '/var/log/app.log'
+                path: '%kernel.logs_dir%/app.log'
                 level: info
 
 when@prod:
@@ -43,7 +43,7 @@ when@prod:
                 buffer_size: 50 # How many messages should be saved? Prevent memory leaks
             nested:
                 type: stream
-                path: '/var/log/app.log'
+                path: '%kernel.logs_dir%/app.log'
                 level: info
                 formatter: monolog.formatter.json
             console:
@@ -53,5 +53,5 @@ when@prod:
             deprecation:
                 type: stream
                 channels: [deprecation]
-                path: '/var/log/app.log'
+                path: '%kernel.logs_dir%/deprecations.log'
                 formatter: monolog.formatter.json

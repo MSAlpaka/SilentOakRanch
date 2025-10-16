@@ -6,6 +6,7 @@ services:
     env_file: .env
     volumes:
       - db-data:/var/lib/postgresql/data
+    restart: unless-stopped
     healthcheck:
       test:
         - CMD-SHELL
@@ -19,7 +20,7 @@ services:
     image: silentoakranch/backend:latest
     build: ./backend
     env_file: .env
-    restart: always
+    restart: unless-stopped
     depends_on:
       - db
     expose:
@@ -65,6 +66,7 @@ services:
     ports:
       - "80:80"
       - "443:443"
+    restart: unless-stopped
     volumes:
       - /var/run/docker.sock:/tmp/docker.sock:ro
       - proxy-certs:/etc/nginx/certs:rw

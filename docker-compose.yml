@@ -67,9 +67,9 @@ services:
       - "443:443"
     volumes:
       - /var/run/docker.sock:/tmp/docker.sock:ro
-      - ./proxy/certs:/etc/nginx/certs:rw
-      - ./proxy/vhost.d:/etc/nginx/vhost.d
-      - ./proxy/html:/usr/share/nginx/html
+      - proxy-certs:/etc/nginx/certs:rw
+      - proxy-vhost:/etc/nginx/vhost.d
+      - proxy-html:/usr/share/nginx/html
     healthcheck:
       test:
         - CMD-SHELL
@@ -83,13 +83,13 @@ services:
     image: nginxproxy/acme-companion
     depends_on:
       - proxy
-    volumes_from:
-      - proxy
     environment:
       NGINX_PROXY_CONTAINER: "proxy"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
-      - ./proxy/certs:/etc/nginx/certs:rw
+      - proxy-certs:/etc/nginx/certs:rw
+      - proxy-vhost:/etc/nginx/vhost.d
+      - proxy-html:/usr/share/nginx/html
     healthcheck:
       test:
         - CMD-SHELL
@@ -101,3 +101,21 @@ services:
 
 volumes:
   db-data:
+  proxy-certs:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ./proxy/certs
+  proxy-vhost:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ./proxy/vhost.d
+  proxy-html:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ./proxy/html

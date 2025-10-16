@@ -190,6 +190,18 @@ To deploy with Docker Compose manually:
 - All Composer and NPM dependencies are installed automatically during the image build.
 - The frontend is served as an Nginx static server.
 
+### TLS automation
+
+The `nginx-proxy` and `acme-companion` services share the same certificate, vhost, and webroot volumes. The companion container
+requests and renews Let's Encrypt certificates automatically. To confirm the proxy is managing certificates correctly, check the
+logs after bringing the stack online:
+
+```bash
+docker compose logs proxy
+```
+
+Successful output shows the generated certificates under `/etc/nginx/certs` and that renewal jobs run without errors.
+
 ### PostgreSQL data persistence
 
 PostgreSQL stores its data in the named Docker volume `db-data` declared in `docker-compose.yml`. The former `./db/data` bind

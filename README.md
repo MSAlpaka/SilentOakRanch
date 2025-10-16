@@ -153,7 +153,9 @@ git push origin v1.0.0
 GitHub Actions automates the Docker workflows:
 
 - `.github/workflows/ci.yml` builds the PHP 8.3 backend image, runs PHPStan and PHPUnit inside it, and lints/tests the frontend with Node.js 20.
-- `.github/workflows/deploy.yml` uses Docker Buildx to build the backend and frontend images, exports them as artifacts, and synchronises them to the target host before running `docker compose up -d`.
+- `.github/workflows/deploy.yml` uses Docker Buildx to build the backend and frontend images, exports them as artifacts, and synchronises them to the target host before starting the stack and applying Doctrine migrations during deployment.
+
+### Deployment Steps
 
 To deploy with Docker Compose manually:
 
@@ -165,13 +167,19 @@ To deploy with Docker Compose manually:
 
    The keys are written to `/var/www/backend/config/jwt/private.pem` and `/var/www/backend/config/jwt/public.pem`; keep the corresponding paths and `JWT_PASSPHRASE` in sync inside `.env`.
 
-2. Start the stack:
+2. Start the stack (image builds complete without a database connection because migrations now run at deploy time):
 
    ```bash
    docker compose up -d --build
    ```
 
-3. Verify that Symfony can connect to PostgreSQL from inside the backend container:
+3. Apply database migrations once the containers are online:
+
+   ```bash
+   docker compose exec backend php bin/console doctrine:migrations:migrate --no-interaction
+   ```
+
+4. Verify that Symfony can connect to PostgreSQL from inside the backend container:
 
    ```bash
    docker compose run --rm backend php bin/console doctrine:query:sql 'SELECT 1'

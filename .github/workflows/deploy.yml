@@ -84,5 +84,6 @@ jobs:
           fi
           docker compose pull db proxy letsencrypt || true
           docker compose up -d
+          docker compose exec backend php bin/console doctrine:migrations:migrate --no-interaction
           docker system prune -f
           EOSSH

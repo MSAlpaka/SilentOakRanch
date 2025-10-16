@@ -45,11 +45,6 @@ RUN composer install --prefer-dist --no-scripts --no-progress
 
 COPY . .
 
-RUN if [ -f bin/console ]; then \
-        php bin/console doctrine:migrations:migrate --no-interaction || \
-        echo "Skipping migrations during build"; \
-    fi
-
 FROM base AS production
 
 COPY --from=builder /var/www/backend /var/www/backend

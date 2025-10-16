@@ -71,6 +71,7 @@ RUN apk add --no-cache \
         nginx \
         supervisor \
         curl \
+        su-exec \
     && mkdir -p /run/nginx /var/log/supervisor /var/cache/nginx /var/www/html
 
 RUN sed -i 's|listen = 9000|listen = 9001|' /usr/local/etc/php-fpm.d/zz-docker.conf
@@ -87,6 +88,5 @@ RUN adduser -D appuser \
 
 EXPOSE 8080 9000
 HEALTHCHECK CMD curl -fsS http://127.0.0.1:9000/health || exit 1
-USER appuser
 ENTRYPOINT ["/docker/entrypoint.sh"]
 CMD ["/usr/bin/supervisord", "-c", "/etc/supervisord.conf"]

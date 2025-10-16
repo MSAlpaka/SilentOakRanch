@@ -200,7 +200,31 @@ logs after bringing the stack online:
 docker compose logs proxy
 ```
 
+### Systemd integration and health monitoring
+
+Production hosts typically wrap `docker compose up -d` in a dedicated systemd unit with `Restart=always` so `systemctl restart
+silentoakranch.service` maps to a full container restart (`docker compose restart`). Even without systemd you can refresh a single
+service with `docker restart <container_name>` during maintenance windows. Pair restart automation with routine health checks, for
+example:
+
+```bash
+docker compose ps --format 'table {{.Name}}\t{{.State}}\t{{.Health}}'
+docker inspect --format '{{json .State.Health}}' silentoakranch-backend-1
+```
+
+The first command highlights failing health checks at a glance, while the second prints the raw probe history for detailed
+troubleshooting.
+
 Successful output shows the generated certificates under `/etc/nginx/certs` and that renewal jobs run without errors.
+
+## Production Operation Checklist
+
+- **CI status** – confirm the latest runs of `ci.yml` and `deploy.yml` in GitHub Actions are green before promoting a build.
+- **SSL renewal** – review the `acme-companion` logs weekly to ensure Let's Encrypt renewals finish without rate-limit warnings.
+- **Restart policy** – verify systemd units and Docker Compose services use `restart: always`/`unless-stopped` to survive host
+  reboots.
+- **Backup routine** – schedule nightly PostgreSQL dumps (e.g. `pg_dump` to `./shared/backups/`) and copy them off-site alongside
+  uploaded agreements.
 
 ### PostgreSQL data persistence
 

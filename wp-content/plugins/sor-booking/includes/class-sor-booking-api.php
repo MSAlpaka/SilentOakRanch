@@ -386,7 +386,7 @@ class SorBookingSyncService {
             'data_format' => 'body',
         );
 
-        $response = \wp_remote_post( $url, $args );
+        $response = \wp_remote_request( $url, $args );
 
         if ( is_wp_error( $response ) ) {
             return new WP_Error(

@@ -186,21 +186,77 @@ class DB {
         global $wpdb;
 
         $defaults = array(
-            'order' => 'DESC',
-            'limit' => 200,
+            'order'     => 'DESC',
+            'limit'     => 200,
+            'per_page'  => 20,
+            'paged'     => 1,
+            'offset'    => null,
+            'resource'  => '',
+            'status'    => '',
+            'date_from' => '',
+            'date_to'   => '',
         );
 
         $args  = \wp_parse_args( $args, $defaults );
         $order = 'ASC' === strtoupper( $args['order'] ) ? 'ASC' : 'DESC';
-        $limit = isset( $args['limit'] ) ? intval( $args['limit'] ) : 200;
         $table = $wpdb->prefix . self::TABLE;
 
-        $sql = "SELECT * FROM {$table} ORDER BY created_at {$order}";
-        if ( $limit > 0 ) {
-            $sql .= $wpdb->prepare( ' LIMIT %d', $limit );
+        $values = array();
+        $where  = $this->build_where_clause( $args, $values );
+
+        $sql = "SELECT * FROM {$table}{$where} ORDER BY created_at {$order}";
+
+        $limit = isset( $args['limit'] ) ? intval( $args['limit'] ) : intval( $args['per_page'] );
+        $limit = 0 === $limit ? 0 : max( -1, $limit );
+
+        if ( 0 !== $limit ) {
+            if ( $limit < 0 ) {
+                $limit = intval( $args['per_page'] );
+            }
+
+            $offset = null !== $args['offset'] ? intval( $args['offset'] ) : ( max( 1, intval( $args['paged'] ) ) - 1 ) * max( 1, intval( $args['per_page'] ) );
+            $offset = max( 0, $offset );
+
+            $sql .= $wpdb->prepare( ' LIMIT %d OFFSET %d', $limit, $offset );
+        }
+
+        if ( ! empty( $values ) ) {
+            array_unshift( $values, $sql );
+            $sql = call_user_func_array( array( $wpdb, 'prepare' ), $values );
         }
 
         return $wpdb->get_results( $sql );
+    }
+
+    /**
+     * Count bookings based on filters.
+     *
+     * @param array $args Query filters.
+     *
+     * @return int
+     */
+    public function count_bookings( array $args = array() ) {
+        global $wpdb;
+
+        $defaults = array(
+            'resource'  => '',
+            'status'    => '',
+            'date_from' => '',
+            'date_to'   => '',
+        );
+
+        $args   = \wp_parse_args( $args, $defaults );
+        $values = array();
+        $where  = $this->build_where_clause( $args, $values );
+        $table  = $wpdb->prefix . self::TABLE;
+        $sql    = "SELECT COUNT(*) FROM {$table}{$where}";
+
+        if ( ! empty( $values ) ) {
+            array_unshift( $values, $sql );
+            $sql = call_user_func_array( array( $wpdb, 'prepare' ), $values );
+        }
+
+        return (int) $wpdb->get_var( $sql );
     }
 
     /**
@@ -254,6 +310,79 @@ class DB {
         }
 
         return $sanitized;
+    }
+
+    /**
+     * Build WHERE clause fragments for booking queries.
+     *
+     * @param array $args   Filter arguments.
+     * @param array $values Prepared statement values (passed by reference).
+     *
+     * @return string
+     */
+    private function build_where_clause( array $args, array &$values ) {
+        $where = array();
+
+        if ( ! empty( $args['resource'] ) ) {
+            $where[] = 'resource = %s';
+            $values[] = \sanitize_key( $args['resource'] );
+        }
+
+        if ( ! empty( $args['status'] ) ) {
+            $allowed_statuses = array( 'pending', 'paid', 'confirmed', 'completed', 'cancelled' );
+            $status           = \sanitize_key( $args['status'] );
+            if ( in_array( $status, $allowed_statuses, true ) ) {
+                $where[] = 'status = %s';
+                $values[] = $status;
+            }
+        }
+
+        if ( ! empty( $args['date_from'] ) ) {
+            $from = $this->normalize_date_boundary( $args['date_from'], false );
+            if ( $from ) {
+                $where[] = 'slot_start >= %s';
+                $values[] = $from;
+            }
+        }
+
+        if ( ! empty( $args['date_to'] ) ) {
+            $to = $this->normalize_date_boundary( $args['date_to'], true );
+            if ( $to ) {
+                $where[] = 'slot_start <= %s';
+                $values[] = $to;
+            }
+        }
+
+        if ( empty( $where ) ) {
+            return '';
+        }
+
+        return ' WHERE ' . implode( ' AND ', $where );
+    }
+
+    /**
+     * Normalize date boundaries for queries.
+     *
+     * @param string $value Date string.
+     * @param bool   $end   Whether value is an end boundary.
+     *
+     * @return string|null
+     */
+    private function normalize_date_boundary( $value, $end = false ) {
+        $value = trim( (string) $value );
+
+        if ( empty( $value ) ) {
+            return null;
+        }
+
+        $timestamp = strtotime( $value );
+        if ( false === $timestamp ) {
+            return null;
+        }
+
+        $format = $end ? 'Y-m-d 23:59:59' : 'Y-m-d 00:00:00';
+
+        return gmdate( $format, $timestamp );
     }
 }
 

@@ -35,6 +35,98 @@ if ( ! defined( 'SOR_BOOKING_TESTMODE_OPTION' ) ) {
     define( 'SOR_BOOKING_TESTMODE_OPTION', 'sor_booking_testmode' );
 }
 
+/**
+ * Retrieve plugin settings with defaults.
+ *
+ * @return array
+ */
+function sor_booking_get_settings() {
+    $defaults = array(
+        'price_solekammer' => 45.00,
+        'price_waage'      => 25.00,
+        'duration_solekammer' => 60,
+        'duration_waage'      => 30,
+        'duration_schmied'    => 0,
+        'paypal_mode'      => 'sandbox',
+        'paypal_client_id' => '',
+        'paypal_secret'    => '',
+        'qr_secret'        => '',
+    );
+
+    $options = get_option( 'sor_booking_options', array() );
+    if ( ! is_array( $options ) ) {
+        $options = array();
+    }
+
+    $options = wp_parse_args( $options, $defaults );
+
+    if ( empty( $options['qr_secret'] ) && defined( 'SOR_QR_SECRET' ) ) {
+        $options['qr_secret'] = SOR_QR_SECRET;
+    }
+
+    if ( empty( $options['paypal_client_id'] ) && defined( 'SOR_PAYPAL_CLIENT_ID' ) ) {
+        $options['paypal_client_id'] = SOR_PAYPAL_CLIENT_ID;
+    }
+
+    if ( empty( $options['paypal_secret'] ) && defined( 'SOR_PAYPAL_SECRET' ) ) {
+        $options['paypal_secret'] = SOR_PAYPAL_SECRET;
+    }
+
+    return $options;
+}
+
+/**
+ * Retrieve a single plugin setting with default fallback.
+ *
+ * @param string $key     Option key.
+ * @param mixed  $default Default value.
+ *
+ * @return mixed
+ */
+function sor_booking_get_option( $key, $default = null ) {
+    $settings = sor_booking_get_settings();
+
+    return isset( $settings[ $key ] ) ? $settings[ $key ] : $default;
+}
+
+/**
+ * Determine whether sandbox mode is enabled for PayPal.
+ *
+ * @return bool
+ */
+function sor_booking_is_sandbox() {
+    $mode = sor_booking_get_option( 'paypal_mode', 'sandbox' );
+
+    return 'live' !== strtolower( $mode );
+}
+
+/**
+ * Retrieve configured PayPal client ID.
+ *
+ * @return string
+ */
+function sor_booking_get_paypal_client_id() {
+    return sor_booking_get_option( 'paypal_client_id', defined( 'SOR_PAYPAL_CLIENT_ID' ) ? SOR_PAYPAL_CLIENT_ID : '' );
+}
+
+/**
+ * Retrieve configured PayPal secret.
+ *
+ * @return string
+ */
+function sor_booking_get_paypal_secret() {
+    return sor_booking_get_option( 'paypal_secret', defined( 'SOR_PAYPAL_SECRET' ) ? SOR_PAYPAL_SECRET : '' );
+}
+
+/**
+ * Retrieve configured QR signing secret.
+ *
+ * @return string
+ */
+function sor_booking_get_qr_secret() {
+    return sor_booking_get_option( 'qr_secret', defined( 'SOR_QR_SECRET' ) ? SOR_QR_SECRET : '' );
+}
+
 spl_autoload_register(
     function ( $class ) {
         $prefix   = 'SOR\\Booking\\';
@@ -60,20 +152,24 @@ spl_autoload_register(
  * @return array
  */
 function sor_booking_get_resources() {
+    $settings  = sor_booking_get_settings();
     $resources = array(
         'solekammer' => array(
             'label'       => __( 'Salt Therapy Room', 'sor-booking' ),
-            'price'       => 45.00,
+            'price'       => floatval( $settings['price_solekammer'] ),
+            'duration'    => absint( $settings['duration_solekammer'] ),
             'description' => __( 'Relaxing salt therapy for horses.', 'sor-booking' ),
         ),
         'waage'      => array(
             'label'       => __( 'Horse Scale', 'sor-booking' ),
-            'price'       => 25.00,
+            'price'       => floatval( $settings['price_waage'] ),
+            'duration'    => absint( $settings['duration_waage'] ),
             'description' => __( 'Precise horse weight measurements.', 'sor-booking' ),
         ),
         'schmied'    => array(
             'label'       => __( 'Blacksmith', 'sor-booking' ),
             'price'       => 0.00,
+            'duration'    => absint( $settings['duration_schmied'] ),
             'description' => __( 'Blacksmith inquiry – we will contact you to schedule.', 'sor-booking' ),
         ),
     );
@@ -127,8 +223,8 @@ function sor_booking_enqueue_assets() {
             'restUrl'       => esc_url_raw( rest_url( 'sor/v1/' ) ),
             'nonce'         => $nonce,
             'resources'     => sor_booking_get_resources(),
-            'paypalClient'  => SOR_PAYPAL_CLIENT_ID,
-            'testmode'      => (bool) get_option( SOR_BOOKING_TESTMODE_OPTION, false ),
+            'paypalClient'  => sor_booking_get_paypal_client_id(),
+            'testmode'      => sor_booking_is_sandbox(),
             'i18n'          => array(
                 'bookingCreated'  => __( 'Booking created. Please complete payment to confirm.', 'sor-booking' ),
                 'paymentComplete' => __( 'Payment completed successfully.', 'sor-booking' ),

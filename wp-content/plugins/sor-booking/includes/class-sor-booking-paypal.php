@@ -42,18 +42,20 @@ class PayPal {
      * Enqueue PayPal SDK when client ID is configured.
      */
     public function enqueue_sdk() {
-        if ( ! \SOR_PAYPAL_CLIENT_ID ) {
+        $client_id = \sor_booking_get_paypal_client_id();
+
+        if ( ! $client_id ) {
             return;
         }
 
         $params = array(
-            'client-id' => \SOR_PAYPAL_CLIENT_ID,
+            'client-id' => $client_id,
             'currency'  => \apply_filters( 'sor_booking_paypal_currency', 'EUR' ),
             'intent'    => 'CAPTURE',
             'components'=> 'buttons',
         );
 
-        if ( \get_option( \SOR_BOOKING_TESTMODE_OPTION, false ) ) {
+        if ( \sor_booking_is_sandbox() ) {
             $params['debug'] = 'true';
         }
 
@@ -164,8 +166,8 @@ class PayPal {
             return $this->access_token;
         }
 
-        $client = \SOR_PAYPAL_CLIENT_ID;
-        $secret = \SOR_PAYPAL_SECRET;
+        $client = \sor_booking_get_paypal_client_id();
+        $secret = \sor_booking_get_paypal_secret();
 
         if ( empty( $client ) || empty( $secret ) ) {
             return new \WP_Error( 'paypal_credentials_missing', \__( 'PayPal credentials not configured.', 'sor-booking' ) );
@@ -207,7 +209,7 @@ class PayPal {
      * @return string
      */
     protected function get_api_base() {
-        $sandbox = \apply_filters( 'sor_booking_paypal_sandbox', (bool) \get_option( \SOR_BOOKING_TESTMODE_OPTION, false ) );
+        $sandbox = \apply_filters( 'sor_booking_paypal_sandbox', \sor_booking_is_sandbox() );
 
         return $sandbox ? 'https://api-m.sandbox.paypal.com/' : 'https://api-m.paypal.com/';
     }

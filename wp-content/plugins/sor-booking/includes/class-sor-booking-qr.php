@@ -38,7 +38,7 @@ class QR {
     public function sign( $uuid, $ts ) {
         $data = $uuid . '|' . intval( $ts );
 
-        return hash_hmac( 'sha256', $data, \SOR_QR_SECRET );
+        return hash_hmac( 'sha256', $data, \sor_booking_get_qr_secret() );
     }
 
     /**

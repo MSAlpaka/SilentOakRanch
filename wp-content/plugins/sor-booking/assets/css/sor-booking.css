@@ -159,6 +159,227 @@
     color: #385a3f;
 }
 
+/* Admin dashboard */
+
+#sor-booking-admin {
+    position: relative;
+}
+
+#sor-booking-admin .sor-booking-filters {
+    background: #fff;
+    border: 1px solid #dcdcde;
+    border-radius: 6px;
+    padding: 16px;
+    margin: 0 0 16px;
+}
+
+#sor-booking-admin .sor-booking-filters__row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px 16px;
+    align-items: flex-end;
+}
+
+#sor-booking-admin .sor-booking-filters label {
+    display: flex;
+    flex-direction: column;
+    font-weight: 600;
+    color: #23282d;
+    min-width: 160px;
+}
+
+#sor-booking-admin .sor-booking-filters select,
+#sor-booking-admin .sor-booking-filters input[type="date"] {
+    min-width: 160px;
+}
+
+#sor-booking-admin .sor-booking-filters__actions {
+    display: flex;
+    gap: 8px;
+    margin-left: auto;
+}
+
+#sor-booking-admin .sor-booking-summary {
+    display: flex;
+    gap: 12px;
+    font-weight: 600;
+    margin: 0 0 12px;
+}
+
+#sor-booking-admin .sor-booking-table-wrapper {
+    overflow-x: auto;
+    border: 1px solid #dcdcde;
+    border-radius: 6px;
+    background: #fff;
+}
+
+#sor-booking-admin .sor-booking-table {
+    margin: 0;
+}
+
+#sor-booking-admin .sor-booking-table.is-loading tbody {
+    opacity: 0.5;
+}
+
+.sor-booking-status {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 600;
+    margin-bottom: 6px;
+}
+
+.sor-booking-status--pending {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.sor-booking-status--paid {
+    background: #dbeafe;
+    color: #1d4ed8;
+}
+
+.sor-booking-status--confirmed {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.sor-booking-status--completed {
+    background: #e5e7eb;
+    color: #374151;
+}
+
+.sor-booking-status--cancelled {
+    background: #fee2e2;
+    color: #b91c1c;
+}
+
+.sor-booking-status-select {
+    margin: 0 8px 8px 0;
+}
+
+.sor-booking-show-qr {
+    margin-bottom: 8px;
+}
+
+.sor-booking-toast {
+    position: fixed;
+    top: 96px;
+    right: 32px;
+    background: #1f2937;
+    color: #fff;
+    padding: 10px 16px;
+    border-radius: 4px;
+    box-shadow: 0 8px 20px rgba(31, 41, 55, 0.2);
+    z-index: 1000;
+}
+
+.sor-booking-toast.is-success {
+    background: #166534;
+}
+
+.sor-booking-toast.is-error {
+    background: #b91c1c;
+}
+
+.sor-booking-toast.is-info {
+    background: #1d4ed8;
+}
+
+.sor-modal {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 999;
+}
+
+.sor-modal[hidden] {
+    display: none;
+}
+
+.sor-modal__backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.45);
+}
+
+.sor-modal__dialog {
+    position: relative;
+    background: #fff;
+    padding: 24px;
+    max-width: 560px;
+    width: calc(100% - 40px);
+    border-radius: 10px;
+    box-shadow: 0 20px 40px rgba(15, 23, 42, 0.25);
+    z-index: 1;
+}
+
+.sor-modal__content--center {
+    text-align: center;
+}
+
+.sor-modal__close {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    background: transparent;
+    border: 0;
+    font-size: 24px;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.sor-booking-details__list {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 4px 12px;
+    margin: 16px 0 0;
+}
+
+.sor-booking-details__list dt {
+    font-weight: 600;
+    color: #374151;
+}
+
+.sor-booking-details__list dd {
+    margin: 0;
+}
+
+.sor-booking-qr-image {
+    max-width: 240px;
+}
+
+@media (max-width: 1024px) {
+    #sor-booking-admin .sor-booking-table th:nth-child(10),
+    #sor-booking-admin .sor-booking-table td:nth-child(10),
+    #sor-booking-admin .sor-booking-table th:nth-child(11),
+    #sor-booking-admin .sor-booking-table td:nth-child(11),
+    #sor-booking-admin .sor-booking-table th:nth-child(12),
+    #sor-booking-admin .sor-booking-table td:nth-child(12) {
+        display: none;
+    }
+}
+
+@media (max-width: 782px) {
+    #sor-booking-admin .sor-booking-filters__actions {
+        margin-left: 0;
+        width: 100%;
+        justify-content: flex-start;
+    }
+
+    #sor-booking-admin .sor-booking-table th:nth-child(4),
+    #sor-booking-admin .sor-booking-table td:nth-child(4),
+    #sor-booking-admin .sor-booking-table th:nth-child(5),
+    #sor-booking-admin .sor-booking-table td:nth-child(5),
+    #sor-booking-admin .sor-booking-table th:nth-child(6),
+    #sor-booking-admin .sor-booking-table td:nth-child(6) {
+        display: none;
+    }
+}
+
 .sor-success p {
     color: #494338;
     line-height: 1.6;

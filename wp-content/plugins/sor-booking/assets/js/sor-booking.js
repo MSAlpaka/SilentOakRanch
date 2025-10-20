@@ -29,8 +29,7 @@
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'X-WP-Nonce': SORBooking.nonce,
-                'X-SOR-API-Key': SORBooking.apiKey
+                'X-WP-Nonce': SORBooking.nonce
             },
             body: JSON.stringify({
                 booking_id: booking.booking_id,

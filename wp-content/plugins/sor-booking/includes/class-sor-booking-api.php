@@ -128,13 +128,13 @@ class API {
      * @return bool
      */
     public function validate_private_request( WP_REST_Request $request ) {
-        $provided = $request->get_header( 'X-SOR-API-Key' );
-        if ( $provided && hash_equals( \SOR_API_KEY, $provided ) ) {
+        $nonce = $request->get_header( 'X-WP-Nonce' );
+        if ( $nonce && \wp_verify_nonce( $nonce, 'wp_rest' ) ) {
             return true;
         }
 
-        $param_key = $request->get_param( 'api_key' );
-        if ( $param_key && hash_equals( \SOR_API_KEY, $param_key ) ) {
+        $provided = $request->get_header( 'X-SOR-API-Key' );
+        if ( $provided && defined( 'SOR_API_KEY' ) && \SOR_API_KEY && hash_equals( \SOR_API_KEY, $provided ) ) {
             return true;
         }
 
@@ -230,6 +230,11 @@ class API {
             return $this->error_response( 'amount_mismatch', \__( 'Payment amount mismatch.', 'sor-booking' ), 400 );
         }
 
+        $verification = $this->paypal->verify_order( $paypal_order, $booking );
+        if ( \is_wp_error( $verification ) ) {
+            return $this->error_response( $verification->get_error_code(), $verification->get_error_message(), 400 );
+        }
+
         $payload = $this->qr->generate_payload( $booking->uuid );
         $qr_url  = $this->qr->render_img( $payload );
 
@@ -312,6 +317,10 @@ class API {
         $booking = $this->db->get_booking( $result['uuid'] );
         if ( ! $booking ) {
             return $this->error_response( 'booking_not_found', \__( 'Booking not found.', 'sor-booking' ), 404 );
+        }
+
+        if ( $this->qr->is_payload_expired_for_booking( $booking ) ) {
+            return $this->error_response( 'qr_expired', \__( 'QR code expired.', 'sor-booking' ), 400 );
         }
 
         $this->db->update_status( $booking->id, 'completed' );

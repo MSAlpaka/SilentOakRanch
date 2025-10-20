@@ -128,7 +128,6 @@ function sor_booking_enqueue_assets() {
             'nonce'         => $nonce,
             'resources'     => sor_booking_get_resources(),
             'paypalClient'  => SOR_PAYPAL_CLIENT_ID,
-            'apiKey'        => SOR_API_KEY,
             'testmode'      => (bool) get_option( SOR_BOOKING_TESTMODE_OPTION, false ),
             'i18n'          => array(
                 'bookingCreated'  => __( 'Booking created. Please complete payment to confirm.', 'sor-booking' ),

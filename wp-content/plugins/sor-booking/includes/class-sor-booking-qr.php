@@ -10,7 +10,7 @@ use WP_Error;
 class QR {
     const SCHEME  = 'SOR';
     const VERSION = 'v1';
-    const TTL     = \DAY_IN_SECONDS;
+    const TTL     = 6 * \MONTH_IN_SECONDS;
 
     /**
      * Generate QR payload string.
@@ -64,7 +64,7 @@ class QR {
      *
      * @return array|WP_Error
      */
-    public function verify_payload( $payload ) {
+    public function verify_payload( $payload, $max_age = null ) {
         $parts = explode( '|', $payload );
         if ( count( $parts ) !== 5 ) {
             return new WP_Error( 'invalid_qr', \__( 'Malformed QR payload.', 'sor-booking' ) );
@@ -86,7 +86,9 @@ class QR {
         }
 
         $timestamp = intval( $ts );
-        if ( time() - $timestamp > self::TTL ) {
+        $max_age   = null === $max_age ? self::TTL : intval( $max_age );
+
+        if ( $max_age > 0 && time() - $timestamp > $max_age ) {
             return new WP_Error( 'qr_expired', \__( 'QR code expired.', 'sor-booking' ) );
         }
 
@@ -94,6 +96,32 @@ class QR {
             'uuid' => \sanitize_text_field( $uuid ),
             'ts'   => $timestamp,
         );
+    }
+
+    /**
+     * Determine if QR payload should expire based on booking schedule.
+     *
+     * @param object $booking Booking record.
+     *
+     * @return bool
+     */
+    public function is_payload_expired_for_booking( $booking ) {
+        if ( empty( $booking->slot_start ) ) {
+            return false;
+        }
+
+        $start = strtotime( $booking->slot_start );
+        $end   = $booking->slot_end ? strtotime( $booking->slot_end ) : $start;
+
+        if ( ! $start ) {
+            return false;
+        }
+
+        $end      = $end && $end > $start ? $end : $start;
+        $grace    = \apply_filters( 'sor_booking_qr_grace_period', \DAY_IN_SECONDS, $booking );
+        $deadline = $end + max( 0, intval( $grace ) );
+
+        return time() > $deadline;
     }
 }
 

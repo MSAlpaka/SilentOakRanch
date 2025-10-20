@@ -1,0 +1,5 @@
+**Decision (by Matthew):** Keep (active – valid dataset v1.6.0)  
+**Rationale:**  
+Dataset for ADR Dashboard metrics; validated via build_adr_dashboard.py.  
+Will update automatically via nightly pipeline.  
+**Date:** 2025-10-20  **Status:** 🟢 Approved

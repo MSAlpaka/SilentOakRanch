@@ -66,21 +66,31 @@ class PayPal {
     }
 
     /**
-     * Validate captured amount for a resource.
+     * Validate captured amount for a booking.
      *
-     * @param string $resource Resource key.
-     * @param float  $amount   Captured amount.
+     * @param object $booking Booking record.
+     * @param float  $amount  Captured amount.
      *
      * @return bool
      */
-    public function validate_amount( $resource, $amount ) {
-        $resources = \sor_booking_get_resources();
-        if ( ! isset( $resources[ $resource ] ) ) {
-            return false;
+    public function validate_amount( $booking, $amount ) {
+        $amount   = floatval( $amount );
+        $expected = null;
+
+        if ( isset( $booking->price ) && '' !== $booking->price ) {
+            $expected = floatval( $booking->price );
         }
 
-        $expected = floatval( $resources[ $resource ]['price'] );
-        $amount   = floatval( $amount );
+        if ( null === $expected ) {
+            $resources = \sor_booking_get_resources();
+            $resource  = $booking->resource ?? null;
+
+            if ( empty( $resource ) || ! isset( $resources[ $resource ] ) ) {
+                return false;
+            }
+
+            $expected = floatval( $resources[ $resource ]['price'] );
+        }
 
         if ( $expected <= 0 ) {
             return true;
@@ -147,7 +157,7 @@ class PayPal {
             return new \WP_Error( 'paypal_missing_amount', \__( 'PayPal order amount missing.', 'sor-booking' ) );
         }
 
-        if ( ! $this->validate_amount( $booking->resource, $amount ) ) {
+        if ( ! $this->validate_amount( $booking, $amount ) ) {
             return new \WP_Error( 'amount_mismatch', \__( 'Payment amount mismatch.', 'sor-booking' ) );
         }
 

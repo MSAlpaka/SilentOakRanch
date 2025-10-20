@@ -102,6 +102,38 @@ class API {
                 ),
             )
         );
+
+        \register_rest_route(
+            'sor/v1',
+            '/admin/update',
+            array(
+                'methods'             => WP_REST_Server::CREATABLE,
+                'callback'            => array( $this, 'handle_admin_update' ),
+                'permission_callback' => array( $this, 'validate_admin_request' ),
+                'args'                => array(
+                    'uuid'   => array( 'required' => true ),
+                    'status' => array( 'required' => true ),
+                ),
+            )
+        );
+
+        \register_rest_route(
+            'sor/v1',
+            '/admin/list',
+            array(
+                'methods'             => WP_REST_Server::READABLE,
+                'callback'            => array( $this, 'handle_admin_list' ),
+                'permission_callback' => array( $this, 'validate_admin_request' ),
+                'args'                => array(
+                    'resource'  => array(),
+                    'status'    => array(),
+                    'date_from' => array(),
+                    'date_to'   => array(),
+                    'page'      => array(),
+                    'per_page'  => array(),
+                ),
+            )
+        );
     }
 
     /**
@@ -138,6 +170,17 @@ class API {
             return true;
         }
 
+        return \current_user_can( 'manage_options' );
+    }
+
+    /**
+     * Validate admin requests.
+     *
+     * @param WP_REST_Request $request Request.
+     *
+     * @return bool
+     */
+    public function validate_admin_request( WP_REST_Request $request ) {
         return \current_user_can( 'manage_options' );
     }
 
@@ -310,6 +353,120 @@ class API {
     }
 
     /**
+     * Handle admin booking status updates.
+     *
+     * @param WP_REST_Request $request Request instance.
+     *
+     * @return WP_REST_Response
+     */
+    public function handle_admin_update( WP_REST_Request $request ) {
+        $uuid   = \sanitize_text_field( $request->get_param( 'uuid' ) );
+        $status = \sanitize_key( $request->get_param( 'status' ) );
+
+        if ( empty( $uuid ) || empty( $status ) ) {
+            return $this->error_response( 'invalid_request', \__( 'Missing booking or status.', 'sor-booking' ), 400 );
+        }
+
+        $booking = $this->db->get_booking( $uuid );
+        if ( ! $booking ) {
+            return $this->error_response( 'booking_not_found', \__( 'Booking not found.', 'sor-booking' ), 404 );
+        }
+
+        $allowed = array( 'pending', 'paid', 'confirmed', 'completed', 'cancelled' );
+        if ( ! in_array( $status, $allowed, true ) ) {
+            return $this->error_response( 'invalid_status', \__( 'Invalid status.', 'sor-booking' ), 400 );
+        }
+
+        $previous_status = $booking->status;
+
+        if ( $status !== $previous_status ) {
+            $updated = $this->db->update_status( $booking->uuid, $status );
+            if ( ! $updated ) {
+                return $this->error_response( 'update_failed', \__( 'Could not update booking.', 'sor-booking' ), 500 );
+            }
+            $booking = $this->db->get_booking( $booking->uuid );
+        }
+
+        if ( in_array( $status, array( 'confirmed', 'cancelled' ), true ) && $previous_status !== $status ) {
+            $this->send_status_notification( $booking, $status );
+        }
+
+        return new WP_REST_Response(
+            array(
+                'ok'      => true,
+                'booking' => $this->format_booking_for_response( $booking ),
+            ),
+            200
+        );
+    }
+
+    /**
+     * Handle admin booking list retrieval.
+     *
+     * @param WP_REST_Request $request Request instance.
+     *
+     * @return WP_REST_Response
+     */
+    public function handle_admin_list( WP_REST_Request $request ) {
+        $resource  = \sanitize_key( $request->get_param( 'resource' ) );
+        $status    = \sanitize_key( $request->get_param( 'status' ) );
+        $date_from = \sanitize_text_field( $request->get_param( 'date_from' ) );
+        $date_to   = \sanitize_text_field( $request->get_param( 'date_to' ) );
+
+        $allowed_resources = array( 'solekammer', 'waage', 'schmied' );
+        if ( $resource && ! in_array( $resource, $allowed_resources, true ) ) {
+            $resource = '';
+        }
+
+        $allowed_statuses = array( 'pending', 'paid', 'confirmed', 'completed', 'cancelled' );
+        if ( $status && ! in_array( $status, $allowed_statuses, true ) ) {
+            $status = '';
+        }
+
+        $page     = max( 1, (int) $request->get_param( 'page' ) );
+        $per_page = (int) $request->get_param( 'per_page' );
+        $per_page = $per_page > 0 ? $per_page : 20;
+        $per_page = min( 100, max( 1, $per_page ) );
+
+        $filters = array(
+            'resource'  => $resource,
+            'status'    => $status,
+            'date_from' => $date_from,
+            'date_to'   => $date_to,
+        );
+
+        $args = array_merge(
+            $filters,
+            array(
+                'limit'  => $per_page,
+                'offset' => ( $page - 1 ) * $per_page,
+                'order'  => 'DESC',
+            )
+        );
+
+        $bookings    = $this->db->get_all_bookings( $args );
+        $total       = $this->db->count_bookings( $filters );
+        $total_pages = max( 1, (int) ceil( $total / $per_page ) );
+
+        $items = array();
+        foreach ( $bookings as $booking ) {
+            $items[] = $this->format_booking_for_response( $booking );
+        }
+
+        return new WP_REST_Response(
+            array(
+                'ok'          => true,
+                'items'       => $items,
+                'total'       => (int) $total,
+                'page'        => (int) $page,
+                'total_pages' => $total_pages,
+                'per_page'    => $per_page,
+            ),
+            200
+        );
+    }
+
+    /**
      * Handle check-in request.
      *
      * @param WP_REST_Request $request Request instance.
@@ -359,21 +516,77 @@ class API {
             return;
         }
 
-        $to      = \sanitize_email( $booking->email );
-        $subject = \__( 'Silent Oak Ranch – Buchungsbestätigung', 'sor-booking' );
-        if ( empty( $to ) ) {
+        $email = $this->build_email_body(
+            $booking,
+            \esc_html__( 'Vielen Dank für deine Buchung!', 'sor-booking' ),
+            true,
+            $qr_url,
+            true
+        );
+
+        if ( empty( $email['body'] ) ) {
             return;
         }
 
-        $resources   = \sor_booking_get_resources();
-        $details     = isset( $resources[ $booking->resource ] ) ? $resources[ $booking->resource ] : array();
-        $resource    = $details['label'] ?? $booking->resource;
-        $date_string = '';
+        $subject = \__( 'Silent Oak Ranch – Buchungsbestätigung', 'sor-booking' );
+        $this->deliver_booking_email( $booking, $subject, $email['body'], $email['attachments'] );
+    }
 
+    /**
+     * Send notifications for manual status updates.
+     *
+     * @param object $booking Booking record.
+     * @param string $status  Target status.
+     */
+    public function send_status_notification( $booking, $status ) {
+        if ( empty( $booking ) ) {
+            return;
+        }
+
+        $status = \sanitize_key( $status );
+
+        if ( 'confirmed' === $status ) {
+            $email = $this->build_email_body(
+                $booking,
+                \esc_html__( 'Deine Buchung wurde bestätigt. Wir freuen uns auf dich!', 'sor-booking' ),
+                true,
+                '',
+                true
+            );
+            $subject = \__( 'Silent Oak Ranch – Buchung bestätigt', 'sor-booking' );
+            $this->deliver_booking_email( $booking, $subject, $email['body'], $email['attachments'] );
+        } elseif ( 'cancelled' === $status ) {
+            $email = $this->build_email_body(
+                $booking,
+                \esc_html__( 'Deine Buchung wurde storniert. Wenn du Fragen hast, melde dich gerne bei uns.', 'sor-booking' ),
+                false,
+                '',
+                false
+            );
+            $subject = \__( 'Silent Oak Ranch – Buchung storniert', 'sor-booking' );
+            $this->deliver_booking_email( $booking, $subject, $email['body'], $email['attachments'] );
+        }
+    }
+
+    /**
+     * Build booking email content.
+     *
+     * @param object $booking      Booking record.
+     * @param string $intro        Introductory message.
+     * @param bool   $include_qr   Whether to include QR code.
+     * @param string $qr_url       Optional QR image URL.
+     * @param bool   $include_ics  Whether to attach ICS calendar file.
+     *
+     * @return array
+     */
+    protected function build_email_body( $booking, $intro, $include_qr = true, $qr_url = '', $include_ics = true ) {
+        $resources = \sor_booking_get_resources();
+        $details   = isset( $resources[ $booking->resource ] ) ? $resources[ $booking->resource ] : array();
+        $resource  = $details['label'] ?? $booking->resource;
+
+        $date_string = '';
         if ( ! empty( $booking->slot_start ) ) {
-            $timestamp   = strtotime( $booking->slot_start );
-            $date_format = \get_option( 'date_format', 'd.m.Y' ) . ' ' . \get_option( 'time_format', 'H:i' );
-            $date_string = \date_i18n( $date_format, $timestamp );
+            $date_string = $this->format_datetime_for_response( $booking->slot_start );
         }
 
         $price = '';
@@ -381,10 +594,13 @@ class API {
             $price = \number_format_i18n( floatval( $booking->price ), 2 ) . ' €';
         }
 
-        $qr_email_url = 'https://silent-oak-ranch.de/wp-json/sor/v1/qr?ref=' . \rawurlencode( $booking->uuid );
+        $status_label = $this->get_status_label( $booking->status );
+        $qr_endpoint  = $qr_url ? $qr_url : \home_url( '/wp-json/sor/v1/qr?ref=' . \rawurlencode( $booking->uuid ) );
 
         $body  = '<div style="font-family:Helvetica,Arial,sans-serif;color:#2f2a24;">';
-        $body .= '<h2 style="color:#385a3f;">' . \esc_html__( 'Vielen Dank für deine Buchung!', 'sor-booking' ) . '</h2>';
+        if ( $intro ) {
+            $body .= '<h2 style="color:#385a3f;">' . \esc_html( $intro ) . '</h2>';
+        }
         $body .= '<p>' . \esc_html__( 'Hier sind deine Buchungsdetails für Silent Oak Ranch:', 'sor-booking' ) . '</p>';
         $body .= '<ul style="list-style:none;padding:0;">';
         $body .= '<li><strong>' . \esc_html__( 'Angebot:', 'sor-booking' ) . '</strong> ' . \esc_html( $resource ) . '</li>';
@@ -397,23 +613,58 @@ class API {
         if ( $price ) {
             $body .= '<li><strong>' . \esc_html__( 'Preis:', 'sor-booking' ) . '</strong> ' . \esc_html( $price ) . '</li>';
         }
+        if ( $status_label ) {
+            $body .= '<li><strong>' . \esc_html__( 'Status:', 'sor-booking' ) . '</strong> ' . \esc_html( $status_label ) . '</li>';
+        }
         $body .= '</ul>';
-        $body .= '<p>' . \esc_html__( 'Dein QR-Ticket findest du hier:', 'sor-booking' ) . '</p>';
-        $body .= '<p><img src="' . \esc_url( $qr_email_url ) . '" alt="QR" style="max-width:240px;border:6px solid rgba(56,90,63,0.3);border-radius:12px;" /></p>';
-        $body .= '<p><a href="' . \esc_url( $qr_email_url ) . '">' . \esc_html__( 'QR-Ticket online öffnen', 'sor-booking' ) . '</a></p>';
-        $body .= '<p>' . \esc_html__( 'Bitte bring das QR-Ticket zu deinem Termin mit.', 'sor-booking' ) . '</p>';
+
+        if ( $include_qr ) {
+            $body .= '<p>' . \esc_html__( 'Dein QR-Ticket findest du hier:', 'sor-booking' ) . '</p>';
+            $body .= '<p><img src="' . \esc_url( $qr_endpoint ) . '" alt="QR" style="max-width:240px;border:6px solid rgba(56,90,63,0.3);border-radius:12px;" /></p>';
+            $body .= '<p><a href="' . \esc_url( $qr_endpoint ) . '">' . \esc_html__( 'QR-Ticket online öffnen', 'sor-booking' ) . '</a></p>';
+            $body .= '<p>' . \esc_html__( 'Bitte bring das QR-Ticket zu deinem Termin mit.', 'sor-booking' ) . '</p>';
+        } else {
+            $body .= '<p>' . \esc_html__( 'Bei Fragen melde dich bitte direkt bei uns.', 'sor-booking' ) . '</p>';
+        }
+
         $body .= '</div>';
 
-        $headers      = array( 'Content-Type: text/html; charset=UTF-8' );
-        $attachments  = array();
-        $ics          = $this->build_ics( $booking );
-        if ( $ics ) {
-            $tmp = \wp_tempnam( 'sor-booking' );
-            if ( $tmp ) {
-                file_put_contents( $tmp, $ics );
-                $attachments[] = $tmp;
+        $attachments = array();
+        if ( $include_ics ) {
+            $ics = $this->build_ics( $booking );
+            if ( $ics ) {
+                $tmp = \wp_tempnam( 'sor-booking' );
+                if ( $tmp ) {
+                    file_put_contents( $tmp, $ics );
+                    $attachments[] = $tmp;
+                }
             }
         }
+
+        return array(
+            'body'        => $body,
+            'attachments' => $attachments,
+        );
+    }
+
+    /**
+     * Deliver booking email and clean attachments.
+     *
+     * @param object $booking      Booking record.
+     * @param string $subject      Email subject.
+     * @param string $body         Email body HTML.
+     * @param array  $attachments  File attachments.
+     */
+    protected function deliver_booking_email( $booking, $subject, $body, array $attachments = array() ) {
+        $to = \sanitize_email( $booking->email );
+        if ( empty( $to ) ) {
+            foreach ( $attachments as $file ) {
+                @unlink( $file );
+            }
+            return;
+        }
+
+        $headers = array( 'Content-Type: text/html; charset=UTF-8' );
 
         \wp_mail( $to, $subject, $body, $headers, $attachments );
         \wp_mail( 'info@silent-oak-ranch.de', $subject, $body, $headers, $attachments );
@@ -421,6 +672,104 @@ class API {
         foreach ( $attachments as $file ) {
             @unlink( $file );
         }
+    }
+
+    /**
+     * Format booking for REST responses.
+     *
+     * @param object $booking Booking record.
+     *
+     * @return array
+     */
+    protected function format_booking_for_response( $booking ) {
+        $resources      = \sor_booking_get_resources();
+        $resource_label = isset( $resources[ $booking->resource ]['label'] ) ? $resources[ $booking->resource ]['label'] : $booking->resource;
+
+        return array(
+            'id'               => (int) $booking->id,
+            'uuid'             => $booking->uuid,
+            'resource'         => $booking->resource,
+            'resource_label'   => $resource_label,
+            'name'             => $booking->name,
+            'phone'            => $booking->phone,
+            'email'            => $booking->email,
+            'horse_name'       => $booking->horse_name,
+            'slot_start'       => $booking->slot_start,
+            'slot_end'         => $booking->slot_end,
+            'slot_human'       => $this->format_slot_for_response( $booking ),
+            'price'            => (float) $booking->price,
+            'price_formatted'  => \number_format_i18n( (float) $booking->price, 2 ),
+            'status'           => $booking->status,
+            'status_label'     => $this->get_status_label( $booking->status ),
+            'payment_ref'      => $booking->payment_ref,
+            'created_at'       => $booking->created_at,
+            'updated_at'       => $booking->updated_at,
+            'created_human'    => $this->format_datetime_for_response( $booking->created_at ),
+            'updated_human'    => $this->format_datetime_for_response( $booking->updated_at ),
+        );
+    }
+
+    /**
+     * Format slot for responses.
+     *
+     * @param object $booking Booking record.
+     *
+     * @return string
+     */
+    protected function format_slot_for_response( $booking ) {
+        if ( empty( $booking->slot_start ) ) {
+            return '';
+        }
+
+        $start = $this->format_datetime_for_response( $booking->slot_start );
+        $end   = $booking->slot_end ? $this->format_datetime_for_response( $booking->slot_end ) : '';
+
+        if ( $end && $end !== $start ) {
+            return $start . ' – ' . $end;
+        }
+
+        return $start;
+    }
+
+    /**
+     * Format datetime strings for responses.
+     *
+     * @param string $datetime Datetime string.
+     *
+     * @return string
+     */
+    protected function format_datetime_for_response( $datetime ) {
+        if ( empty( $datetime ) ) {
+            return '';
+        }
+
+        $timestamp = strtotime( $datetime );
+        if ( ! $timestamp ) {
+            return '';
+        }
+
+        $format = \get_option( 'date_format', 'd.m.Y' ) . ' ' . \get_option( 'time_format', 'H:i' );
+
+        return \date_i18n( $format, $timestamp );
+    }
+
+    /**
+     * Retrieve human readable status label.
+     *
+     * @param string $status Status key.
+     *
+     * @return string
+     */
+    protected function get_status_label( $status ) {
+        $statuses = array(
+            'pending'   => \__( 'Ausstehend', 'sor-booking' ),
+            'paid'      => \__( 'Bezahlt', 'sor-booking' ),
+            'confirmed' => \__( 'Bestätigt', 'sor-booking' ),
+            'completed' => \__( 'Abgeschlossen', 'sor-booking' ),
+            'cancelled' => \__( 'Storniert', 'sor-booking' ),
+        );
+
+        return $statuses[ $status ] ?? $status;
     }
 
     /**

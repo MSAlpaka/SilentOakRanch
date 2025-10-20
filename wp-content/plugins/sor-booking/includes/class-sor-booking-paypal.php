@@ -42,18 +42,20 @@ class PayPal {
      * Enqueue PayPal SDK when client ID is configured.
      */
     public function enqueue_sdk() {
-        if ( ! \SOR_PAYPAL_CLIENT_ID ) {
+        $client_id = \sor_booking_get_paypal_client_id();
+
+        if ( ! $client_id ) {
             return;
         }
 
         $params = array(
-            'client-id' => \SOR_PAYPAL_CLIENT_ID,
+            'client-id' => $client_id,
             'currency'  => \apply_filters( 'sor_booking_paypal_currency', 'EUR' ),
             'intent'    => 'CAPTURE',
             'components'=> 'buttons',
         );
 
-        if ( \get_option( \SOR_BOOKING_TESTMODE_OPTION, false ) ) {
+        if ( \sor_booking_is_sandbox() ) {
             $params['debug'] = 'true';
         }
 
@@ -64,21 +66,31 @@ class PayPal {
     }
 
     /**
-     * Validate captured amount for a resource.
+     * Validate captured amount for a booking.
      *
-     * @param string $resource Resource key.
-     * @param float  $amount   Captured amount.
+     * @param object $booking Booking record.
+     * @param float  $amount  Captured amount.
      *
      * @return bool
      */
-    public function validate_amount( $resource, $amount ) {
-        $resources = \sor_booking_get_resources();
-        if ( ! isset( $resources[ $resource ] ) ) {
-            return false;
+    public function validate_amount( $booking, $amount ) {
+        $amount   = floatval( $amount );
+        $expected = null;
+
+        if ( isset( $booking->price ) && '' !== $booking->price ) {
+            $expected = floatval( $booking->price );
         }
 
-        $expected = floatval( $resources[ $resource ]['price'] );
-        $amount   = floatval( $amount );
+        if ( null === $expected ) {
+            $resources = \sor_booking_get_resources();
+            $resource  = $booking->resource ?? null;
+
+            if ( empty( $resource ) || ! isset( $resources[ $resource ] ) ) {
+                return false;
+            }
+
+            $expected = floatval( $resources[ $resource ]['price'] );
+        }
 
         if ( $expected <= 0 ) {
             return true;
@@ -145,7 +157,7 @@ class PayPal {
             return new \WP_Error( 'paypal_missing_amount', \__( 'PayPal order amount missing.', 'sor-booking' ) );
         }
 
-        if ( ! $this->validate_amount( $booking->resource, $amount ) ) {
+        if ( ! $this->validate_amount( $booking, $amount ) ) {
             return new \WP_Error( 'amount_mismatch', \__( 'Payment amount mismatch.', 'sor-booking' ) );
         }
 
@@ -164,8 +176,8 @@ class PayPal {
             return $this->access_token;
         }
 
-        $client = \SOR_PAYPAL_CLIENT_ID;
-        $secret = \SOR_PAYPAL_SECRET;
+        $client = \sor_booking_get_paypal_client_id();
+        $secret = \sor_booking_get_paypal_secret();
 
         if ( empty( $client ) || empty( $secret ) ) {
             return new \WP_Error( 'paypal_credentials_missing', \__( 'PayPal credentials not configured.', 'sor-booking' ) );
@@ -207,7 +219,7 @@ class PayPal {
      * @return string
      */
     protected function get_api_base() {
-        $sandbox = \apply_filters( 'sor_booking_paypal_sandbox', (bool) \get_option( \SOR_BOOKING_TESTMODE_OPTION, false ) );
+        $sandbox = \apply_filters( 'sor_booking_paypal_sandbox', \sor_booking_is_sandbox() );
 
         return $sandbox ? 'https://api-m.sandbox.paypal.com/' : 'https://api-m.paypal.com/';
     }

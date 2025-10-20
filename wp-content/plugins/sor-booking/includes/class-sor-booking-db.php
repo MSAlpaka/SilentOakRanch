@@ -234,21 +234,77 @@ class DB {
         global $wpdb;
 
         $defaults = array(
-            'order' => 'DESC',
-            'limit' => 200,
+            'order'     => 'DESC',
+            'limit'     => 200,
+            'offset'    => 0,
+            'resource'  => '',
+            'status'    => '',
+            'date_from' => '',
+            'date_to'   => '',
         );
 
         $args  = \wp_parse_args( $args, $defaults );
         $order = 'ASC' === strtoupper( $args['order'] ) ? 'ASC' : 'DESC';
-        $limit = isset( $args['limit'] ) ? intval( $args['limit'] ) : 200;
         $table = $wpdb->prefix . self::TABLE;
 
-        $sql = "SELECT * FROM {$table} ORDER BY created_at {$order}";
+        list( $where, $values ) = $this->build_where_clause( $args );
+
+        $sql = "SELECT * FROM {$table}";
+        if ( $where ) {
+            $sql .= ' WHERE ' . implode( ' AND ', $where );
+        }
+
+        $sql .= " ORDER BY created_at {$order}";
+
+        $limit  = isset( $args['limit'] ) ? intval( $args['limit'] ) : 0;
+        $offset = isset( $args['offset'] ) ? intval( $args['offset'] ) : 0;
+
         if ( $limit > 0 ) {
-            $sql .= $wpdb->prepare( ' LIMIT %d', $limit );
+            $sql     .= ' LIMIT %d OFFSET %d';
+            $values[] = $limit;
+            $values[] = max( 0, $offset );
+        }
+
+        if ( $values ) {
+            $sql = $wpdb->prepare( $sql, $values );
         }
 
         return $wpdb->get_results( $sql );
+    }
+
+    /**
+     * Count bookings for filters.
+     *
+     * @param array $args Filter arguments.
+     *
+     * @return int
+     */
+    public function count_bookings( array $args = array() ) {
+        global $wpdb;
+
+        $defaults = array(
+            'resource'  => '',
+            'status'    => '',
+            'date_from' => '',
+            'date_to'   => '',
+        );
+
+        $args = \wp_parse_args( $args, $defaults );
+
+        list( $where, $values ) = $this->build_where_clause( $args );
+
+        $table = $wpdb->prefix . self::TABLE;
+        $sql   = "SELECT COUNT(*) FROM {$table}";
+
+        if ( $where ) {
+            $sql .= ' WHERE ' . implode( ' AND ', $where );
+        }
+
+        if ( $values ) {
+            $sql = $wpdb->prepare( $sql, $values );
+        }
+
+        return (int) $wpdb->get_var( $sql );
     }
 
     /**
@@ -302,6 +358,46 @@ class DB {
         }
 
         return $sanitized;
+    }
+
+    /**
+     * Build WHERE clause parts for booking queries.
+     *
+     * @param array $args Query arguments.
+     *
+     * @return array
+     */
+    private function build_where_clause( array $args ) {
+        $where  = array();
+        $values = array();
+
+        if ( ! empty( $args['resource'] ) ) {
+            $where[]  = 'resource = %s';
+            $values[] = \sanitize_key( $args['resource'] );
+        }
+
+        if ( ! empty( $args['status'] ) ) {
+            $where[]  = 'status = %s';
+            $values[] = \sanitize_key( $args['status'] );
+        }
+
+        if ( ! empty( $args['date_from'] ) ) {
+            $from = $this->sanitize_datetime( $args['date_from'] . ' 00:00:00' );
+            if ( $from ) {
+                $where[]  = 'COALESCE(slot_start, created_at) >= %s';
+                $values[] = $from;
+            }
+        }
+
+        if ( ! empty( $args['date_to'] ) ) {
+            $to = $this->sanitize_datetime( $args['date_to'] . ' 23:59:59' );
+            if ( $to ) {
+                $where[]  = 'COALESCE(slot_start, created_at) <= %s';
+                $values[] = $to;
+            }
+        }
+
+        return array( $where, $values );
     }
 }
 

@@ -1,0 +1,5 @@
+**Decision (by Matthew):** Keep (active – role governance definitions)  
+**Rationale:**  
+Defines ADR governance roles (Steward, Reviewer, Auditor, Contributor).  
+No technical change required; remains authoritative for all governance workflows.  
+**Date:** 2025-10-20  **Status:** 🟢 Approved

@@ -1,0 +1,4 @@
+**Decision (by Matthew):** Keep (active – auto-generated from tools/api/generate_openapi.php)  
+**Rationale:**  
+Auto-generated OpenAPI 3.0.3 specification for all core routes. Immutable artefact.  
+**Date:** 2025-10-20  **Status:** 🟢 Approved

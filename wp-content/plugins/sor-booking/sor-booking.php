@@ -134,6 +134,12 @@ function sor_booking_enqueue_assets() {
                 'paymentComplete' => __( 'Payment completed successfully.', 'sor-booking' ),
                 'qrReady'         => __( 'Your QR code is ready for check-in.', 'sor-booking' ),
                 'error'           => __( 'An unexpected error occurred. Please try again.', 'sor-booking' ),
+                'creatingBooking' => __( 'Creating your booking…', 'sor-booking' ),
+                'requiredName'    => __( 'Please enter your full name.', 'sor-booking' ),
+                'requiredEmail'   => __( 'Please provide a valid email address.', 'sor-booking' ),
+                'requiredSlot'    => __( 'Please choose a date and time.', 'sor-booking' ),
+                'processingPayment' => __( 'Processing your payment…', 'sor-booking' ),
+                'paymentError'    => __( 'We could not process your payment. Please try again.', 'sor-booking' ),
             ),
         )
     );

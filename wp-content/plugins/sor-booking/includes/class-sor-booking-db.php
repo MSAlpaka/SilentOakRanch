@@ -108,6 +108,54 @@ class DB {
     }
 
     /**
+     * Determine whether a booking conflicts with an existing slot.
+     *
+     * @param string      $resource   Resource key.
+     * @param string|null $slot_start Slot start datetime.
+     * @param string|null $slot_end   Slot end datetime.
+     *
+     * @return bool
+     */
+    public function has_slot_conflict( $resource, $slot_start, $slot_end = null ) {
+        global $wpdb;
+
+        $resource   = \sanitize_key( $resource );
+        $slot_start = $this->sanitize_datetime( $slot_start );
+        $slot_end   = $this->sanitize_datetime( $slot_end );
+
+        if ( empty( $resource ) || empty( $slot_start ) ) {
+            return false;
+        }
+
+        if ( empty( $slot_end ) ) {
+            $slot_end = $slot_start;
+        }
+
+        if ( $slot_start > $slot_end ) {
+            $tmp        = $slot_start;
+            $slot_start = $slot_end;
+            $slot_end   = $tmp;
+        }
+
+        $table = $wpdb->prefix . self::TABLE;
+        $sql   = $wpdb->prepare(
+            "SELECT COUNT(*) FROM {$table}
+             WHERE resource = %s
+               AND status IN ('pending','paid','confirmed','completed')
+               AND slot_start IS NOT NULL
+               AND slot_start <= %s
+               AND COALESCE(slot_end, slot_start) >= %s",
+            $resource,
+            $slot_end,
+            $slot_start
+        );
+
+        $count = (int) $wpdb->get_var( $sql );
+
+        return $count > 0;
+    }
+
+    /**
      * Update booking status and optional fields.
      *
      * @param int|string $id_or_uuid Booking identifier.

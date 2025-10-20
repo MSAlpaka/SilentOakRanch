@@ -1,0 +1,82 @@
+.sor-booking-form {
+    background: #fffdf7;
+    border: 1px solid #d2c7a8;
+    border-radius: 12px;
+    padding: 24px;
+    margin: 20px 0;
+    box-shadow: 0 8px 24px rgba(80, 60, 20, 0.08);
+    max-width: 640px;
+}
+
+.sor-booking-form h2 {
+    font-family: 'Georgia', serif;
+    color: #2f5d3a;
+    margin-bottom: 16px;
+}
+
+.sor-booking-form label {
+    display: block;
+    margin-bottom: 12px;
+    color: #4b4b4b;
+}
+
+.sor-booking-form input,
+.sor-booking-form select,
+.sor-booking-form textarea {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid #cbbba0;
+    border-radius: 8px;
+    background: #fffef9;
+    font-size: 16px;
+}
+
+.sor-booking-form button,
+.sor-booking-form input[type="submit"] {
+    background: #3f7d4c;
+    color: #fff;
+    border: none;
+    border-radius: 999px;
+    padding: 12px 28px;
+    font-size: 16px;
+    cursor: pointer;
+    transition: background 0.2s ease-in-out;
+    margin-top: 10px;
+}
+
+.sor-booking-form button:hover,
+.sor-booking-form input[type="submit"]:hover {
+    background: #35673f;
+}
+
+.sor-booking-message {
+    padding: 12px 16px;
+    border-radius: 8px;
+    margin-top: 16px;
+    font-weight: 600;
+}
+
+.sor-booking-message.success {
+    background: #edf7ed;
+    color: #256029;
+    border: 1px solid #c2e0c2;
+}
+
+.sor-booking-message.error {
+    background: #fdeeee;
+    color: #8a1f1f;
+    border: 1px solid #f2c4c4;
+}
+
+.sor-booking-qr-container {
+    margin-top: 20px;
+    text-align: center;
+}
+
+.sor-booking-qr {
+    max-width: 220px;
+    border: 6px solid #d2c7a8;
+    border-radius: 12px;
+    background: #fff;
+}
+

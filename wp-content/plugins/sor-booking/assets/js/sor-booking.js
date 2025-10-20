@@ -140,15 +140,20 @@
     }
 
     function renderSuccess($form, uuid) {
-        var qrEndpoint = '/wp-json/sor/v1/qr?ref=' + encodeURIComponent(uuid);
         fetchQr(uuid).catch(function () {
             return null;
-        }).then(function () {
+        }).then(function (response) {
+            var qrUrl = '';
+            if (response && response.ok && response.data && response.data.url) {
+                qrUrl = response.data.url;
+            }
+
             var successHtml = '' +
                 '<div class="sor-success">' +
                 '<h3>Buchung bestätigt!</h3>' +
                 '<p>Bitte speichere dein QR-Ticket und bring es zum Termin mit.</p>' +
-                '<img id="sor-qr-img" src="' + qrEndpoint + '" alt="QR Ticket" width="256">' +
+                (qrUrl ? '<img id="sor-qr-img" src="' + qrUrl + '" alt="QR Ticket" width="256">' : '') +
+                (qrUrl ? '' : '<p>' + (SORBooking.i18n.qrUnavailable || 'Das QR-Ticket konnte nicht geladen werden. Prüfe bitte deine E-Mail für dein Ticket.') + '</p>') +
                 '<p>Eine Bestätigung wurde per E-Mail an dich gesendet.</p>' +
                 '</div>';
             $form.replaceWith(successHtml);

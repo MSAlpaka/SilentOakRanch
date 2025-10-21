@@ -17,9 +17,19 @@ declare global {
 const fetchMock = vi.fn()
 const originalFetch = global.fetch
 
-function mockResponse(data: unknown, ok = true) {
+function mockResponse(
+  data: unknown,
+  {
+    ok = true,
+    status = ok ? 200 : 400,
+  }: {
+    ok?: boolean
+    status?: number
+  } = {},
+) {
   return {
     ok,
+    status,
     text: () => Promise.resolve(JSON.stringify(data)),
   } as Response
 }
@@ -43,8 +53,10 @@ describe('AuthContext', () => {
     global.fetch = originalFetch
   })
 
-  it('hydrates session and stores token', async () => {
-    fetchMock.mockResolvedValueOnce(mockResponse({ ok: false }, false))
+  it('hydrates session with provided user data', async () => {
+    fetchMock.mockResolvedValueOnce(
+      mockResponse({ message: 'Unauthorized' }, { ok: false, status: 401 }),
+    )
 
     let contextValue: AuthContextValue | undefined
 
@@ -61,19 +73,21 @@ describe('AuthContext', () => {
     }
 
     await act(async () => {
-      await contextValue!.hydrate('api-token', { id: 1, email: 'john@example.com' })
+      await contextValue!.hydrate(undefined, {
+        id: 1,
+        email: 'john@example.com',
+        roles: ['ROLE_STAFF'],
+      })
     })
 
-    expect(window.localStorage.getItem('ranch_token')).toBe('api-token')
     expect(contextValue.user?.email).toBe('john@example.com')
+    expect(contextValue.role).toBe('staff')
     expect(contextValue.isAuthenticated).toBe(true)
   })
 
-  it('restores user from stored token', async () => {
-    window.localStorage.setItem('ranch_token', 'stored-token')
-
+  it('restores user from API session cookie', async () => {
     fetchMock.mockResolvedValueOnce(
-      mockResponse({ ok: true, user: { id: 2, email: 'restored@example.com', role: 'staff' } }),
+      mockResponse({ id: 2, email: 'restored@example.com', roles: ['ROLE_STAFF'] }),
     )
 
     let contextValue: AuthContextValue | undefined
@@ -86,15 +100,18 @@ describe('AuthContext', () => {
 
     await waitFor(() => expect(contextValue?.user?.email).toBe('restored@example.com'))
 
-    expect(fetchMock).toHaveBeenCalledWith('/api/auth/me', {
-      headers: { Authorization: 'Bearer stored-token' },
+    expect(fetchMock).toHaveBeenCalledWith('/api/me', {
+      credentials: 'include',
     })
     expect(contextValue?.role).toBe('staff')
     expect(contextValue?.isAuthenticated).toBe(true)
   })
 
   it('clears session on logout', async () => {
-    fetchMock.mockResolvedValueOnce(mockResponse({ ok: false }, false))
+    fetchMock.mockResolvedValueOnce(
+      mockResponse({ message: 'Unauthorized' }, { ok: false, status: 401 }),
+    )
+    fetchMock.mockResolvedValueOnce(mockResponse({ message: 'Logged out' }))
 
     let contextValue: AuthContextValue | undefined
 
@@ -111,7 +128,11 @@ describe('AuthContext', () => {
     }
 
     await act(async () => {
-      await contextValue!.hydrate('api-token', { id: 3, email: 'logout@example.com' })
+      await contextValue!.hydrate(undefined, {
+        id: 3,
+        email: 'logout@example.com',
+        roles: ['ROLE_ADMIN'],
+      })
     })
 
     expect(contextValue.user).not.toBeNull()
@@ -121,6 +142,9 @@ describe('AuthContext', () => {
     })
 
     expect(contextValue.user).toBeNull()
-    expect(window.localStorage.getItem('ranch_token')).toBeNull()
+    expect(fetchMock).toHaveBeenCalledWith('/api/logout', {
+      credentials: 'include',
+      method: 'POST',
+    })
   })
 })

@@ -32,7 +32,10 @@ describe('InviteAccept', () => {
   })
 
   it('submits password, hydrates auth and navigates', async () => {
-    acceptInviteMock.mockResolvedValue({ ok: true, token: 'api-token', user: { id: 1, email: 'guest@example.com' } })
+    acceptInviteMock.mockResolvedValue({
+      role: 'staff',
+      roles: ['ROLE_STAFF'],
+    })
 
     render(<InviteAccept />)
 
@@ -43,7 +46,10 @@ describe('InviteAccept', () => {
 
     await waitFor(() => {
       expect(acceptInviteMock).toHaveBeenCalledWith('my-token', 'new-secret')
-      expect(hydrateMock).toHaveBeenCalledWith('api-token', { id: 1, email: 'guest@example.com' })
+      expect(hydrateMock).toHaveBeenCalledWith(undefined, null, {
+        role: 'staff',
+        roles: ['ROLE_STAFF'],
+      })
       expect(navigateMock).toHaveBeenCalledWith('/dashboard/bookings', { replace: true })
     })
   })

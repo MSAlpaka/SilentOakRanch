@@ -17,10 +17,10 @@ export default function InviteAccept() {
     setError(null)
     try {
       const result = await acceptInvite(token, password)
-      if (!result.ok || !result.token) {
-        throw new Error('Invalid invite response')
-      }
-      await hydrate(result.token, result.user ?? null)
+      await hydrate(undefined, null, {
+        role: result.role ?? null,
+        roles: result.roles ?? null,
+      })
       navigate('/dashboard/bookings', { replace: true })
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unable to accept invite')

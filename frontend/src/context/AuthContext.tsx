@@ -8,8 +8,6 @@ import {
   type ReactNode,
 } from 'react'
 
-const STORAGE_KEY = 'ranch_token'
-
 const normalizeBaseUrl = (value: string | undefined): string => {
   if (!value) return ''
   return value.endsWith('/') ? value.slice(0, -1) : value
@@ -65,7 +63,11 @@ export interface AuthContextType {
   login: (email: string, password: string) => Promise<boolean>
   logout: () => Promise<void>
   refresh: (hints?: AuthRefreshHints) => Promise<void>
-  hydrate: (token: string, user?: User | null) => Promise<void>
+  hydrate: (
+    token?: string | null,
+    user?: User | null,
+    hints?: AuthRefreshHints,
+  ) => Promise<void>
 }
 
 interface AuthProviderProps {
@@ -87,21 +89,15 @@ async function parseJson<T>(response: Response): Promise<T> {
 
 export function AuthProvider({ children }: AuthProviderProps) {
   const [user, setUser] = useState<User | null>(null)
-  const [token, setToken] = useState<string | null>(() => {
-    if (typeof window === 'undefined') return null
-    return window.localStorage.getItem(STORAGE_KEY)
-  })
+  const [token, setToken] = useState<string | null>(null)
   const [role, setRole] = useState<RoleName | null>(null)
   const [loading, setLoading] = useState(false)
   const [initialized, setInitialized] = useState(false)
   const [error, setError] = useState<Error | null>(null)
 
-  const persistToken = useCallback((value: string | null) => {
-    if (typeof window === 'undefined') return
-    if (value) {
-      window.localStorage.setItem(STORAGE_KEY, value)
-    } else {
-      window.localStorage.removeItem(STORAGE_KEY)
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      window.localStorage.removeItem('ranch_token')
     }
   }, [])
 
@@ -122,42 +118,29 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   const refresh = useCallback(
     async (hints?: AuthRefreshHints) => {
-      const activeToken =
-        token ?? (typeof window !== 'undefined' ? window.localStorage.getItem(STORAGE_KEY) : null)
-
-      if (!activeToken) {
-        applyUser(null)
-        setToken(null)
-        persistToken(null)
-        setInitialized(true)
-        return
-      }
-
       setLoading(true)
       setError(null)
       try {
-        const response = await fetch(`${API_BASE}/auth/me`, {
-          headers: {
-            Authorization: `Bearer ${activeToken}`,
-          },
+        const response = await fetch(`${API_BASE}/me`, {
+          credentials: 'include',
         })
+
+        if (response.status === 401) {
+          applyUser(null)
+          setToken(null)
+          return
+        }
 
         if (!response.ok) {
           throw new Error('Session could not be restored')
         }
 
-        const data = await parseJson<{ ok?: boolean; user?: User | null }>(response)
-        if (!data.ok || !data.user) {
-          throw new Error('Invalid authentication response')
-        }
-
-        setToken(activeToken)
-        persistToken(activeToken)
-        applyUser(data.user, hints)
+        const data = await parseJson<User>(response)
+        setToken(null)
+        applyUser(data, hints ?? { roles: Array.isArray(data.roles) ? data.roles : null })
       } catch (err) {
         applyUser(null)
         setToken(null)
-        persistToken(null)
         setError(err instanceof Error ? err : new Error('Unable to refresh authentication'))
         throw err
       } finally {
@@ -165,7 +148,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         setInitialized(true)
       }
     },
-    [applyUser, persistToken, token],
+    [applyUser],
   )
 
   const login = useCallback(
@@ -173,11 +156,12 @@ export function AuthProvider({ children }: AuthProviderProps) {
       setLoading(true)
       setError(null)
       try {
-        const response = await fetch(`${API_BASE}/auth/login`, {
+        const response = await fetch(`${API_BASE}/login`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
           },
+          credentials: 'include',
           body: JSON.stringify({ email, password }),
         })
 
@@ -187,22 +171,12 @@ export function AuthProvider({ children }: AuthProviderProps) {
         }
 
         const data = await parseJson<{
-          ok?: boolean
-          token?: string
-          user?: User | null
           role?: string | null
           roles?: string[] | null
         }>(response)
 
-        if (!data.token || !data.user) {
-          setError(new Error('Invalid credentials'))
-          return false
-        }
-
-        setToken(data.token)
-        persistToken(data.token)
-        applyUser(data.user, { role: data.role, roles: data.roles ?? data.user.roles })
-        setInitialized(true)
+        setToken(null)
+        await refresh({ role: data.role, roles: data.roles ?? null })
         return true
       } catch (err) {
         setError(err instanceof Error ? err : new Error('Unable to login'))
@@ -211,30 +185,36 @@ export function AuthProvider({ children }: AuthProviderProps) {
         setLoading(false)
       }
     },
-    [applyUser, persistToken],
+    [refresh],
   )
 
   const hydrate = useCallback(
-    async (nextToken: string, nextUser?: User | null) => {
-      persistToken(nextToken)
-      setToken(nextToken)
+    async (nextToken?: string | null, nextUser?: User | null, hints?: AuthRefreshHints) => {
+      setToken(nextToken ?? null)
       if (nextUser) {
-        applyUser(nextUser)
+        applyUser(nextUser, hints)
         setInitialized(true)
         return
       }
-      await refresh()
+      await refresh(hints)
     },
-    [applyUser, persistToken, refresh],
+    [applyUser, refresh],
   )
 
   const logout = useCallback(async () => {
-    persistToken(null)
     setToken(null)
     applyUser(null)
     setError(null)
     setInitialized(true)
-  }, [applyUser, persistToken])
+    try {
+      await fetch(`${API_BASE}/logout`, {
+        method: 'POST',
+        credentials: 'include',
+      })
+    } catch (err) {
+      // best effort logout; swallow network errors to avoid breaking UI logout
+    }
+  }, [applyUser])
 
   useEffect(() => {
     if (!initialized) {

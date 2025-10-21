@@ -10,6 +10,518 @@ use WP_REST_Request;
 use WP_REST_Response;
 use WP_REST_Server;
 
+class SorBookingSyncService {
+    const CRON_HOOK = 'sor_booking_sync_retry';
+
+    /**
+     * Database handler.
+     *
+     * @var DB
+     */
+    protected $db;
+
+    /**
+     * Constructor.
+     *
+     * @param DB $db Database handler.
+     */
+    public function __construct( DB $db ) {
+        $this->db = $db;
+        $this->db->create_tables();
+
+        \add_action( self::CRON_HOOK, array( $this, 'run_cron' ) );
+        \add_action( 'init', array( $this, 'maybe_schedule_cron' ) );
+        \add_action( 'admin_init', array( $this, 'maybe_schedule_cron' ) );
+    }
+
+    /**
+     * Determine whether remote sync is enabled.
+     *
+     * @return bool
+     */
+    public function is_enabled() {
+        $enabled  = (bool) \sor_booking_get_option( 'api_enabled', false );
+        $base_url = $this->get_base_url();
+        $api_key  = $this->get_api_key();
+
+        if ( ! $enabled ) {
+            return false;
+        }
+
+        if ( empty( $base_url ) || 0 !== strpos( $base_url, 'https://' ) ) {
+            return false;
+        }
+
+        if ( empty( $api_key ) ) {
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
+     * Retrieve base API URL.
+     *
+     * @return string
+     */
+    protected function get_base_url() {
+        $url = trim( (string) \sor_booking_get_option( 'api_base_url', 'https://app.silent-oak-ranch.de/api' ) );
+
+        return \untrailingslashit( $url );
+    }
+
+    /**
+     * Retrieve API key.
+     *
+     * @return string
+     */
+    protected function get_api_key() {
+        return (string) \sor_booking_get_option( 'api_key', '' );
+    }
+
+    /**
+     * Handle newly created bookings.
+     *
+     * @param object $booking Booking object.
+     */
+    public function handle_booking_created( $booking ) {
+        if ( ! $booking ) {
+            return;
+        }
+
+        if ( ! $this->is_enabled() ) {
+            $this->mark_disabled( $booking );
+            return;
+        }
+
+        $this->set_pending_action( $booking, 'create' );
+        $this->attempt_sync( $booking, 'create' );
+    }
+
+    /**
+     * Handle booking status transitions that require remote sync.
+     *
+     * @param object $booking Booking object.
+     * @param string $status  New status.
+     */
+    public function handle_status_transition( $booking, $status ) {
+        if ( ! $booking ) {
+            return;
+        }
+
+        $status = \sanitize_key( $status );
+
+        if ( ! in_array( $status, array( 'paid', 'completed', 'cancelled' ), true ) ) {
+            $this->mark_synced( $booking, 'synced' );
+            return;
+        }
+
+        if ( ! $this->is_enabled() ) {
+            $this->mark_disabled( $booking );
+            return;
+        }
+
+        $action = 'status_' . $status;
+        $this->set_pending_action( $booking, $action );
+        $this->attempt_sync( $booking, $action );
+    }
+
+    /**
+     * Attempt to sync a booking with the remote API.
+     *
+     * @param object      $booking Booking record or UUID.
+     * @param string|null $action  Action to perform.
+     *
+     * @return bool|WP_Error
+     */
+    public function attempt_sync( $booking, $action = null ) {
+        $record = is_object( $booking ) ? $booking : $this->db->get_booking( $booking );
+        if ( ! $record ) {
+            return new WP_Error( 'sor_sync_missing_booking', \__( 'Booking not found for sync.', 'sor-booking' ) );
+        }
+
+        $action = $action ? \sanitize_key( $action ) : ( $record->sync_action ?? 'create' );
+        $now    = \current_time( 'mysql' );
+
+        $this->db->update_booking_fields(
+            $record->uuid,
+            array(
+                'sync_attempted_at' => $now,
+            )
+        );
+        $record->sync_attempted_at = $now;
+
+        if ( 'create' === $action ) {
+            $result = $this->send_create_request( $record );
+        } elseif ( 0 === strpos( $action, 'status_' ) ) {
+            $status = substr( $action, 7 );
+            $result = $this->send_status_request( $record, $status );
+        } else {
+            $result = true;
+        }
+
+        if ( is_wp_error( $result ) ) {
+            $this->handle_sync_error( $record, $action, $result );
+
+            return $result;
+        }
+
+        $this->mark_synced( $record, 'synced' );
+
+        return true;
+    }
+
+    /**
+     * Retry sync for a specific booking.
+     *
+     * @param string $uuid Booking UUID.
+     *
+     * @return bool|WP_Error
+     */
+    public function retry_booking_by_uuid( $uuid ) {
+        $booking = $this->db->get_booking( $uuid );
+
+        if ( ! $booking ) {
+            return new WP_Error( 'sor_sync_missing_booking', \__( 'Booking not found.', 'sor-booking' ), array( 'status' => 404 ) );
+        }
+
+        if ( ! $this->is_enabled() ) {
+            return new WP_Error( 'sor_sync_disabled', \__( 'API sync is disabled.', 'sor-booking' ), array( 'status' => 400 ) );
+        }
+
+        $action = ! empty( $booking->sync_action ) ? $booking->sync_action : 'create';
+        $this->set_pending_action( $booking, $action );
+
+        return $this->attempt_sync( $booking, $action );
+    }
+
+    /**
+     * Mark a booking as synced manually.
+     *
+     * @param string $uuid Booking UUID.
+     *
+     * @return bool
+     */
+    public function mark_booking_manually_synced( $uuid ) {
+        $booking = $this->db->get_booking( $uuid );
+
+        if ( ! $booking ) {
+            return false;
+        }
+
+        $this->db->update_booking_fields(
+            $booking->uuid,
+            array(
+                'synced'          => 1,
+                'sync_status'     => 'manual',
+                'sync_action'     => '',
+                'sync_synced_at'  => \current_time( 'mysql' ),
+                'sync_message'    => '',
+            )
+        );
+        $this->db->clear_sync_logs( $booking->uuid );
+
+        return true;
+    }
+
+    /**
+     * Fetch unsynced bookings with the latest log entry.
+     *
+     * @param int $limit Maximum number of entries.
+     *
+     * @return array
+     */
+    public function get_unsynced_items( $limit = 50 ) {
+        $items    = array();
+        $bookings = $this->db->get_unsynced_bookings( $limit );
+
+        foreach ( $bookings as $booking ) {
+            $items[] = array(
+                'booking' => $booking,
+                'log'     => $this->db->get_last_sync_log( $booking->uuid ),
+            );
+        }
+
+        return $items;
+    }
+
+    /**
+     * Count unsynced bookings.
+     *
+     * @return int
+     */
+    public function get_unsynced_count() {
+        return $this->db->count_unsynced_bookings();
+    }
+
+    /**
+     * Process hourly cron job.
+     */
+    public function run_cron() {
+        if ( ! $this->is_enabled() ) {
+            return;
+        }
+
+        $bookings = $this->db->get_unsynced_bookings( 20 );
+
+        foreach ( $bookings as $booking ) {
+            $this->attempt_sync( $booking, $booking->sync_action ?? 'create' );
+        }
+    }
+
+    /**
+     * Schedule cron event when missing.
+     */
+    public function maybe_schedule_cron() {
+        if ( \wp_next_scheduled( self::CRON_HOOK ) ) {
+            return;
+        }
+
+        \wp_schedule_event( time() + MINUTE_IN_SECONDS, 'hourly', self::CRON_HOOK );
+    }
+
+    /**
+     * Prepare booking for sync attempt.
+     *
+     * @param object $booking Booking object.
+     * @param string $action  Action identifier.
+     */
+    protected function set_pending_action( $booking, $action ) {
+        $action = \sanitize_key( $action );
+
+        $this->db->update_booking_fields(
+            $booking->uuid,
+            array(
+                'synced'           => 0,
+                'sync_status'      => 'pending',
+                'sync_action'      => $action,
+                'sync_attempted_at'=> null,
+                'sync_message'     => '',
+            )
+        );
+
+        $booking->synced            = 0;
+        $booking->sync_status       = 'pending';
+        $booking->sync_action       = $action;
+        $booking->sync_attempted_at = null;
+        $booking->sync_message      = '';
+    }
+
+    /**
+     * Send booking creation payload.
+     *
+     * @param object $booking Booking object.
+     *
+     * @return array|WP_Error
+     */
+    protected function send_create_request( $booking ) {
+        $payload = array(
+            'uuid'       => $booking->uuid,
+            'resource'   => $booking->resource,
+            'name'       => $booking->name,
+            'phone'      => $booking->phone,
+            'email'      => $booking->email,
+            'horse_name' => $booking->horse_name,
+            'slot_start' => $this->format_datetime( $booking->slot_start ),
+            'slot_end'   => $this->format_datetime( $booking->slot_end ),
+            'price'      => (float) $booking->price,
+            'status'     => $booking->status,
+            'source'     => 'website',
+        );
+
+        return $this->request( '/bookings', 'POST', $payload );
+    }
+
+    /**
+     * Send booking status update.
+     *
+     * @param object $booking Booking object.
+     * @param string $status  Status value.
+     *
+     * @return array|bool|WP_Error
+     */
+    protected function send_status_request( $booking, $status ) {
+        $status = \sanitize_key( $status );
+
+        if ( ! in_array( $status, array( 'paid', 'completed', 'cancelled' ), true ) ) {
+            return true;
+        }
+
+        $payload = array(
+            'status' => $status,
+        );
+
+        $path = sprintf( '/bookings/%s/status', $booking->uuid );
+
+        return $this->request( $path, 'PATCH', $payload );
+    }
+
+    /**
+     * Perform remote HTTP request.
+     *
+     * @param string $path    Endpoint path.
+     * @param string $method  HTTP method.
+     * @param array  $payload Request payload.
+     *
+     * @return array|WP_Error
+     */
+    protected function request( $path, $method, array $payload = array() ) {
+        $base = $this->get_base_url();
+
+        if ( empty( $base ) ) {
+            return new WP_Error( 'sor_sync_missing_base', \__( 'API base URL not configured.', 'sor-booking' ), array( 'status' => 400 ) );
+        }
+
+        $url = \untrailingslashit( $base ) . '/' . ltrim( $path, '/' );
+
+        $args = array(
+            'method'      => strtoupper( $method ),
+            'timeout'     => 15,
+            'headers'     => array(
+                'Authorization' => 'Bearer ' . $this->get_api_key(),
+                'Content-Type'  => 'application/json',
+                'Accept'        => 'application/json',
+            ),
+            'body'        => ! empty( $payload ) ? \wp_json_encode( $payload ) : '{}',
+            'data_format' => 'body',
+        );
+
+        $response = \wp_remote_request( $url, $args );
+
+        if ( is_wp_error( $response ) ) {
+            return new WP_Error(
+                'sor_sync_request_failed',
+                $response->get_error_message(),
+                array(
+                    'status'      => 0,
+                    'status_code' => 0,
+                )
+            );
+        }
+
+        $code = (int) \wp_remote_retrieve_response_code( $response );
+        $body = \wp_remote_retrieve_body( $response );
+
+        if ( $code < 200 || $code >= 300 ) {
+            return new WP_Error(
+                'sor_sync_http_error',
+                sprintf( /* translators: %d: HTTP status code */ \__( 'Remote API error (HTTP %d).', 'sor-booking' ), $code ),
+                array(
+                    'status'      => $code,
+                    'status_code' => $code,
+                    'body'        => $body,
+                )
+            );
+        }
+
+        $decoded = json_decode( $body, true );
+
+        if ( is_array( $decoded ) && array_key_exists( 'ok', $decoded ) && true !== $decoded['ok'] ) {
+            return new WP_Error(
+                'sor_sync_remote_error',
+                \__( 'Remote API rejected the request.', 'sor-booking' ),
+                array(
+                    'status'      => $code,
+                    'status_code' => $code,
+                    'body'        => $body,
+                )
+            );
+        }
+
+        return array(
+            'code' => $code,
+            'body' => $decoded,
+        );
+    }
+
+    /**
+     * Mark booking as synced.
+     *
+     * @param object $booking Booking record.
+     * @param string $status  Sync status label.
+     */
+    protected function mark_synced( $booking, $status ) {
+        $fields = array(
+            'synced'         => 1,
+            'sync_status'    => $status,
+            'sync_action'    => '',
+            'sync_synced_at' => \current_time( 'mysql' ),
+            'sync_message'   => '',
+        );
+
+        $this->db->update_booking_fields( $booking->uuid, $fields );
+        $this->db->clear_sync_logs( $booking->uuid );
+
+        $booking->synced         = 1;
+        $booking->sync_status    = $status;
+        $booking->sync_action    = '';
+        $booking->sync_synced_at = $fields['sync_synced_at'];
+        $booking->sync_message   = '';
+    }
+
+    /**
+     * Handle sync error bookkeeping.
+     *
+     * @param object   $booking Booking record.
+     * @param string   $action  Sync action.
+     * @param WP_Error $error   Error instance.
+     */
+    protected function handle_sync_error( $booking, $action, WP_Error $error ) {
+        $data        = $error->get_error_data();
+        $status_code = is_array( $data ) && isset( $data['status_code'] ) ? (int) $data['status_code'] : 0;
+        $message     = $error->get_error_message();
+        $message     = $message ? $message : \__( 'Unknown sync error.', 'sor-booking' );
+        $message     = \wp_trim_words( \wp_strip_all_tags( (string) $message ), 30, '…' );
+
+        $this->db->update_booking_fields(
+            $booking->uuid,
+            array(
+                'synced'           => 0,
+                'sync_status'      => 'error',
+                'sync_message'     => $message,
+            )
+        );
+
+        $this->db->log_sync_error( $booking->uuid, $action, $status_code, $message );
+    }
+
+    /**
+     * Format datetime to ISO8601 in site timezone.
+     *
+     * @param string $datetime Datetime string.
+     *
+     * @return string|null
+     */
+    protected function format_datetime( $datetime ) {
+        if ( empty( $datetime ) ) {
+            return null;
+        }
+
+        $formatted = \get_date_from_gmt( $datetime, DATE_ATOM );
+
+        return $formatted ?: null;
+    }
+
+    /**
+     * Mark booking as not synced when integration disabled.
+     *
+     * @param object $booking Booking record.
+     */
+    protected function mark_disabled( $booking ) {
+        $this->db->update_booking_fields(
+            $booking->uuid,
+            array(
+                'synced'         => 1,
+                'sync_status'    => 'disabled',
+                'sync_action'    => '',
+                'sync_synced_at' => \current_time( 'mysql' ),
+                'sync_message'   => '',
+            )
+        );
+        $this->db->clear_sync_logs( $booking->uuid );
+    }
+}
+
 class API {
     /**
      * Database handler.
@@ -33,16 +545,25 @@ class API {
     protected $paypal;
 
     /**
+     * Sync service.
+     *
+     * @var SorBookingSyncService|null
+     */
+    protected $sync;
+
+    /**
      * Constructor.
      *
-     * @param DB     $db     Database.
-     * @param QR     $qr     QR helper.
-     * @param PayPal $paypal PayPal helper.
+     * @param DB                      $db     Database.
+     * @param QR                      $qr     QR helper.
+     * @param PayPal                  $paypal PayPal helper.
+     * @param SorBookingSyncService   $sync   Sync service.
      */
-    public function __construct( DB $db, QR $qr, PayPal $paypal ) {
+    public function __construct( DB $db, QR $qr, PayPal $paypal, ?SorBookingSyncService $sync = null ) {
         $this->db     = $db;
         $this->qr     = $qr;
         $this->paypal = $paypal;
+        $this->sync   = $sync;
 
         \add_action( 'rest_api_init', array( $this, 'register_routes' ) );
     }
@@ -125,12 +646,26 @@ class API {
                 'callback'            => array( $this, 'handle_admin_list' ),
                 'permission_callback' => array( $this, 'validate_admin_request' ),
                 'args'                => array(
+                    'uuid'      => array(),
                     'resource'  => array(),
                     'status'    => array(),
                     'date_from' => array(),
                     'date_to'   => array(),
                     'page'      => array(),
                     'per_page'  => array(),
+                ),
+            )
+        );
+
+        \register_rest_route(
+            'sor/v1',
+            '/admin/sync-retry',
+            array(
+                'methods'             => WP_REST_Server::CREATABLE,
+                'callback'            => array( $this, 'handle_admin_sync_retry' ),
+                'permission_callback' => array( $this, 'validate_admin_request' ),
+                'args'                => array(
+                    'uuid' => array( 'required' => true ),
                 ),
             )
         );
@@ -247,6 +782,11 @@ class API {
             $booking->status = 'confirmed';
         }
 
+        if ( $booking && $this->sync ) {
+            $this->sync->handle_booking_created( $booking );
+            $booking = $this->db->get_booking( $booking->id );
+        }
+
         return new WP_REST_Response(
             array(
                 'ok'         => true,
@@ -255,6 +795,8 @@ class API {
                 'status'     => $booking ? $booking->status : 'pending',
                 'price'      => $definition['price'],
                 'resource'   => $resource,
+                'synced'     => $booking && isset( $booking->synced ) ? (int) $booking->synced : 0,
+                'sync_status'=> $booking->sync_status ?? 'pending',
             ),
             201
         );
@@ -308,6 +850,10 @@ class API {
         }
 
         $booking = $this->db->get_booking( $booking->id );
+        if ( $this->sync && $booking ) {
+            $this->sync->handle_status_transition( $booking, 'paid' );
+            $booking = $this->db->get_booking( $booking->id );
+        }
         $this->send_confirmation_emails( $booking, $qr_url );
 
         return new WP_REST_Response(
@@ -316,6 +862,8 @@ class API {
                 'uuid'       => $booking->uuid,
                 'status'     => 'paid',
                 'qr'         => $qr_url,
+                'synced'     => isset( $booking->synced ) ? (int) $booking->synced : 0,
+                'sync_status'=> $booking->sync_status ?? '',
             ),
             200
         );
@@ -391,6 +939,11 @@ class API {
             $this->send_status_notification( $booking, $status );
         }
 
+        if ( $this->sync && in_array( $status, array( 'paid', 'completed', 'cancelled' ), true ) ) {
+            $this->sync->handle_status_transition( $booking, $status );
+            $booking = $this->db->get_booking( $booking->uuid );
+        }
+
         return new WP_REST_Response(
             array(
                 'ok'      => true,
@@ -408,6 +961,26 @@ class API {
      * @return WP_REST_Response
      */
     public function handle_admin_list( WP_REST_Request $request ) {
+        $uuid      = \sanitize_text_field( $request->get_param( 'uuid' ) );
+        if ( ! empty( $uuid ) ) {
+            $booking = $this->db->get_booking( $uuid );
+            if ( ! $booking ) {
+                return $this->error_response( 'booking_not_found', \__( 'Booking not found.', 'sor-booking' ), 404 );
+            }
+
+            return new WP_REST_Response(
+                array(
+                    'ok'          => true,
+                    'items'       => array( $this->format_booking_for_response( $booking ) ),
+                    'total'       => 1,
+                    'page'        => 1,
+                    'total_pages' => 1,
+                    'per_page'    => 1,
+                ),
+                200
+            );
+        }
+
         $resource  = \sanitize_key( $request->get_param( 'resource' ) );
         $status    = \sanitize_key( $request->get_param( 'status' ) );
         $date_from = \sanitize_text_field( $request->get_param( 'date_from' ) );
@@ -467,6 +1040,48 @@ class API {
     }
 
     /**
+     * Retry syncing a booking via REST.
+     *
+     * @param WP_REST_Request $request Request instance.
+     *
+     * @return WP_REST_Response
+     */
+    public function handle_admin_sync_retry( WP_REST_Request $request ) {
+        $uuid = \sanitize_text_field( $request->get_param( 'uuid' ) );
+
+        if ( empty( $uuid ) ) {
+            return $this->error_response( 'invalid_request', \__( 'Missing booking identifier.', 'sor-booking' ), 400 );
+        }
+
+        $booking = $this->db->get_booking( $uuid );
+        if ( ! $booking ) {
+            return $this->error_response( 'booking_not_found', \__( 'Booking not found.', 'sor-booking' ), 404 );
+        }
+
+        if ( ! $this->sync ) {
+            return $this->error_response( 'sync_unavailable', \__( 'Sync service is not available.', 'sor-booking' ), 500 );
+        }
+
+        $result = $this->sync->retry_booking_by_uuid( $uuid );
+        if ( is_wp_error( $result ) ) {
+            $data   = $result->get_error_data();
+            $status = is_array( $data ) && isset( $data['status'] ) ? (int) $data['status'] : 400;
+
+            return $this->error_response( $result->get_error_code(), $result->get_error_message(), $status ?: 400 );
+        }
+
+        $booking = $this->db->get_booking( $uuid );
+
+        return new WP_REST_Response(
+            array(
+                'ok'      => true,
+                'booking' => $this->format_booking_for_response( $booking ),
+            ),
+            200
+        );
+    }
+
+    /**
      * Handle check-in request.
      *
      * @param WP_REST_Request $request Request instance.
@@ -494,12 +1109,20 @@ class API {
         }
 
         $this->db->update_status( $booking->id, 'completed' );
+        $booking = $this->db->get_booking( $booking->id );
+
+        if ( $this->sync && $booking ) {
+            $this->sync->handle_status_transition( $booking, 'completed' );
+            $booking = $this->db->get_booking( $booking->id );
+        }
 
         return new WP_REST_Response(
             array(
                 'ok'         => true,
                 'booking_id' => (int) $booking->id,
                 'status'     => 'completed',
+                'synced'     => isset( $booking->synced ) ? (int) $booking->synced : 0,
+                'sync_status'=> $booking->sync_status ?? '',
             ),
             200
         );
@@ -706,6 +1329,14 @@ class API {
             'updated_at'       => $booking->updated_at,
             'created_human'    => $this->format_datetime_for_response( $booking->created_at ),
             'updated_human'    => $this->format_datetime_for_response( $booking->updated_at ),
+            'synced'           => isset( $booking->synced ) ? (int) $booking->synced : 0,
+            'sync_status'      => $booking->sync_status ?? '',
+            'sync_action'      => $booking->sync_action ?? '',
+            'sync_message'     => $booking->sync_message ?? '',
+            'sync_attempted_at'=> $booking->sync_attempted_at ?? '',
+            'sync_attempted_human' => isset( $booking->sync_attempted_at ) ? $this->format_datetime_for_response( $booking->sync_attempted_at ) : '',
+            'sync_synced_at'   => $booking->sync_synced_at ?? '',
+            'sync_synced_human'=> isset( $booking->sync_synced_at ) ? $this->format_datetime_for_response( $booking->sync_synced_at ) : '',
         );
     }
 

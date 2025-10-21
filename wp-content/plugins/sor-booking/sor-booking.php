@@ -48,6 +48,9 @@ function sor_booking_get_option_defaults() {
         'paypal_client_id' => defined( 'SOR_PAYPAL_CLIENT_ID' ) ? SOR_PAYPAL_CLIENT_ID : '',
         'paypal_secret'    => defined( 'SOR_PAYPAL_SECRET' ) ? SOR_PAYPAL_SECRET : '',
         'qr_secret'        => defined( 'SOR_QR_SECRET' ) ? SOR_QR_SECRET : '',
+        'api_enabled'      => false,
+        'api_base_url'     => 'https://app.silent-oak-ranch.de/api',
+        'api_key'          => '',
     );
 }
 
@@ -216,15 +219,18 @@ function sor_booking_init() {
     $db     = new \SOR\Booking\DB();
     $qr     = new \SOR\Booking\QR();
     $paypal = new \SOR\Booking\PayPal( $db );
-    $api    = new \SOR\Booking\API( $db, $qr, $paypal );
+    require_once SOR_BOOKING_PATH . 'includes/class-sor-booking-api.php';
+    $sync   = new \SOR\Booking\SorBookingSyncService( $db );
+    $api    = new \SOR\Booking\API( $db, $qr, $paypal, $sync );
 
     $GLOBALS['sor_booking_db']     = $db;
     $GLOBALS['sor_booking_qr']     = $qr;
     $GLOBALS['sor_booking_paypal'] = $paypal;
     $GLOBALS['sor_booking_api']    = $api;
+    $GLOBALS['sor_booking_sync']   = $sync;
 
     if ( is_admin() ) {
-        new \SOR\Booking\Admin( $db );
+        new \SOR\Booking\Admin( $db, $sync );
     }
 }
 add_action( 'plugins_loaded', 'sor_booking_init' );

@@ -14,6 +14,13 @@ class Admin {
     protected $db;
 
     /**
+     * Sync service handler.
+     *
+     * @var SorBookingSyncService|null
+     */
+    protected $sync;
+
+    /**
      * Stored admin page hooks.
      *
      * @var array
@@ -23,15 +30,19 @@ class Admin {
     /**
      * Constructor.
      *
-     * @param DB $db Database handler.
+     * @param DB                    $db   Database handler.
+     * @param SorBookingSyncService $sync Sync service.
      */
-    public function __construct( DB $db ) {
-        $this->db = $db;
+    public function __construct( DB $db, ?SorBookingSyncService $sync = null ) {
+        $this->db   = $db;
+        $this->sync = $sync;
 
         \add_action( 'admin_menu', array( $this, 'register_menu' ) );
         \add_action( 'admin_init', array( $this, 'register_settings' ) );
         \add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_assets' ) );
         \add_action( 'admin_post_sor_booking_export', array( $this, 'handle_export' ) );
+        \add_action( 'admin_post_sor_booking_mark_synced', array( $this, 'handle_mark_synced' ) );
+        \add_action( 'admin_notices', array( $this, 'render_sync_notice' ) );
     }
 
     /**
@@ -149,6 +160,49 @@ class Admin {
                 'class' => 'regular-text',
             )
         );
+
+        \add_settings_section(
+            'sor_booking_section_api',
+            \__( 'Backend Synchronisierung', 'sor-booking' ),
+            array( $this, 'render_api_section' ),
+            $page
+        );
+
+        \add_settings_field(
+            'api_enabled',
+            \__( 'API-Synchronisierung aktivieren', 'sor-booking' ),
+            array( $this, 'render_checkbox_field' ),
+            $page,
+            'sor_booking_section_api',
+            array(
+                'name'  => 'api_enabled',
+                'label' => \__( 'Automatische Synchronisierung einschalten', 'sor-booking' ),
+            )
+        );
+
+        \add_settings_field(
+            'api_base_url',
+            \__( 'API Basis-URL', 'sor-booking' ),
+            array( $this, 'render_text_field' ),
+            $page,
+            'sor_booking_section_api',
+            array(
+                'name'  => 'api_base_url',
+                'class' => 'regular-text',
+            )
+        );
+
+        \add_settings_field(
+            'api_key',
+            \__( 'API Schlüssel', 'sor-booking' ),
+            array( $this, 'render_password_field' ),
+            $page,
+            'sor_booking_section_api',
+            array(
+                'name'  => 'api_key',
+                'class' => 'regular-text',
+            )
+        );
     }
 
     /**
@@ -190,6 +244,15 @@ class Admin {
             'manage_options',
             'sor-booking-export',
             array( $this, 'render_export_page' )
+        );
+
+        $this->page_hooks['sync'] = \add_submenu_page(
+            'sor-booking',
+            \__( 'Sync-Status', 'sor-booking' ),
+            \__( 'Sync-Status', 'sor-booking' ),
+            'manage_options',
+            'sor-booking-sync',
+            array( $this, 'render_sync_page' )
         );
     }
 
@@ -255,6 +318,37 @@ class Admin {
     }
 
     /**
+     * Render sync warning notice when necessary.
+     */
+    public function render_sync_notice() {
+        if ( ! \current_user_can( 'manage_options' ) ) {
+            return;
+        }
+
+        if ( ! $this->sync || ! $this->sync->is_enabled() ) {
+            return;
+        }
+
+        $count = (int) $this->sync->get_unsynced_count();
+        if ( $count <= 5 ) {
+            return;
+        }
+
+        $url   = \admin_url( 'admin.php?page=sor-booking-sync' );
+        $label = sprintf(
+            \esc_html__( '%1$d Buchungen warten auf Synchronisierung.', 'sor-booking' ),
+            $count
+        );
+        $link  = sprintf(
+            '<a href="%s">%s</a>',
+            \esc_url( $url ),
+            \esc_html__( 'Zum Sync-Status', 'sor-booking' )
+        );
+
+        echo '<div class="notice notice-warning"><p>' . $label . ' ' . $link . '</p></div>';
+    }
+
+    /**
      * Render bookings page.
      */
     public function render_bookings_page() {
@@ -263,17 +357,30 @@ class Admin {
         }
 
         $filters   = $this->get_filters();
-        $page      = $this->get_current_page();
-        $per_page  = $this->get_per_page();
-        $offset    = ( $page - 1 ) * $per_page;
-        $query     = array_merge( $filters, array(
-            'limit'  => $per_page,
-            'offset' => $offset,
-            'order'  => 'DESC',
-        ) );
-        $bookings  = $this->db->get_all_bookings( $query );
-        $total     = $this->db->count_bookings( $filters );
-        $max_pages = max( 1, (int) ceil( $total / $per_page ) );
+        $uuid      = isset( $_GET['uuid'] ) ? \sanitize_text_field( \wp_unslash( $_GET['uuid'] ) ) : '';
+        $has_uuid  = ! empty( $uuid );
+        if ( $has_uuid ) {
+            $booking  = $this->db->get_booking( $uuid );
+            $bookings = $booking ? array( $booking ) : array();
+            $total    = count( $bookings );
+            $page     = 1;
+            $per_page = $this->get_per_page();
+            $max_pages = 1;
+            $pagination = null;
+        } else {
+            $page      = $this->get_current_page();
+            $per_page  = $this->get_per_page();
+            $offset    = ( $page - 1 ) * $per_page;
+            $query     = array_merge( $filters, array(
+                'limit'  => $per_page,
+                'offset' => $offset,
+                'order'  => 'DESC',
+            ) );
+            $bookings  = $this->db->get_all_bookings( $query );
+            $total     = $this->db->count_bookings( $filters );
+            $max_pages = max( 1, (int) ceil( $total / $per_page ) );
+            $pagination = $this->get_pagination_links( $page, $max_pages, $filters );
+        }
         $resources = \sor_booking_get_resources();
 
         $export_url = \add_query_arg(
@@ -281,7 +388,9 @@ class Admin {
             \admin_url( 'admin.php' )
         );
 
-        $pagination = $this->get_pagination_links( $page, $max_pages, $filters );
+        if ( $has_uuid && empty( $bookings ) ) {
+            echo '<div class="notice notice-warning"><p>' . \esc_html__( 'Die angeforderte Buchung wurde nicht gefunden.', 'sor-booking' ) . '</p></div>';
+        }
         ?>
         <div class="wrap" id="sor-booking-admin">
             <h1><?php \esc_html_e( 'Ranch Buchungen', 'sor-booking' ); ?></h1>
@@ -529,6 +638,221 @@ class Admin {
     }
 
     /**
+     * Render sync overview page.
+     */
+    public function render_sync_page() {
+        if ( ! \current_user_can( 'manage_options' ) ) {
+            return;
+        }
+
+        $items      = $this->sync ? $this->sync->get_unsynced_items( 100 ) : array();
+        $resources  = \sor_booking_get_resources();
+        $rest_url   = \esc_url_raw( \rest_url( 'sor/v1/admin/sync-retry' ) );
+        $rest_nonce = \wp_create_nonce( 'wp_rest' );
+        $flag       = isset( $_GET['sor_sync_marked'] ) ? (int) \wp_unslash( $_GET['sor_sync_marked'] ) : null;
+        $can_retry  = $this->sync && $this->sync->is_enabled();
+
+        echo '<div class="wrap" id="sor-booking-sync">';
+        echo '<h1>' . \esc_html__( 'Sync-Status', 'sor-booking' ) . '</h1>';
+
+        if ( ! $this->sync ) {
+            echo '<div class="notice notice-error"><p>' . \esc_html__( 'Die Synchronisierungsfunktion ist derzeit nicht verfügbar.', 'sor-booking' ) . '</p></div>';
+        } elseif ( ! $this->sync->is_enabled() ) {
+            echo '<div class="notice notice-info"><p>' . \esc_html__( 'Die API-Synchronisierung ist deaktiviert. Buchungen werden lokal verarbeitet.', 'sor-booking' ) . '</p></div>';
+        }
+
+        if ( 1 === $flag ) {
+            echo '<div class="notice notice-success is-dismissible"><p>' . \esc_html__( 'Buchung wurde als synchron markiert.', 'sor-booking' ) . '</p></div>';
+        } elseif ( 0 === $flag ) {
+            echo '<div class="notice notice-error is-dismissible"><p>' . \esc_html__( 'Buchung konnte nicht aktualisiert werden.', 'sor-booking' ) . '</p></div>';
+        }
+
+        if ( empty( $items ) ) {
+            echo '<p>' . \esc_html__( 'Alle Buchungen sind synchronisiert.', 'sor-booking' ) . '</p>';
+            echo '</div>';
+            return;
+        }
+
+        echo '<table class="wp-list-table widefat fixed striped">';
+        echo '<thead><tr>';
+        echo '<th>' . \esc_html__( 'Buchung', 'sor-booking' ) . '</th>';
+        echo '<th>' . \esc_html__( 'Ressource', 'sor-booking' ) . '</th>';
+        echo '<th>' . \esc_html__( 'Aktion', 'sor-booking' ) . '</th>';
+        echo '<th>' . \esc_html__( 'Sync-Status', 'sor-booking' ) . '</th>';
+        echo '<th>' . \esc_html__( 'Letzter Versuch', 'sor-booking' ) . '</th>';
+        echo '<th>' . \esc_html__( 'Nachricht', 'sor-booking' ) . '</th>';
+        echo '<th>' . \esc_html__( 'Aktionen', 'sor-booking' ) . '</th>';
+        echo '</tr></thead><tbody>';
+
+        foreach ( $items as $item ) {
+            $booking         = $item['booking'];
+            $log             = $item['log'];
+            $resource_label  = isset( $resources[ $booking->resource ]['label'] ) ? $resources[ $booking->resource ]['label'] : $booking->resource;
+            $action_label    = $this->get_sync_action_label( $booking->sync_action ?? '' );
+            $status_label    = $this->get_sync_status_label( $booking->sync_status ?? '' );
+            $attempted       = $this->format_sync_datetime( $booking->sync_attempted_at ?? '' );
+            $message         = $booking->sync_message ?? '';
+            $status_code     = $log && isset( $log->status_code ) ? (int) $log->status_code : 0;
+            if ( empty( $message ) && $log && ! empty( $log->message ) ) {
+                $message = $log->message;
+            }
+            if ( $status_code && $message ) {
+                $message = sprintf( \esc_html__( '[HTTP %1$d] %2$s', 'sor-booking' ), $status_code, $message );
+            }
+            if ( empty( $message ) ) {
+                $message = \esc_html__( 'Keine Fehlermeldung vorhanden.', 'sor-booking' );
+            }
+
+            $view_url   = \add_query_arg( array( 'page' => 'sor-booking', 'uuid' => $booking->uuid ), \admin_url( 'admin.php' ) );
+            $can_retry_attr = $can_retry ? '' : ' disabled="disabled"';
+
+            echo '<tr>';
+            echo '<td><strong>' . \esc_html( $booking->name ) . '</strong><br /><code>' . \esc_html( $booking->uuid ) . '</code><br />' . \esc_html( $booking->email ) . '</td>';
+            echo '<td>' . \esc_html( $resource_label ) . '</td>';
+            echo '<td>' . \esc_html( $action_label ) . '</td>';
+            echo '<td>' . \esc_html( $status_label ) . '</td>';
+            echo '<td>' . \esc_html( $attempted ? $attempted : '—' ) . '</td>';
+            echo '<td>' . \esc_html( $message ) . '</td>';
+            echo '<td>';
+            echo '<button type="button" class="button button-secondary js-sor-sync-retry" data-uuid="' . \esc_attr( $booking->uuid ) . '"' . $can_retry_attr . '>' . \esc_html__( 'Erneut versuchen', 'sor-booking' ) . '</button> ';
+            echo '<a class="button button-link" href="' . \esc_url( $view_url ) . '">' . \esc_html__( 'Ansehen', 'sor-booking' ) . '</a> ';
+            echo '<form method="post" style="display:inline-block;margin-left:4px;" action="' . \esc_url( \admin_url( 'admin-post.php' ) ) . '">';
+            \wp_nonce_field( 'sor_booking_mark_synced' );
+            echo '<input type="hidden" name="action" value="sor_booking_mark_synced" />';
+            echo '<input type="hidden" name="uuid" value="' . \esc_attr( $booking->uuid ) . '" />';
+            echo '<button type="submit" class="button button-link-delete">' . \esc_html__( 'Als synchron markieren', 'sor-booking' ) . '</button>';
+            echo '</form>';
+            echo '</td>';
+            echo '</tr>';
+        }
+
+        echo '</tbody></table>';
+
+        if ( $can_retry ) {
+            $error_message = \esc_js( \__( 'Die Synchronisierung konnte nicht erneut gestartet werden.', 'sor-booking' ) );
+            echo '<script>document.addEventListener("DOMContentLoaded",function(){const buttons=document.querySelectorAll(".js-sor-sync-retry");buttons.forEach(function(button){button.addEventListener("click",function(event){event.preventDefault();if(button.hasAttribute("disabled")){return;}const uuid=button.dataset.uuid;if(!uuid){button.removeAttribute("disabled");return;}button.setAttribute("disabled","disabled");fetch("' . \esc_js( $rest_url ) . '",{method:"POST",headers:{"Content-Type":"application/json","X-WP-Nonce":"' . \esc_js( $rest_nonce ) . '"},body:JSON.stringify({uuid:uuid})}).then(function(response){if(!response.ok){throw new Error("request_failed");}return response.json();}).then(function(){window.location.reload();}).catch(function(){alert("' . $error_message . '");button.removeAttribute("disabled");});});});});</script>';
+        }
+
+        echo '</div>';
+    }
+
+    /**
+     * Handle manual sync mark action.
+     */
+    public function handle_mark_synced() {
+        if ( ! \current_user_can( 'manage_options' ) ) {
+            \wp_die( \esc_html__( 'Keine Berechtigung.', 'sor-booking' ) );
+        }
+
+        \check_admin_referer( 'sor_booking_mark_synced' );
+
+        $uuid = isset( $_POST['uuid'] ) ? \sanitize_text_field( \wp_unslash( $_POST['uuid'] ) ) : '';
+        if ( $uuid ) {
+            if ( $this->sync ) {
+                $this->sync->mark_booking_manually_synced( $uuid );
+            } else {
+                $this->db->update_booking_fields(
+                    $uuid,
+                    array(
+                        'synced'         => 1,
+                        'sync_status'    => 'manual',
+                        'sync_action'    => '',
+                        'sync_synced_at' => \current_time( 'mysql' ),
+                        'sync_message'   => '',
+                    )
+                );
+                $this->db->clear_sync_logs( $uuid );
+            }
+            $flag = 1;
+        } else {
+            $flag = 0;
+        }
+
+        $redirect = \add_query_arg(
+            array(
+                'page'            => 'sor-booking-sync',
+                'sor_sync_marked' => $flag,
+            ),
+            \admin_url( 'admin.php' )
+        );
+
+        \wp_safe_redirect( $redirect );
+        exit;
+    }
+
+    /**
+     * Format sync datetime for display.
+     *
+     * @param string $datetime Datetime value.
+     *
+     * @return string
+     */
+    protected function format_sync_datetime( $datetime ) {
+        if ( empty( $datetime ) ) {
+            return '';
+        }
+
+        return \mysql2date( $this->get_datetime_format(), $datetime );
+    }
+
+    /**
+     * Retrieve formatted datetime pattern.
+     *
+     * @return string
+     */
+    protected function get_datetime_format() {
+        $date = \get_option( 'date_format', 'd.m.Y' );
+        $time = \get_option( 'time_format', 'H:i' );
+
+        return trim( $date . ' ' . $time );
+    }
+
+    /**
+     * Retrieve human readable sync action label.
+     *
+     * @param string $action Action key.
+     *
+     * @return string
+     */
+    protected function get_sync_action_label( $action ) {
+        $action = \sanitize_key( $action );
+
+        switch ( $action ) {
+            case 'create':
+                return \__( 'Erstellung', 'sor-booking' );
+            case 'status_paid':
+                return \__( 'Status: bezahlt', 'sor-booking' );
+            case 'status_completed':
+                return \__( 'Status: abgeschlossen', 'sor-booking' );
+            case 'status_cancelled':
+                return \__( 'Status: storniert', 'sor-booking' );
+            default:
+                return $action ? $action : \__( 'Unbekannt', 'sor-booking' );
+        }
+    }
+
+    /**
+     * Retrieve human readable sync status label.
+     *
+     * @param string $status Status key.
+     *
+     * @return string
+     */
+    protected function get_sync_status_label( $status ) {
+        $status = \sanitize_key( $status );
+
+        $labels = array(
+            'pending'  => \__( 'Wartet', 'sor-booking' ),
+            'error'    => \__( 'Fehler', 'sor-booking' ),
+            'synced'   => \__( 'Synchronisiert', 'sor-booking' ),
+            'disabled' => \__( 'Deaktiviert', 'sor-booking' ),
+            'manual'   => \__( 'Manuell bestätigt', 'sor-booking' ),
+        );
+
+        return isset( $labels[ $status ] ) ? $labels[ $status ] : $status;
+    }
+
+    /**
      * Sanitize settings input.
      *
      * @param array $input Raw settings.
@@ -553,6 +877,16 @@ class Admin {
         $output['paypal_secret']    = isset( $input['paypal_secret'] ) ? sanitize_text_field( $input['paypal_secret'] ) : '';
         $output['qr_secret']        = isset( $input['qr_secret'] ) ? sanitize_text_field( $input['qr_secret'] ) : $defaults['qr_secret'];
 
+        $output['api_enabled'] = ! empty( $input['api_enabled'] ) ? 1 : 0;
+
+        $base_url = isset( $input['api_base_url'] ) ? \esc_url_raw( trim( $input['api_base_url'] ) ) : $defaults['api_base_url'];
+        if ( $base_url && 0 !== strpos( $base_url, 'https://' ) ) {
+            $base_url = $defaults['api_base_url'];
+        }
+        $output['api_base_url'] = $base_url ? \untrailingslashit( $base_url ) : $defaults['api_base_url'];
+
+        $output['api_key'] = isset( $input['api_key'] ) ? sanitize_text_field( $input['api_key'] ) : '';
+
         \update_option( \SOR_BOOKING_TESTMODE_OPTION, 'sandbox' === $mode );
 
         return $output;
@@ -570,6 +904,13 @@ class Admin {
      */
     public function render_paypal_section() {
         echo '<p>' . \esc_html__( 'Konfiguriere PayPal Sandbox oder Live Zugangsdaten.', 'sor-booking' ) . '</p>';
+    }
+
+    /**
+     * Render API sync section description.
+     */
+    public function render_api_section() {
+        echo '<p>' . \esc_html__( 'Synchronisiere Buchungen optional mit dem Silent Oak Ranch Backend.', 'sor-booking' ) . '</p>';
     }
 
     /**
@@ -629,6 +970,26 @@ class Admin {
         $value   = isset( $options[ $name ] ) ? $options[ $name ] : '';
         ?>
         <input type="password" name="sor_booking_options[<?php echo \esc_attr( $name ); ?>]" value="<?php echo \esc_attr( $value ); ?>" class="<?php echo \esc_attr( $args['class'] ); ?>" autocomplete="new-password" />
+        <?php
+    }
+
+    /**
+     * Render checkbox field.
+     *
+     * @param array $args Field arguments.
+     */
+    public function render_checkbox_field( $args ) {
+        $options = \sor_booking_get_options();
+        $name    = $args['name'];
+        $value   = ! empty( $options[ $name ] );
+        $label   = isset( $args['label'] ) ? $args['label'] : '';
+        ?>
+        <label>
+            <input type="checkbox" name="sor_booking_options[<?php echo \esc_attr( $name ); ?>]" value="1" <?php \checked( $value, true ); ?> />
+            <?php if ( $label ) : ?>
+                <span><?php echo \esc_html( $label ); ?></span>
+            <?php endif; ?>
+        </label>
         <?php
     }
 

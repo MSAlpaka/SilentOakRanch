@@ -1,49 +1,51 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
-import { ApiError, checkQr } from './api';
-import type { Booking } from './types';
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { toast } from 'sonner'
+
+import { ApiError, checkQr } from './api'
+import type { Booking } from './types'
 
 interface QrScannerProps {
-  onSuccess: (booking: Booking) => void;
-  onManualComplete: (uuid: string) => Promise<Booking>;
-  onRefresh?: () => void;
+  onSuccess: (booking: Booking) => void
+  onManualComplete: (uuid: string) => Promise<Booking>
+  onRefresh?: () => void
 }
 
-type ScannerStatus = 'idle' | 'success' | 'error';
+type ScannerStatus = 'idle' | 'success' | 'error'
 
 const QrScanner = ({ onSuccess, onManualComplete, onRefresh }: QrScannerProps): JSX.Element => {
-  const containerId = useMemo(() => `qr-scanner-${Math.random().toString(36).slice(2, 9)}`, []);
-  const scannerRef = useRef<any>(null);
-  const onSuccessRef = useRef(onSuccess);
-  const onRefreshRef = useRef(onRefresh);
-  const [status, setStatus] = useState<ScannerStatus>('idle');
-  const [message, setMessage] = useState<string>('Point the camera at a booking QR code');
-  const [manualUuid, setManualUuid] = useState('');
-  const [manualLoading, setManualLoading] = useState(false);
-  const [cameraError, setCameraError] = useState<string | null>(null);
+  const containerId = useMemo(() => `qr-scanner-${Math.random().toString(36).slice(2, 9)}`, [])
+  const scannerRef = useRef<any>(null)
+  const onSuccessRef = useRef(onSuccess)
+  const onRefreshRef = useRef(onRefresh)
+  const [status, setStatus] = useState<ScannerStatus>('idle')
+  const [message, setMessage] = useState<string>('Point the camera at a booking QR code')
+  const [manualUuid, setManualUuid] = useState('')
+  const [manualLoading, setManualLoading] = useState(false)
+  const [cameraError, setCameraError] = useState<string | null>(null)
 
   useEffect(() => {
-    onSuccessRef.current = onSuccess;
-  }, [onSuccess]);
+    onSuccessRef.current = onSuccess
+  }, [onSuccess])
 
   useEffect(() => {
-    onRefreshRef.current = onRefresh;
-  }, [onRefresh]);
+    onRefreshRef.current = onRefresh
+  }, [onRefresh])
 
   useEffect(() => {
-    let isMounted = true;
+    let isMounted = true
 
     async function initScanner() {
       if (typeof window === 'undefined') {
-        return;
+        return
       }
 
       try {
-        const { Html5Qrcode } = await import('html5-qrcode');
+        const { Html5Qrcode } = await import('html5-qrcode')
         if (!isMounted) {
-          return;
+          return
         }
-        const scanner = new Html5Qrcode(containerId);
-        scannerRef.current = scanner;
+        const scanner = new Html5Qrcode(containerId)
+        scannerRef.current = scanner
 
         await scanner.start(
           { facingMode: 'environment' },
@@ -53,96 +55,99 @@ const QrScanner = ({ onSuccess, onManualComplete, onRefresh }: QrScannerProps): 
           },
           async (decodedText: string) => {
             if (!decodedText) {
-              return;
+              return
             }
-            scanner.pause?.(true);
+            scanner.pause?.(true)
             try {
-              const booking = await checkQr(decodedText);
-              setStatus('success');
-              setMessage('✅ Check-in erfolgreich');
-              onSuccessRef.current(booking);
-              onRefreshRef.current?.();
+              const booking = await checkQr(decodedText)
+              setStatus('success')
+              setMessage('✅ Check-in erfolgreich')
+              onSuccessRef.current(booking)
+              onRefreshRef.current?.()
             } catch (error) {
               if (error instanceof ApiError && error.status === 401) {
-                window.location.href = '/login';
-                return;
+                window.location.href = '/login'
+                return
               }
-              setStatus('error');
-              const errMessage = error instanceof Error ? error.message : 'Invalid QR code';
-              setMessage(`❌ ${errMessage}`);
+              setStatus('error')
+              const errMessage = error instanceof Error ? error.message : 'Invalid QR code'
+              setMessage(`❌ ${errMessage}`)
+              toast.error(errMessage)
             } finally {
               setTimeout(() => {
-                setStatus('idle');
-                setMessage('Point the camera at a booking QR code');
+                setStatus('idle')
+                setMessage('Point the camera at a booking QR code')
                 try {
-                  scanner.resume?.();
+                  scanner.resume?.()
                 } catch (resumeError) {
                   // ignore resume errors
                 }
-              }, 2500);
+              }, 2500)
             }
           },
           () => {
             // ignore scan failure callbacks to avoid noise
           },
-        );
+        )
       } catch (error) {
         const errMessage =
           error instanceof Error
             ? error.message
-            : 'Unable to initialise QR scanner. Please check camera permissions.';
+            : 'Unable to initialise QR scanner. Please check camera permissions.'
         if (isMounted) {
-          setCameraError(errMessage);
+          setCameraError(errMessage)
+          toast.error(errMessage)
         }
       }
     }
 
-    void initScanner();
+    void initScanner()
 
     return () => {
-      isMounted = false;
+      isMounted = false
       if (scannerRef.current) {
-        const instance = scannerRef.current;
+        const instance = scannerRef.current
         instance
           .stop()
           .catch(() => undefined)
           .finally(() => {
-            instance.clear();
-          });
+            instance.clear()
+          })
       }
-    };
-  }, [containerId]);
+    }
+  }, [containerId])
 
   const handleManualSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
+    event.preventDefault()
     if (!manualUuid.trim()) {
-      return;
+      return
     }
-    setManualLoading(true);
-    setCameraError(null);
+    setManualLoading(true)
+    setCameraError(null)
     try {
-      const booking = await onManualComplete(manualUuid.trim());
-      setStatus('success');
-      setMessage('✅ Check-in erfolgreich');
-      onSuccess(booking);
-      onRefresh?.();
-      setManualUuid('');
+      const booking = await onManualComplete(manualUuid.trim())
+      setStatus('success')
+      setMessage('✅ Check-in erfolgreich')
+      onSuccess(booking)
+      onRefresh?.()
+      setManualUuid('')
     } catch (error) {
       if (error instanceof ApiError && error.status === 401) {
-        window.location.href = '/login';
-        return;
+        window.location.href = '/login'
+        return
       }
-      setStatus('error');
-      const errMessage = error instanceof Error ? error.message : 'Unable to update booking.';
-      setMessage(`❌ ${errMessage}`);
+      setStatus('error')
+      const errMessage = error instanceof Error ? error.message : 'Unable to update booking.'
+      setMessage(`❌ ${errMessage}`)
+      toast.error(errMessage)
     } finally {
-      setManualLoading(false);
+      setManualLoading(false)
       setTimeout(() => {
-        setStatus('idle');
-        setMessage('Point the camera at a booking QR code');
-      }, 2500);
+        setStatus('idle')
+        setMessage('Point the camera at a booking QR code')
+      }, 2500)
     }
-  };
+  }
 
   return (
     <div className="flex flex-col gap-4 text-[#222]">
@@ -180,7 +185,7 @@ const QrScanner = ({ onSuccess, onManualComplete, onRefresh }: QrScannerProps): 
         </div>
       </form>
     </div>
-  );
-};
+  )
+}
 
-export default QrScanner;
+export default QrScanner

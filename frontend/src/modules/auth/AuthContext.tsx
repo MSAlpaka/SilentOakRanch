@@ -1,4 +1,11 @@
-import { createContext, useContext, useState, ReactNode, useEffect, useCallback } from 'react'
+import {
+  createContext,
+  useContext,
+  useState,
+  type ReactNode,
+  useEffect,
+  useCallback,
+} from 'react'
 import api from '../../axios'
 import { UserInfo } from './useUser'
 
@@ -12,6 +19,7 @@ type AuthHints = {
 type AuthState = {
   user: UserInfo | null
   role: RoleName | null
+  token: string | null
   isAuthenticated: boolean
   isLoading: boolean
   initialized: boolean
@@ -20,6 +28,8 @@ type AuthState = {
   logout: () => Promise<void>
   refresh: (hints?: AuthHints) => Promise<void>
 }
+
+const STORAGE_KEY = 'sor.authToken'
 
 function normalizeRole(value: unknown): RoleName | null {
   if (typeof value !== 'string') return null
@@ -54,9 +64,22 @@ const AuthContext = createContext<AuthState | undefined>(undefined)
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<UserInfo | null>(null)
   const [role, setRole] = useState<RoleName | null>(null)
+  const [token, setToken] = useState<string | null>(() => {
+    if (typeof window === 'undefined') return null
+    return window.localStorage.getItem(STORAGE_KEY)
+  })
   const [isLoading, setIsLoading] = useState(true)
   const [initialized, setInitialized] = useState(false)
   const [error, setError] = useState<Error | null>(null)
+
+  const persistToken = useCallback((value: string | null) => {
+    if (typeof window === 'undefined') return
+    if (value) {
+      window.localStorage.setItem(STORAGE_KEY, value)
+    } else {
+      window.localStorage.removeItem(STORAGE_KEY)
+    }
+  }, [])
 
   const refresh = useCallback(async (hints?: AuthHints) => {
     setIsLoading(true)
@@ -76,6 +99,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } catch (err) {
       setUser(null)
       setRole(null)
+      persistToken(null)
+      setToken(null)
       if (isUnauthorizedError(err)) {
         setError(null)
       } else {
@@ -86,7 +111,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setIsLoading(false)
       setInitialized(true)
     }
-  }, [])
+  }, [persistToken])
 
   useEffect(() => {
     refresh().catch(() => undefined)
@@ -95,11 +120,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = useCallback(
     async (email: string, password: string) => {
       const response = await api.post('/login', { email, password })
-      const { role: responseRole, roles: responseRoles }: { role?: string | null; roles?: string[] } =
-        response.data ?? {}
+      const {
+        role: responseRole,
+        roles: responseRoles,
+        token: responseToken,
+        access_token: accessToken,
+      }: {
+        role?: string | null
+        roles?: string[]
+        token?: string
+        access_token?: string
+      } = response.data ?? {}
+
+      const nextToken = responseToken ?? accessToken ?? null
+      if (nextToken) {
+        setToken(nextToken)
+        persistToken(nextToken)
+      }
+
       await refresh({ role: responseRole, roles: responseRoles })
     },
-    [refresh]
+    [refresh, persistToken],
   )
 
   const logout = useCallback(async () => {
@@ -108,17 +149,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } finally {
       setUser(null)
       setRole(null)
+      setToken(null)
+      persistToken(null)
       setInitialized(true)
       setIsLoading(false)
       setError(null)
     }
-  }, [])
+  }, [persistToken])
+
+  useEffect(() => {
+    if (!token) {
+      const stored = typeof window !== 'undefined' ? window.localStorage.getItem(STORAGE_KEY) : null
+      if (stored) {
+        setToken(stored)
+      }
+    }
+  }, [token])
 
   return (
     <AuthContext.Provider
       value={{
         user,
         role,
+        token,
         isAuthenticated: !!user,
         isLoading,
         initialized,

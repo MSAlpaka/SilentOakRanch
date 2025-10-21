@@ -4,7 +4,7 @@ import { CalendarDays, ListTree, Menu, Settings, X } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
-import { useAuth } from '@/context/AuthContext'
+import { useAuth } from '@/hooks/useAuth'
 
 const NAV_ITEMS = [
   { label: 'Overview', to: '/dashboard', icon: ListTree },

@@ -5,7 +5,7 @@ import App from './App'
 import './index.css'
 import { Provider } from 'react-redux'
 import { store } from './store'
-import { AuthProvider } from './modules/auth/AuthContext'
+import { AuthProvider } from './context/AuthContext'
 import { I18nextProvider } from 'react-i18next'
 import i18n from './i18n'
 

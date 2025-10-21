@@ -1,5 +1,13 @@
 import api from '../axios'
 
+export type AuthUser = {
+  id: string | number
+  name?: string
+  email: string
+  role?: string | null
+  roles?: string[] | null
+}
+
 export type RegisterPayload = {
   email: string
   password: string

@@ -13,11 +13,21 @@ type ScannerStatus = 'idle' | 'success' | 'error';
 const QrScanner = ({ onSuccess, onManualComplete, onRefresh }: QrScannerProps): JSX.Element => {
   const containerId = useMemo(() => `qr-scanner-${Math.random().toString(36).slice(2, 9)}`, []);
   const scannerRef = useRef<any>(null);
+  const onSuccessRef = useRef(onSuccess);
+  const onRefreshRef = useRef(onRefresh);
   const [status, setStatus] = useState<ScannerStatus>('idle');
   const [message, setMessage] = useState<string>('Point the camera at a booking QR code');
   const [manualUuid, setManualUuid] = useState('');
   const [manualLoading, setManualLoading] = useState(false);
   const [cameraError, setCameraError] = useState<string | null>(null);
+
+  useEffect(() => {
+    onSuccessRef.current = onSuccess;
+  }, [onSuccess]);
+
+  useEffect(() => {
+    onRefreshRef.current = onRefresh;
+  }, [onRefresh]);
 
   useEffect(() => {
     let isMounted = true;
@@ -50,8 +60,8 @@ const QrScanner = ({ onSuccess, onManualComplete, onRefresh }: QrScannerProps): 
               const booking = await checkQr(decodedText);
               setStatus('success');
               setMessage('✅ Check-in erfolgreich');
-              onSuccess(booking);
-              onRefresh?.();
+              onSuccessRef.current(booking);
+              onRefreshRef.current?.();
             } catch (error) {
               if (error instanceof ApiError && error.status === 401) {
                 window.location.href = '/login';
@@ -101,7 +111,7 @@ const QrScanner = ({ onSuccess, onManualComplete, onRefresh }: QrScannerProps): 
           });
       }
     };
-  }, [containerId, onRefresh, onSuccess]);
+  }, [containerId]);
 
   const handleManualSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();

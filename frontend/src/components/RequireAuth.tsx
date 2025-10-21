@@ -1,12 +1,12 @@
-import { Navigate } from 'react-router-dom'
 import type { PropsWithChildren } from 'react'
+import { Navigate } from 'react-router-dom'
 
-import { useAuth } from '@/context/AuthContext'
+import { useAuth } from '@/hooks/useAuth'
 
 export default function RequireAuth({ children }: PropsWithChildren) {
-  const { user, initialized, isLoading } = useAuth()
+  const { user, initialized, loading } = useAuth()
 
-  if (!initialized || isLoading) {
+  if (!initialized || loading) {
     return null
   }
 

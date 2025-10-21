@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { useAuth } from './AuthContext'
+import { useAuth } from '@/hooks/useAuth'
 
 export type UserInfo = {
   id: number

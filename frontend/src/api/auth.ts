@@ -1,5 +1,13 @@
 import api from '../axios'
 
+export type AuthUser = {
+  id: string | number
+  name?: string
+  email: string
+  role?: string | null
+  roles?: string[] | null
+}
+
 export type RegisterPayload = {
   email: string
   password: string
@@ -10,6 +18,9 @@ export type RegisterPayload = {
 }
 
 export type AuthMetadata = {
+  ok?: boolean
+  token?: string
+  user?: AuthUser | null
   role?: string | null
   roles?: string[]
   expiresAt?: string
@@ -22,7 +33,7 @@ export async function register(payload: RegisterPayload): Promise<AuthMetadata> 
 }
 
 export async function login(email: string, password: string): Promise<AuthMetadata> {
-  const response = await api.post('/login', { email, password })
+  const response = await api.post('/auth/login', { email, password })
   return response.data
 }
 
@@ -32,6 +43,6 @@ export async function inviteUser(email: string) {
 }
 
 export async function acceptInvite(token: string, password: string): Promise<AuthMetadata> {
-  const response = await api.post(`/accept-invite/${token}`, { password })
+  const response = await api.post(`/auth/accept-invite/${token}`, { password })
   return response.data
 }

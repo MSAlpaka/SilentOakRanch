@@ -1,0 +1,17 @@
+name: Test SSH Connection to Silent Oak Ranch
+on:
+  workflow_dispatch:   # manually triggerable from GitHub UI
+jobs:
+  test-ssh:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Test SSH connection
+        uses: appleboy/ssh-action@v1.1.0
+        with:
+          host: ${{ secrets.SOR_SERVER_HOST }}
+          username: ${{ secrets.SOR_SERVER_USER }}
+          key: ${{ secrets.SOR_SERVER_SSH_KEY }}
+          script: |
+            echo "✅ Connected to $(hostname) as $(whoami) at $(date)"
+            echo "Current directory:"
+            pwd

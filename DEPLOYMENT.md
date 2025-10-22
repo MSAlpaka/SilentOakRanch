@@ -14,7 +14,8 @@ When you push changes to the `main` branch of
 GitHub Actions automatically:
 1. Connects to the server via SSH.
 2. Runs `/srv/stallapp/deploy.sh`.
-3. The script executes a `git pull` to fetch the latest code.
+3. The script fetches the latest code, rebuilds the Docker images, restarts the
+   stack with `docker compose`, and runs database migrations.
 
 ## 🛡️ SSH Setup
 Add these secrets in your GitHub repository settings:
@@ -52,6 +53,7 @@ and configure your webserver’s DocumentRoot to `/srv/stallapp/public`
 (or `/srv/stallapp` if you serve static PHP).
 
 ## ✅ Notes
-- This setup **does not rebuild Composer/NPM** — only code changes are pulled.
-- Perfect for WordPress-integrated or PHP-only environments.
-- Future: you can enable build steps once the app moves to Symfony/React.
+- The deployment automatically rebuilds the backend and frontend Docker images
+  and runs database migrations so that every push to `main` is released.
+- Ensure the server user has permission to run Docker and that the `.env`
+  configuration is up to date before deploying.

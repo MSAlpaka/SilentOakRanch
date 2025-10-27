@@ -16,6 +16,24 @@ services:
       retries: 5
       start_period: 30s
 
+  wp-db:
+    image: mariadb:11
+    env_file: .env
+    volumes:
+      - wp-db-data:/var/lib/mysql
+    restart: unless-stopped
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - |
+          MYSQL_PWD="$${MARIADB_PASSWORD:-$${MARIADB_ROOT_PASSWORD:-}}"
+          export MYSQL_PWD
+          mysqladmin ping -h localhost -u "$${MARIADB_USER:-root}" --silent
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+
   backend:
     image: silentoakranch/backend:latest
     build: ./backend
@@ -32,6 +50,9 @@ services:
       - ./shared/jwt/backend:/var/www/backend/config/jwt
       - ./shared/backend/var:/var/www/backend/var
       - ./shared/agreements/signing:/var/www/backend/config/agreements
+    networks:
+      - default
+      - symfony-wp
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:9000/health"]
       interval: 30s
@@ -60,6 +81,20 @@ services:
       timeout: 5s
       retries: 3
       start_period: 20s
+
+  wordpress:
+    image: php:8.3-apache
+    env_file: .env
+    depends_on:
+      - wp-db
+    volumes:
+      - wp-content:/var/www/html/wp-content
+    environment:
+      VIRTUAL_HOST: "book.silentoakranch.de"
+      LETSENCRYPT_HOST: "book.silentoakranch.de"
+    networks:
+      - default
+      - symfony-wp
 
   proxy:
     image: nginxproxy/nginx-proxy:latest
@@ -121,3 +156,14 @@ volumes:
       type: none
       o: bind
       device: ./proxy/html
+  wp-db-data:
+  wp-content:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ./wp-content
+
+networks:
+  symfony-wp:
+    internal: true

@@ -20,10 +20,10 @@ if [ -d "var/cache" ]; then
 fi
 
 echo "🔨 Building Docker images..."
-docker compose build --pull backend frontend
+docker compose build --pull backend frontend wordpress
 
 echo "🚢 Deploying updated services..."
-docker compose up -d --remove-orphans
+docker compose up -d --remove-orphans db wp-db backend frontend wordpress proxy letsencrypt
 
 echo "⏳ Waiting for backend service to become healthy..."
 BACKEND_CONTAINER=$(docker compose ps -q backend)

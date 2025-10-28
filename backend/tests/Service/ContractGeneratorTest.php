@@ -9,6 +9,7 @@ use App\Enum\BookingType;
 use App\Enum\StallUnitStatus;
 use App\Enum\StallUnitType;
 use App\Enum\ContractStatus;
+use App\Repository\AuditLogRepository;
 use App\Service\ContractGenerator;
 use DateTimeImmutable;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
@@ -59,5 +60,11 @@ class ContractGeneratorTest extends KernelTestCase
         self::assertNotSame('', $contract->getHash());
         self::assertSame(hash('sha256', file_get_contents($contract->getPath())), $contract->getHash());
         self::assertNotEmpty($contract->getAuditTrail());
+
+        /** @var AuditLogRepository $auditLogs */
+        $auditLogs = $container->get(AuditLogRepository::class);
+        $entries = $auditLogs->findForEntity('CONTRACT', (string) $contract->getId());
+        self::assertNotEmpty($entries);
+        self::assertSame('CONTRACT_GENERATED', $entries[0]->getAction());
     }
 }

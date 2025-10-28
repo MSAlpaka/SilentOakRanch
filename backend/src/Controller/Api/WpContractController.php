@@ -7,6 +7,7 @@ use App\Entity\Contract;
 use App\Enum\ContractStatus;
 use App\Repository\BookingRepository;
 use App\Repository\ContractRepository;
+use App\Service\AuditLogger;
 use App\Service\ContractGenerator;
 use App\Service\SignatureClient;
 use Doctrine\ORM\EntityManagerInterface;
@@ -25,6 +26,7 @@ class WpContractController extends AbstractController
         private readonly BookingRepository $bookings,
         private readonly ContractRepository $contracts,
         private readonly ContractGenerator $generator,
+        private readonly AuditLogger $auditLogger,
         private readonly SignatureClient $signatureClient,
         private readonly EntityManagerInterface $entityManager,
         private readonly UrlGeneratorInterface $urlGenerator,
@@ -61,6 +63,10 @@ class WpContractController extends AbstractController
                     ->setSignedAt($result->getSignedAt())
                     ->setStatus(ContractStatus::SIGNED);
                 $contract->appendAuditEntry('signed', $result->getHash());
+                $this->auditLogger->log($contract, 'CONTRACT_SIGNED', [
+                    'hash' => $result->getHash(),
+                    'path' => $result->getPath(),
+                ]);
                 $this->entityManager->flush();
             }
 
@@ -117,6 +123,11 @@ class WpContractController extends AbstractController
         if ($path === null || !is_file($path)) {
             return $this->json(['ok' => false, 'error' => 'Contract file unavailable.'], Response::HTTP_NOT_FOUND);
         }
+
+        $this->auditLogger->log($contract, 'CONTRACT_VIEWED', [
+            'hash' => $variant === 'signed' ? $contract->getSignedHash() : $contract->getHash(),
+            'variant' => $variant,
+        ]);
 
         $response = new BinaryFileResponse($path);
         $response->setContentDisposition('attachment', sprintf('vertrag-%s.pdf', $contract->getId()->toRfc4122()));

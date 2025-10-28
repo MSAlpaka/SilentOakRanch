@@ -50,6 +50,7 @@ services:
       - ./shared/jwt/backend:/var/www/backend/config/jwt
       - ./shared/backend/var:/var/www/backend/var
       - ./shared/agreements/signing:/var/www/backend/config/agreements
+      - audit-log:/var/www/backend/shared/audit
     networks:
       - default
       - symfony-wp
@@ -163,6 +164,7 @@ volumes:
       type: none
       o: bind
       device: ./wp-content
+  audit-log:
 
 networks:
   symfony-wp:

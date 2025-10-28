@@ -2,16 +2,31 @@
 
 namespace App\Service\Logging;
 
+use Monolog\LogRecord;
+
 class AnonymizeIpProcessor
 {
     private const IPV4_PATTERN = '/\b((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\b/';
     private const IPV6_PATTERN = '/\b([0-9a-fA-F]{0,4}:){2,7}[0-9a-fA-F]{0,4}\b/';
 
-    public function __invoke(array $record): array
+    /**
+     * @param array<string, mixed>|LogRecord $record
+     *
+     * @return array<string, mixed>|LogRecord
+     */
+    public function __invoke(array|LogRecord $record): array|LogRecord
     {
-        $record['message'] = $this->anonymizeString($record['message']);
-        $record['context'] = $this->anonymizeArray($record['context']);
-        $record['extra'] = $this->anonymizeArray($record['extra']);
+        if ($record instanceof LogRecord) {
+            return $record->with(
+                message: $this->anonymizeString($record->message),
+                context: $this->anonymizeArray($record->context),
+                extra: $this->anonymizeArray($record->extra),
+            );
+        }
+
+        $record['message'] = $this->anonymizeString($record['message'] ?? '');
+        $record['context'] = $this->anonymizeArray($record['context'] ?? []);
+        $record['extra'] = $this->anonymizeArray($record['extra'] ?? []);
 
         return $record;
     }

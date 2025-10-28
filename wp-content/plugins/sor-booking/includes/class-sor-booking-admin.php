@@ -266,6 +266,144 @@ class Admin {
             'sor-booking-sync',
             array( $this, 'render_sync_page' )
         );
+
+        $this->page_hooks['contracts'] = \add_submenu_page(
+            'sor-booking',
+            \__( 'Verträge', 'sor-booking' ),
+            \__( 'Verträge', 'sor-booking' ),
+            'manage_options',
+            'sor-booking-contracts',
+            array( $this, 'render_contracts_page' )
+        );
+    }
+
+    /**
+     * Render contracts overview page.
+     */
+    public function render_contracts_page() {
+        if ( ! \current_user_can( 'manage_options' ) ) {
+            return;
+        }
+
+        $sign_request = isset( $_GET['sign'] ) ? \sanitize_text_field( \wp_unslash( $_GET['sign'] ) ) : '';
+
+        if ( $sign_request && $this->sync && $this->sync->is_enabled() ) {
+            $result = $this->sync->get_contract_link( $sign_request, array( 'signed' => true ) );
+            if ( \is_wp_error( $result ) ) {
+                \add_settings_error( 'sor-booking-contracts', 'contract-signature', $result->get_error_message(), 'error' );
+            } else {
+                \add_settings_error( 'sor-booking-contracts', 'contract-signature', \__( 'Signatur wurde ausgelöst. Bitte lade die Seite neu.', 'sor-booking' ), 'updated' );
+            }
+        }
+
+        echo '<div class="wrap" id="sor-booking-contracts">';
+        echo '<h1>' . \esc_html__( 'Verträge', 'sor-booking' ) . '</h1>';
+        \settings_errors( 'sor-booking-contracts' );
+
+        if ( ! $this->sync || ! $this->sync->is_enabled() ) {
+            echo '<div class="notice notice-warning"><p>' . \esc_html__( 'API-Synchronisierung ist deaktiviert. Verträge können nicht abgerufen werden.', 'sor-booking' ) . '</p></div>';
+            echo '</div>';
+
+            return;
+        }
+
+        $bookings = $this->db->get_all_bookings(
+            array(
+                'limit' => 50,
+                'order' => 'DESC',
+            )
+        );
+
+        $eligible_statuses = array( 'paid', 'confirmed', 'completed' );
+        $rows              = array();
+
+        foreach ( $bookings as $booking ) {
+            if ( empty( $booking->uuid ) || ! in_array( $booking->status, $eligible_statuses, true ) ) {
+                continue;
+            }
+
+            $contract = $this->sync->get_contract_link( $booking->uuid );
+
+            $row = array(
+                'booking'     => $booking,
+                'hash'        => '',
+                'signed_hash' => '',
+                'signed'      => false,
+                'download'    => '',
+                'signed_url'  => '',
+                'error'       => '',
+            );
+
+            if ( \is_wp_error( $contract ) ) {
+                $row['error'] = $contract->get_error_message();
+            } elseif ( isset( $contract['ok'] ) && $contract['ok'] ) {
+                $row['hash']        = isset( $contract['hash'] ) ? (string) $contract['hash'] : '';
+                $row['signed_hash'] = isset( $contract['signed_hash'] ) ? (string) $contract['signed_hash'] : '';
+                $row['signed']      = ! empty( $contract['signed'] );
+                $row['download']    = isset( $contract['download_url'] ) ? (string) $contract['download_url'] : '';
+                $row['signed_url']  = isset( $contract['signed_download_url'] ) ? (string) $contract['signed_download_url'] : '';
+            } else {
+                $row['error'] = \__( 'Kein Vertrag vorhanden.', 'sor-booking' );
+            }
+
+            $rows[] = $row;
+        }
+
+        if ( empty( $rows ) ) {
+            echo '<div class="notice notice-info"><p>' . \esc_html__( 'Keine bezahlten Buchungen gefunden.', 'sor-booking' ) . '</p></div>';
+            echo '</div>';
+
+            return;
+        }
+
+        echo '<table class="wp-list-table widefat fixed striped">';
+        echo '<thead><tr>';
+        echo '<th>' . \esc_html__( 'UUID', 'sor-booking' ) . '</th>';
+        echo '<th>' . \esc_html__( 'Name', 'sor-booking' ) . '</th>';
+        echo '<th>' . \esc_html__( 'Status', 'sor-booking' ) . '</th>';
+        echo '<th>' . \esc_html__( 'Hash', 'sor-booking' ) . '</th>';
+        echo '<th>' . \esc_html__( 'Signiert', 'sor-booking' ) . '</th>';
+        echo '<th>' . \esc_html__( 'Aktionen', 'sor-booking' ) . '</th>';
+        echo '</tr></thead><tbody>';
+
+        foreach ( $rows as $row ) {
+            echo '<tr>';
+            echo '<td>' . \esc_html( $row['booking']->uuid ) . '</td>';
+            echo '<td>' . \esc_html( $row['booking']->name ) . '</td>';
+            echo '<td>' . \esc_html( $row['booking']->status ) . '</td>';
+            if ( $row['error'] ) {
+                echo '<td colspan="2"><span class="description">' . \esc_html( $row['error'] ) . '</span></td>';
+                echo '<td></td>';
+            } else {
+                echo '<td>' . \esc_html( $row['hash'] ) . '</td>';
+                echo '<td>' . ( $row['signed'] ? \esc_html__( 'Ja', 'sor-booking' ) : \esc_html__( 'Nein', 'sor-booking' ) );
+                if ( $row['signed'] && $row['signed_hash'] ) {
+                    echo '<br /><span class="description">' . \esc_html( $row['signed_hash'] ) . '</span>';
+                }
+                echo '</td>';
+                echo '<td>';
+                if ( $row['download'] ) {
+                    echo '<a class="button button-secondary" href="' . \esc_url( $row['download'] ) . '">' . \esc_html__( 'Download', 'sor-booking' ) . '</a> ';
+                }
+                if ( $row['signed_url'] ) {
+                    echo '<a class="button" href="' . \esc_url( $row['signed_url'] ) . '">' . \esc_html__( 'Signierte Version', 'sor-booking' ) . '</a>';
+                } elseif ( $row['download'] ) {
+                    $sign_url = \add_query_arg(
+                        array(
+                            'page' => 'sor-booking-contracts',
+                            'sign' => $row['booking']->uuid,
+                        ),
+                        \admin_url( 'admin.php' )
+                    );
+                    echo '<a class="button" href="' . \esc_url( $sign_url ) . '">' . \esc_html__( 'Signatur anfordern', 'sor-booking' ) . '</a>';
+                }
+                echo '</td>';
+            }
+            echo '</tr>';
+        }
+
+        echo '</tbody></table>';
+        echo '</div>';
     }
 
     /**

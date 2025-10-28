@@ -7,6 +7,7 @@ use App\Enum\BookingType;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Uid\Uuid;
 
 #[ORM\Entity(repositoryClass: 'App\\Repository\\BookingRepository')]
 class Booking
@@ -15,6 +16,9 @@ class Booking
     #[ORM\GeneratedValue]
     #[ORM\Column(type: 'integer')]
     private ?int $id = null;
+
+    #[ORM\Column(type: 'uuid', unique: true, nullable: true)]
+    private ?Uuid $sourceUuid = null;
 
     #[ORM\ManyToOne(targetEntity: StallUnit::class)]
     #[ORM\JoinColumn(nullable: false)]
@@ -74,6 +78,18 @@ class Booking
     public function getStallUnit(): StallUnit
     {
         return $this->stallUnit;
+    }
+
+    public function getSourceUuid(): ?Uuid
+    {
+        return $this->sourceUuid;
+    }
+
+    public function setSourceUuid(?Uuid $sourceUuid): self
+    {
+        $this->sourceUuid = $sourceUuid;
+
+        return $this;
     }
 
     public function setStallUnit(StallUnit $stallUnit): self

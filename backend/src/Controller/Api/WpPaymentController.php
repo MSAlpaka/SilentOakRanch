@@ -5,6 +5,7 @@ namespace App\Controller\Api;
 use App\Controller\Api\Dto\WpPaymentConfirmationRequest;
 use App\Entity\Booking;
 use App\Enum\BookingStatus;
+use App\Message\ContractQueued;
 use App\Message\WpPaymentConfirmed;
 use App\Repository\BookingRepository;
 use Doctrine\ORM\EntityManagerInterface;
@@ -88,6 +89,10 @@ class WpPaymentController extends AbstractController
             $amount,
             $dto->getRawPayload()
         ));
+
+        if ($dto->getStatus() === 'paid') {
+            $this->bus->dispatch(new ContractQueued($booking->getId(), 'payment:paid'));
+        }
 
         return $this->json([
             'ok' => true,

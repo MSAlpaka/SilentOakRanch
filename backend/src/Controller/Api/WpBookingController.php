@@ -18,6 +18,7 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Validator\ConstraintViolationInterface;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
+use Symfony\Component\Uid\Uuid;
 
 class WpBookingController extends AbstractController
 {
@@ -89,6 +90,15 @@ class WpBookingController extends AbstractController
             ->setIsConfirmed($dto->getBookingStatus() === BookingStatus::CONFIRMED)
             ->setLabel($this->buildLabel($dto))
             ->setUser($this->resolveUser($dto));
+
+        try {
+            $booking->setSourceUuid(Uuid::fromString($dto->getUuid()));
+        } catch (\Throwable $exception) {
+            $this->logger->warning('Failed to assign source UUID to booking', [
+                'error' => $exception->getMessage(),
+                'uuid' => $dto->getUuid(),
+            ]);
+        }
 
         $this->entityManager->persist($booking);
         $this->entityManager->flush();

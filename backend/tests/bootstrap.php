@@ -8,6 +8,7 @@ require dirname(__DIR__).'/vendor/autoload.php';
 require_once dirname(__DIR__).'/src/Entity/Invoice.php';
 require_once dirname(__DIR__).'/src/Entity/InvoiceItem.php';
 require_once dirname(__DIR__).'/src/Entity/Subscription.php';
+require_once dirname(__DIR__).'/src/Entity/Contract.php';
 
 if (method_exists(Dotenv::class, 'bootEnv')) {
     (new Dotenv())->bootEnv(dirname(__DIR__).'/.env');

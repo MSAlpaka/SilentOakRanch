@@ -10,7 +10,7 @@ $requires_slot  = true;
         class="sor-form"
         data-resource="<?php echo esc_attr( $resource_key ); ?>"
         data-price="<?php echo esc_attr( number_format( $price, 2, '.', '' ) ); ?>"
-        data-paypal-client="<?php echo esc_attr( SOR_PAYPAL_CLIENT_ID ); ?>"
+        data-paypal-client="<?php echo esc_attr( sor_booking_get_paypal_client_id() ); ?>"
     >
         <?php wp_nonce_field( 'sor_booking_form', 'sor_booking_nonce' ); ?>
         <header class="sor-form__header">

@@ -76,7 +76,7 @@ class SorBookingSyncService {
      * @return string
      */
     protected function get_api_key() {
-        return (string) \sor_booking_get_option( 'api_key', '' );
+        return \sor_booking_get_api_key();
     }
 
     /**
@@ -701,7 +701,9 @@ class API {
         }
 
         $provided = $request->get_header( 'X-SOR-API-Key' );
-        if ( $provided && defined( 'SOR_API_KEY' ) && \SOR_API_KEY && hash_equals( \SOR_API_KEY, $provided ) ) {
+        $secret   = \sor_booking_get_api_secret();
+
+        if ( $provided && $secret && hash_equals( $secret, $provided ) ) {
             return true;
         }
 

@@ -155,6 +155,8 @@ GitHub Actions automates the Docker workflows:
 - `.github/workflows/ci.yml` builds the PHP 8.3 backend image, runs PHPStan and PHPUnit inside it, and lints/tests the frontend with Node.js 20.
 - `.github/workflows/deploy.yml` uses Docker Buildx to build the backend and frontend images, exports them as artifacts, and synchronises them to the target host before starting the stack and applying Doctrine migrations during deployment.
 
+> ℹ️ Für einen Gesamtüberblick über das hybride WordPress/Symfony-Setup inklusive Compose-Services, Plugin-Konfiguration und HMAC-Fluss siehe [`docs/hybrid-setup.md`](docs/hybrid-setup.md).
+
 ### Deployment Steps
 
 To deploy with Docker Compose manually:

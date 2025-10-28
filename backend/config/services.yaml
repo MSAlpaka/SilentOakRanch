@@ -9,6 +9,10 @@ parameters:
     agreement_signature_private_key_passphrase: '%env(string:AGREEMENT_SIGNATURE_PRIVATE_KEY_PASSPHRASE)%'
     wp_bridge_key: '%env(string:WP_BRIDGE_KEY)%'
     wp_bridge_secret: '%env(string:WP_BRIDGE_SECRET)%'
+    contracts_storage_path: '%kernel.project_dir%/shared/agreements'
+    enable_signatures: '%env(bool:default:false:ENABLE_SIGNATURES)%'
+    signature_api_base_url: '%env(default::SIGNATURE_API_BASE_URL)%'
+    signature_api_token: '%env(default::SIGNATURE_API_TOKEN)%'
 
 services:
     # default configuration for services in *this* file
@@ -40,6 +44,21 @@ services:
             $signatureCertificatePath: '%agreement_signature_certificate_path%'
             $signaturePrivateKeyPath: '%agreement_signature_private_key_path%'
             $signaturePrivateKeyPassphrase: '%agreement_signature_private_key_passphrase%'
+
+    App\Service\ContractGenerator:
+        arguments:
+            $contractsStoragePath: '%contracts_storage_path%'
+
+    App\Service\SignatureClient:
+        arguments:
+            $contractsStoragePath: '%contracts_storage_path%'
+            $signaturesEnabled: '%enable_signatures%'
+            $signatureBaseUrl: '%signature_api_base_url%'
+            $signatureToken: '%signature_api_token%'
+
+    App\Controller\Api\WpContractController:
+        arguments:
+            $wpBridgeSecret: '%wp_bridge_secret%'
 
     # add more service definitions when explicit configuration is needed
     # please note that last definitions always *replace* previous ones

@@ -6,6 +6,7 @@ use App\Entity\Booking;
 use App\Entity\StallUnit;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
+use Symfony\Component\Uid\Uuid;
 
 /**
  * @extends ServiceEntityRepository<Booking>
@@ -54,5 +55,10 @@ class BookingRepository extends ServiceEntityRepository
             ->setParameter('end', $end);
 
         return (int) $qb->getQuery()->getSingleScalarResult() === 0;
+    }
+
+    public function findOneBySourceUuid(Uuid $uuid): ?Booking
+    {
+        return $this->findOneBy(['sourceUuid' => $uuid]);
     }
 }

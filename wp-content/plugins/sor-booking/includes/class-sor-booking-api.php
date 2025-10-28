@@ -182,6 +182,42 @@ class SorBookingSyncService {
     }
 
     /**
+     * Retrieve contract information including download link from backend.
+     *
+     * @param string $booking_uuid Booking UUID.
+     * @param array  $args         Optional flags.
+     *
+     * @return array|WP_Error
+     */
+    public function get_contract_link( $booking_uuid, $args = array() ) {
+        $uuid = \sanitize_text_field( (string) $booking_uuid );
+
+        if ( empty( $uuid ) ) {
+            return new WP_Error( 'sor_contract_missing_uuid', \__( 'Buchungs-UUID erforderlich.', 'sor-booking' ) );
+        }
+
+        if ( ! $this->is_enabled() ) {
+            return new WP_Error( 'sor_contract_api_disabled', \__( 'API-Synchronisierung ist deaktiviert.', 'sor-booking' ), array( 'status' => 400 ) );
+        }
+
+        $path = sprintf( '/contracts/%s', rawurlencode( $uuid ) );
+        if ( ! empty( $args['signed'] ) ) {
+            $path .= '?signed=1';
+        }
+
+        $response = $this->request( $path, 'GET' );
+        if ( \is_wp_error( $response ) ) {
+            return $response;
+        }
+
+        if ( ! isset( $response['body'] ) || ! is_array( $response['body'] ) ) {
+            return new WP_Error( 'sor_contract_invalid_response', \__( 'Unerwartete Antwort vom Vertragsservice.', 'sor-booking' ), array( 'status' => $response['code'] ?? 500 ) );
+        }
+
+        return $response['body'];
+    }
+
+    /**
      * Retry sync for a specific booking.
      *
      * @param string $uuid Booking UUID.

@@ -22,6 +22,7 @@ RUN apk add --no-cache \
         freetype-dev \
         libpng-dev \
         libjpeg-turbo-dev \
+        ttf-dejavu \
         libsodium-dev \
         build-base \
     && docker-php-ext-configure gd --with-freetype --with-jpeg \

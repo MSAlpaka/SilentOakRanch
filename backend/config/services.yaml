@@ -7,6 +7,8 @@ parameters:
     agreement_signature_certificate_path: '%env(string:AGREEMENT_SIGNATURE_CERTIFICATE_PATH)%'
     agreement_signature_private_key_path: '%env(string:AGREEMENT_SIGNATURE_PRIVATE_KEY_PATH)%'
     agreement_signature_private_key_passphrase: '%env(string:AGREEMENT_SIGNATURE_PRIVATE_KEY_PASSPHRASE)%'
+    wp_bridge_key: '%env(string:WP_BRIDGE_KEY)%'
+    wp_bridge_secret: '%env(string:WP_BRIDGE_SECRET)%'
 
 services:
     # default configuration for services in *this* file
@@ -45,3 +47,8 @@ services:
         arguments:
             $whatsappDsn: '%env(WHATSAPP_DSN)%'
             $smsDsn: '%env(SMS_DSN)%'
+
+    App\RanchBooking\EventSubscriber\HmacRequestSubscriber:
+        arguments:
+            $wpBridgeKey: '%wp_bridge_key%'
+            $wpBridgeSecret: '%wp_bridge_secret%'

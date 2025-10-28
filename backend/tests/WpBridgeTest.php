@@ -29,6 +29,8 @@ class WpBridgeTest extends WebTestCase
 
     private string $bridgeSecret;
 
+    private string $webhookToken;
+
     protected function setUp(): void
     {
         parent::setUp();
@@ -40,6 +42,7 @@ class WpBridgeTest extends WebTestCase
         $this->bookingRepository = $container->get(BookingRepository::class);
         $this->bridgeKey = (string) $container->getParameter('wp_bridge_key');
         $this->bridgeSecret = (string) $container->getParameter('wp_bridge_secret');
+        $this->webhookToken = (string) ($_SERVER['WORDPRESS_WEBHOOK_TOKEN'] ?? $_ENV['WORDPRESS_WEBHOOK_TOKEN'] ?? '');
 
         $schemaTool = new SchemaTool($this->entityManager);
         $metadata = $this->entityManager->getMetadataFactory()->getAllMetadata();
@@ -123,6 +126,7 @@ class WpBridgeTest extends WebTestCase
         $this->client->request('POST', '/api/wp/bookings', server: [
             'CONTENT_TYPE' => 'application/json',
             'HTTP_ACCEPT' => 'application/json',
+            'HTTP_AUTHORIZATION' => sprintf('Bearer %s', $this->webhookToken),
         ], content: $body);
 
         $response = $this->client->getResponse();
@@ -210,6 +214,7 @@ class WpBridgeTest extends WebTestCase
             'HTTP_X_SOR_KEY' => $this->bridgeKey,
             'HTTP_X_SOR_DATE' => $formatted,
             'HTTP_X_SOR_SIGNATURE' => $signature,
+            'HTTP_AUTHORIZATION' => sprintf('Bearer %s', $this->webhookToken),
         ];
     }
 }

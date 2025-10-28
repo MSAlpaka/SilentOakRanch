@@ -384,10 +384,17 @@ class SorBookingSyncService {
 
         $url = \untrailingslashit( $base ) . '/' . ltrim( $path, '/' );
 
-        $method  = strtoupper( $method );
-        $body    = ! empty( $payload ) ? \wp_json_encode( $payload ) : '{}';
+        $method = strtoupper( $method );
+        $body   = ! empty( $payload ) ? \wp_json_encode( $payload ) : '{}';
+
+        $signature_path = \parse_url( $url, PHP_URL_PATH );
+
+        if ( empty( $signature_path ) ) {
+            $signature_path = '/' . ltrim( $path, '/' );
+        }
+
         $signer  = new HMAC( $this->get_api_key(), $this->get_api_secret() );
-        $headers = $signer->build_headers( $method, $path, $body );
+        $headers = $signer->build_headers( $method, $signature_path, $body );
 
         $args = array(
             'timeout'     => 15,

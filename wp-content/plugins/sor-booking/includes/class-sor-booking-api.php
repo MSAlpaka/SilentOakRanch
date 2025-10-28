@@ -40,9 +40,10 @@ class SorBookingSyncService {
      * @return bool
      */
     public function is_enabled() {
-        $enabled  = (bool) \sor_booking_get_option( 'api_enabled', false );
-        $base_url = $this->get_base_url();
-        $api_key  = $this->get_api_key();
+        $enabled    = (bool) \sor_booking_get_option( 'api_enabled', false );
+        $base_url   = $this->get_base_url();
+        $api_key    = $this->get_api_key();
+        $api_secret = $this->get_api_secret();
 
         if ( ! $enabled ) {
             return false;
@@ -52,7 +53,7 @@ class SorBookingSyncService {
             return false;
         }
 
-        if ( empty( $api_key ) ) {
+        if ( empty( $api_key ) || empty( $api_secret ) ) {
             return false;
         }
 
@@ -77,6 +78,15 @@ class SorBookingSyncService {
      */
     protected function get_api_key() {
         return \sor_booking_get_api_key();
+    }
+
+    /**
+     * Retrieve API secret.
+     *
+     * @return string
+     */
+    protected function get_api_secret() {
+        return \sor_booking_get_api_secret();
     }
 
     /**
@@ -374,19 +384,31 @@ class SorBookingSyncService {
 
         $url = \untrailingslashit( $base ) . '/' . ltrim( $path, '/' );
 
+        $method = strtoupper( $method );
+        $body   = ! empty( $payload ) ? \wp_json_encode( $payload ) : '{}';
+
+        $signature_path = \parse_url( $url, PHP_URL_PATH );
+
+        if ( empty( $signature_path ) ) {
+            $signature_path = '/' . ltrim( $path, '/' );
+        }
+
+        $signer  = new HMAC( $this->get_api_key(), $this->get_api_secret() );
+        $headers = $signer->build_headers( $method, $signature_path, $body );
+
         $args = array(
-            'method'      => strtoupper( $method ),
             'timeout'     => 15,
-            'headers'     => array(
-                'Authorization' => 'Bearer ' . $this->get_api_key(),
-                'Content-Type'  => 'application/json',
-                'Accept'        => 'application/json',
-            ),
-            'body'        => ! empty( $payload ) ? \wp_json_encode( $payload ) : '{}',
+            'headers'     => $headers,
+            'body'        => $body,
             'data_format' => 'body',
         );
 
-        $response = \wp_remote_request( $url, $args );
+        if ( 'POST' === $method ) {
+            $response = \wp_remote_post( $url, $args );
+        } else {
+            $args['method'] = $method;
+            $response       = \wp_remote_request( $url, $args );
+        }
 
         if ( is_wp_error( $response ) ) {
             return new WP_Error(

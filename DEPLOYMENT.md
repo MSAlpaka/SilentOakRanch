@@ -2,6 +2,8 @@
 
 This document explains the automated deployment workflow for Silent Oak Ranch.
 
+> ℹ️ Für Architektur- und Security-Details des hybriden Stacks siehe [`docs/hybrid-setup.md`](docs/hybrid-setup.md).
+
 ## 📍 Server Details
 - **Host:** 188.34.158.53
 - **User:** stallapp

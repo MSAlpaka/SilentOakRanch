@@ -20,6 +20,29 @@ if ( ! defined( 'SOR_BOOKING_TESTMODE_OPTION' ) ) {
 }
 
 /**
+ * Retrieve the value of a legacy configuration constant.
+ *
+ * @param string $constant Constant name.
+ *
+ * @return string
+ */
+function sor_booking_get_legacy_constant_value( $constant ) {
+    if ( defined( $constant ) ) {
+        $value = constant( $constant );
+
+        if ( is_string( $value ) ) {
+            $value = trim( $value );
+        }
+
+        if ( '' !== $value && null !== $value ) {
+            return (string) $value;
+        }
+    }
+
+    return '';
+}
+
+/**
  * Retrieve default plugin options.
  *
  * @return array
@@ -29,12 +52,12 @@ function sor_booking_get_option_defaults() {
         'price_solekammer' => 45.0,
         'price_waage'      => 25.0,
         'paypal_mode'      => 'sandbox',
-        'paypal_client_id' => '',
-        'paypal_secret'    => '',
-        'qr_secret'        => '',
+        'paypal_client_id' => sor_booking_get_legacy_constant_value( 'SOR_PAYPAL_CLIENT_ID' ),
+        'paypal_secret'    => sor_booking_get_legacy_constant_value( 'SOR_PAYPAL_SECRET' ),
+        'qr_secret'        => sor_booking_get_legacy_constant_value( 'SOR_QR_SECRET' ),
         'api_enabled'      => false,
         'api_base_url'     => 'https://app.silent-oak-ranch.de/api',
-        'api_key'          => '',
+        'api_key'          => sor_booking_get_legacy_constant_value( 'SOR_API_KEY' ),
         'api_secret'       => '',
     );
 }

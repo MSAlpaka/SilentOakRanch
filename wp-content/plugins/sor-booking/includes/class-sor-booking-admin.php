@@ -288,6 +288,8 @@ class Admin {
         $sign_request = isset( $_GET['sign'] ) ? \sanitize_text_field( \wp_unslash( $_GET['sign'] ) ) : '';
 
         if ( $sign_request && $this->sync && $this->sync->is_enabled() ) {
+            \check_admin_referer( 'sor-booking-contract-sign' );
+
             $result = $this->sync->get_contract_link( $sign_request, array( 'signed' => true ) );
             if ( \is_wp_error( $result ) ) {
                 \add_settings_error( 'sor-booking-contracts', 'contract-signature', $result->get_error_message(), 'error' );
@@ -388,12 +390,15 @@ class Admin {
                 if ( $row['signed_url'] ) {
                     echo '<a class="button" href="' . \esc_url( $row['signed_url'] ) . '">' . \esc_html__( 'Signierte Version', 'sor-booking' ) . '</a>';
                 } elseif ( $row['download'] ) {
-                    $sign_url = \add_query_arg(
-                        array(
-                            'page' => 'sor-booking-contracts',
-                            'sign' => $row['booking']->uuid,
+                    $sign_url = \wp_nonce_url(
+                        \add_query_arg(
+                            array(
+                                'page' => 'sor-booking-contracts',
+                                'sign' => $row['booking']->uuid,
+                            ),
+                            \admin_url( 'admin.php' )
                         ),
-                        \admin_url( 'admin.php' )
+                        'sor-booking-contract-sign'
                     );
                     echo '<a class="button" href="' . \esc_url( $sign_url ) . '">' . \esc_html__( 'Signatur anfordern', 'sor-booking' ) . '</a>';
                 }

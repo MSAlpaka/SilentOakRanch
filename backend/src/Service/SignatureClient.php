@@ -55,11 +55,11 @@ class SignatureClient
     {
         $baseUrl = $this->signatureBaseUrl ? rtrim($this->signatureBaseUrl, '/') : null;
         if ($baseUrl === null || $this->signatureToken === null) {
-            $this->logger->warning('Signature client misconfigured. Falling back to local copy.', [
+            $this->logger->error('Signature client misconfigured.', [
                 'contract_uuid' => (string) $contract->getId(),
             ]);
 
-            return null;
+            throw new ServiceUnavailableHttpException(null, 'Signature service misconfigured.');
         }
 
         try {

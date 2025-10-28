@@ -7,8 +7,6 @@ monolog:
             path: '%kernel.logs_dir%/app.log'
             level: info
             channels: ['!event']
-    processors:
-        - App\Service\Logging\AnonymizeIpProcessor
 
 when@dev:
     monolog:

@@ -13,6 +13,9 @@ parameters:
     enable_signatures: '%env(bool:default:false:ENABLE_SIGNATURES)%'
     signature_api_base_url: '%env(default::SIGNATURE_API_BASE_URL)%'
     signature_api_token: '%env(default::SIGNATURE_API_TOKEN)%'
+    audit_storage_path: '%kernel.project_dir%/shared/audit'
+    signature_validation_api_url: '%env(default::SIGNATURE_API_URL)%'
+    signature_ttl_days: '%env(int:SIGNATURE_TTL_DAYS)%'
 
 services:
     # default configuration for services in *this* file
@@ -48,6 +51,19 @@ services:
     App\Service\ContractGenerator:
         arguments:
             $contractsStoragePath: '%contracts_storage_path%'
+
+    App\Service\AuditLogger:
+        arguments:
+            $auditStoragePath: '%audit_storage_path%'
+
+    App\Service\SignatureValidator:
+        arguments:
+            $validationApiUrl: '%signature_validation_api_url%'
+            $signatureTtlDays: '%signature_ttl_days%'
+
+    App\Service\Logging\AnonymizeIpProcessor:
+        tags:
+            - { name: monolog.processor, handler: main }
 
     App\Service\SignatureClient:
         arguments:

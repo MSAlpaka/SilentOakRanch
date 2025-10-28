@@ -18,6 +18,7 @@ class ContractGenerator
         private readonly ContractRepository $contracts,
         private readonly EntityManagerInterface $entityManager,
         private readonly Filesystem $filesystem,
+        private readonly AuditLogger $auditLogger,
         private readonly string $contractsStoragePath
     ) {
     }
@@ -47,6 +48,10 @@ class ContractGenerator
             ->setHash($hash)
             ->setStatus(ContractStatus::GENERATED);
         $contract->appendAuditEntry('generated', $hash);
+        $this->auditLogger->log($contract, 'CONTRACT_GENERATED', [
+            'hash' => $hash,
+            'path' => $filename,
+        ]);
 
         if (!$this->contracts->find($contract->getId())) {
             $this->entityManager->persist($contract);

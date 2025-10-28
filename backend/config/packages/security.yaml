@@ -46,6 +46,8 @@ security:
         - { path: ^/api/register, roles: PUBLIC_ACCESS }
         - { path: ^/api/logout, roles: PUBLIC_ACCESS }
         - { path: ^/api/invite, roles: ROLE_ADMIN }
+        - { path: ^/api/contracts/.+/verify, allow_if: "is_granted('ROLE_ADMIN') or is_granted('ROLE_AUDITOR')" }
+        - { path: ^/api/audit, allow_if: "is_granted('ROLE_ADMIN') or is_granted('ROLE_AUDITOR')" }
         - { path: ^/api, roles: IS_AUTHENTICATED_FULLY }
 
 when@test:

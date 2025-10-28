@@ -1,0 +1,2 @@
+parameters:
+    audit_storage_path: '%kernel.project_dir%/var/audit-test'

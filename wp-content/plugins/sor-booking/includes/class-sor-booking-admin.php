@@ -152,7 +152,7 @@ class Admin {
         \add_settings_field(
             'qr_secret',
             \__( 'QR Geheimnis', 'sor-booking' ),
-            array( $this, 'render_text_field' ),
+            array( $this, 'render_password_field' ),
             $page,
             'sor_booking_section_qr',
             array(
@@ -200,6 +200,18 @@ class Admin {
             'sor_booking_section_api',
             array(
                 'name'  => 'api_key',
+                'class' => 'regular-text',
+            )
+        );
+
+        \add_settings_field(
+            'api_secret',
+            \__( 'API Secret', 'sor-booking' ),
+            array( $this, 'render_password_field' ),
+            $page,
+            'sor_booking_section_api',
+            array(
+                'name'  => 'api_secret',
                 'class' => 'regular-text',
             )
         );
@@ -325,6 +337,8 @@ class Admin {
             return;
         }
 
+        $this->render_configuration_notice();
+
         if ( ! $this->sync || ! $this->sync->is_enabled() ) {
             return;
         }
@@ -346,6 +360,54 @@ class Admin {
         );
 
         echo '<div class="notice notice-warning"><p>' . $label . ' ' . $link . '</p></div>';
+    }
+
+    /**
+     * Render configuration warning when API or HMAC secrets are missing.
+     */
+    protected function render_configuration_notice() {
+        $options = \sor_booking_get_options();
+        $issues  = array();
+
+        if ( empty( $options['qr_secret'] ) ) {
+            $issues[] = \__( 'QR Geheimnis', 'sor-booking' );
+        }
+
+        if ( ! empty( $options['api_enabled'] ) ) {
+            if ( empty( $options['api_base_url'] ) || 0 !== strpos( $options['api_base_url'], 'https://' ) ) {
+                $issues[] = \__( 'API Basis-URL', 'sor-booking' );
+            }
+
+            if ( empty( $options['api_key'] ) ) {
+                $issues[] = \__( 'API Schlüssel', 'sor-booking' );
+            }
+
+            if ( empty( $options['api_secret'] ) ) {
+                $issues[] = \__( 'API Secret', 'sor-booking' );
+            }
+        }
+
+        if ( empty( $issues ) ) {
+            return;
+        }
+
+        $labels       = implode( ', ', array_map( '\\esc_html', $issues ) );
+        $settings_url = \esc_url( \admin_url( 'admin.php?page=sor-booking-settings' ) );
+        $link         = sprintf(
+            '<a href="%s">%s</a>',
+            $settings_url,
+            \esc_html__( 'Einstellungen öffnen', 'sor-booking' )
+        );
+
+        printf(
+            '<div class="notice notice-error"><p>%s %s</p></div>',
+            sprintf(
+                /* translators: %s: Missing configuration fields. */
+                \__( 'Bitte vervollständige die folgenden Einstellungen: %s.', 'sor-booking' ),
+                $labels
+            ),
+            $link
+        );
     }
 
     /**
@@ -886,6 +948,7 @@ class Admin {
         $output['api_base_url'] = $base_url ? \untrailingslashit( $base_url ) : $defaults['api_base_url'];
 
         $output['api_key'] = isset( $input['api_key'] ) ? sanitize_text_field( $input['api_key'] ) : '';
+        $output['api_secret'] = isset( $input['api_secret'] ) ? sanitize_text_field( $input['api_secret'] ) : '';
 
         \update_option( \SOR_BOOKING_TESTMODE_OPTION, 'sandbox' === $mode );
 

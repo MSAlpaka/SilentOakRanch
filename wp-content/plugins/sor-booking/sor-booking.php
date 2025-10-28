@@ -15,24 +15,31 @@ define( 'SOR_BOOKING_VERSION', '0.1.0' );
 define( 'SOR_BOOKING_PATH', plugin_dir_path( __FILE__ ) );
 define( 'SOR_BOOKING_URL', plugin_dir_url( __FILE__ ) );
 
-if ( ! defined( 'SOR_QR_SECRET' ) ) {
-    define( 'SOR_QR_SECRET', 'f7d80f14f052d2a122b5d8790c93bc186c8a2ad2d276f1d8cfafbf55bc96d14e' );
-}
-
-if ( ! defined( 'SOR_PAYPAL_CLIENT_ID' ) ) {
-    define( 'SOR_PAYPAL_CLIENT_ID', 'sb' );
-}
-
-if ( ! defined( 'SOR_PAYPAL_SECRET' ) ) {
-    define( 'SOR_PAYPAL_SECRET', 'sandbox-secret' );
-}
-
-if ( ! defined( 'SOR_API_KEY' ) ) {
-    define( 'SOR_API_KEY', 'change-me-api-key' );
-}
-
 if ( ! defined( 'SOR_BOOKING_TESTMODE_OPTION' ) ) {
     define( 'SOR_BOOKING_TESTMODE_OPTION', 'sor_booking_testmode' );
+}
+
+/**
+ * Retrieve the value of a legacy configuration constant.
+ *
+ * @param string $constant Constant name.
+ *
+ * @return string
+ */
+function sor_booking_get_legacy_constant_value( $constant ) {
+    if ( defined( $constant ) ) {
+        $value = constant( $constant );
+
+        if ( is_string( $value ) ) {
+            $value = trim( $value );
+        }
+
+        if ( '' !== $value && null !== $value ) {
+            return (string) $value;
+        }
+    }
+
+    return '';
 }
 
 /**
@@ -45,12 +52,13 @@ function sor_booking_get_option_defaults() {
         'price_solekammer' => 45.0,
         'price_waage'      => 25.0,
         'paypal_mode'      => 'sandbox',
-        'paypal_client_id' => defined( 'SOR_PAYPAL_CLIENT_ID' ) ? SOR_PAYPAL_CLIENT_ID : '',
-        'paypal_secret'    => defined( 'SOR_PAYPAL_SECRET' ) ? SOR_PAYPAL_SECRET : '',
-        'qr_secret'        => defined( 'SOR_QR_SECRET' ) ? SOR_QR_SECRET : '',
+        'paypal_client_id' => sor_booking_get_legacy_constant_value( 'SOR_PAYPAL_CLIENT_ID' ),
+        'paypal_secret'    => sor_booking_get_legacy_constant_value( 'SOR_PAYPAL_SECRET' ),
+        'qr_secret'        => sor_booking_get_legacy_constant_value( 'SOR_QR_SECRET' ),
         'api_enabled'      => false,
         'api_base_url'     => 'https://app.silent-oak-ranch.de/api',
-        'api_key'          => '',
+        'api_key'          => sor_booking_get_legacy_constant_value( 'SOR_API_KEY' ),
+        'api_secret'       => '',
     );
 }
 
@@ -116,13 +124,7 @@ function sor_booking_is_sandbox() {
  * @return string
  */
 function sor_booking_get_paypal_client_id() {
-    $option = sor_booking_get_option( 'paypal_client_id', '' );
-
-    if ( ! empty( $option ) ) {
-        return $option;
-    }
-
-    return defined( 'SOR_PAYPAL_CLIENT_ID' ) ? SOR_PAYPAL_CLIENT_ID : '';
+    return (string) sor_booking_get_option( 'paypal_client_id', '' );
 }
 
 /**
@@ -131,13 +133,7 @@ function sor_booking_get_paypal_client_id() {
  * @return string
  */
 function sor_booking_get_paypal_secret() {
-    $option = sor_booking_get_option( 'paypal_secret', '' );
-
-    if ( ! empty( $option ) ) {
-        return $option;
-    }
-
-    return defined( 'SOR_PAYPAL_SECRET' ) ? SOR_PAYPAL_SECRET : '';
+    return (string) sor_booking_get_option( 'paypal_secret', '' );
 }
 
 /**
@@ -146,13 +142,25 @@ function sor_booking_get_paypal_secret() {
  * @return string
  */
 function sor_booking_get_qr_secret() {
-    $option = sor_booking_get_option( 'qr_secret', '' );
+    return (string) sor_booking_get_option( 'qr_secret', '' );
+}
 
-    if ( ! empty( $option ) ) {
-        return $option;
-    }
+/**
+ * Retrieve API key used for remote requests.
+ *
+ * @return string
+ */
+function sor_booking_get_api_key() {
+    return (string) sor_booking_get_option( 'api_key', '' );
+}
 
-    return defined( 'SOR_QR_SECRET' ) ? SOR_QR_SECRET : '';
+/**
+ * Retrieve API secret used for HMAC validation.
+ *
+ * @return string
+ */
+function sor_booking_get_api_secret() {
+    return (string) sor_booking_get_option( 'api_secret', '' );
 }
 
 spl_autoload_register(

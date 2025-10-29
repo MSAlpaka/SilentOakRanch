@@ -510,6 +510,7 @@ class Admin {
         }
 
         $this->render_configuration_notice();
+        $this->render_status_notice();
 
         if ( ! $this->sync || ! $this->sync->is_enabled() ) {
             return;
@@ -1063,6 +1064,47 @@ class Admin {
             default:
                 return $action ? $action : \__( 'Unbekannt', 'sor-booking' );
         }
+    }
+
+    /**
+     * Render notice when bridge status endpoint signals failure.
+     */
+    protected function render_status_notice() {
+        if ( ! $this->sync || ! $this->sync->is_enabled() ) {
+            return;
+        }
+
+        $response = \wp_remote_get(
+            \rest_url( 'sor/v1/status' ),
+            array(
+                'timeout' => 5,
+                'headers' => array( 'Accept' => 'application/json' ),
+            )
+        );
+
+        if ( \is_wp_error( $response ) ) {
+            $message = $response->get_error_message();
+        } else {
+            $code = (int) \wp_remote_retrieve_response_code( $response );
+
+            if ( $code >= 200 && $code < 300 ) {
+                $body = json_decode( \wp_remote_retrieve_body( $response ), true );
+
+                if ( isset( $body['ok'] ) && $body['ok'] ) {
+                    return;
+                }
+
+                $message = __( 'Bridge status degraded – check monitoring dashboard.', 'sor-booking' );
+            } else {
+                $message = sprintf( __( 'Bridge status endpoint returned HTTP %d.', 'sor-booking' ), $code );
+            }
+        }
+
+        if ( empty( $message ) ) {
+            $message = __( 'Bridge status unknown.', 'sor-booking' );
+        }
+
+        echo '<div class="notice notice-error"><p>' . esc_html( $message ) . '</p></div>';
     }
 
     /**

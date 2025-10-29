@@ -1,0 +1,27 @@
+server:
+  http_listen_port: 9080
+  grpc_listen_port: 0
+
+positions:
+  filename: /tmp/positions.yaml
+
+clients:
+  - url: http://loki:3100/loki/api/v1/push
+
+scrape_configs:
+  - job_name: docker-logs
+    static_configs:
+      - targets: ['localhost']
+        labels:
+          job: docker
+          __path__: /var/lib/docker/containers/*/*-json.log
+    pipeline_stages:
+      - docker: {}
+      - replace:
+          expression: '[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}'
+          replace: '[redacted-email]'
+      - replace:
+          expression: 'Bearer [A-Za-z0-9._-]+'
+          replace: 'Bearer [redacted]'
+      - labels:
+          container: container_name

@@ -10,6 +10,7 @@ parameters:
     wp_bridge_key: '%env(string:WP_BRIDGE_KEY)%'
     wp_bridge_secret: '%env(string:WP_BRIDGE_SECRET)%'
     contracts_storage_path: '%kernel.project_dir%/shared/agreements'
+    agreements_storage_path: '%kernel.project_dir%/var/agreements'
     enable_signatures: '%env(bool:ENABLE_SIGNATURES)%'
     signature_api_base_url: '%env(default::SIGNATURE_API_BASE_URL)%'
     signature_api_token: '%env(default::SIGNATURE_API_TOKEN)%'
@@ -71,6 +72,11 @@ services:
             $signaturesEnabled: '%enable_signatures%'
             $signatureBaseUrl: '%signature_api_base_url%'
             $signatureToken: '%signature_api_token%'
+
+    App\Service\HealthCheckService:
+        arguments:
+            $agreementsStoragePath: '%agreements_storage_path%'
+            $auditStoragePath: '%audit_storage_path%'
 
     App\Controller\Api\WpContractController:
         arguments:

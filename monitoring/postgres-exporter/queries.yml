@@ -1,0 +1,28 @@
+queue_metrics:
+  query: |
+    SELECT
+      COALESCE(EXTRACT(EPOCH FROM (NOW() - MIN(available_at))), 0) AS oldest_delay_seconds,
+      COUNT(*) AS pending_messages
+    FROM messenger_messages;
+  metrics:
+    - metric_name: sor_queue_oldest_seconds
+      type: gauge
+      help: Oldest messenger message in seconds.
+      value: oldest_delay_seconds
+    - metric_name: sor_queue_pending_messages
+      type: gauge
+      help: Number of pending messenger messages.
+      value: pending_messages
+
+booking_activity:
+  query: |
+    SELECT
+      COALESCE(COUNT(*)::double precision, 0) AS events_last_minute
+    FROM audit_log
+    WHERE entity_type = 'BOOKING'
+      AND timestamp >= NOW() - INTERVAL '1 minute';
+  metrics:
+    - metric_name: sor_booking_events_last_minute
+      type: gauge
+      help: Booking-related audit events recorded in the last minute.
+      value: events_last_minute

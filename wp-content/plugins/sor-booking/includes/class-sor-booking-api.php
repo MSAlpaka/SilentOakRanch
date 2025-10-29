@@ -61,6 +61,94 @@ class SorBookingSyncService {
     }
 
     /**
+     * Build a comprehensive status report for the remote integration.
+     *
+     * @param Contracts_API|null $contracts_api Optional contracts API client for signature checks.
+     *
+     * @return array
+     */
+    public function get_status_report( ?Contracts_API $contracts_api = null ) {
+        $checks = array();
+        $overall_ok = true;
+
+        $enabled = $this->is_enabled();
+        $checks['integration_enabled'] = array(
+            'ok'      => $enabled,
+            'message' => $enabled ? __( 'Remote synchronisation enabled.', 'sor-booking' ) : __( 'Remote synchronisation disabled.', 'sor-booking' ),
+        );
+
+        if ( ! $enabled ) {
+            return array(
+                'ok'     => false,
+                'checks' => $checks,
+            );
+        }
+
+        $base      = $this->get_base_url();
+        $health_url = trailingslashit( $base ) . 'health';
+        $api_check  = array(
+            'ok'      => false,
+            'status'  => null,
+            'message' => '',
+        );
+
+        $response = \wp_remote_get(
+            $health_url,
+            array(
+                'timeout' => 10,
+                'headers' => array( 'Accept' => 'application/json' ),
+            )
+        );
+
+        if ( \is_wp_error( $response ) ) {
+            $api_check['message'] = $response->get_error_message();
+        } else {
+            $status               = (int) \wp_remote_retrieve_response_code( $response );
+            $api_check['status']  = $status;
+            $api_check['ok']      = ( $status >= 200 && $status < 300 );
+            $api_check['message'] = $api_check['ok'] ? __( 'Health endpoint reachable.', 'sor-booking' ) : sprintf( __( 'Health endpoint responded with HTTP %d.', 'sor-booking' ), $status );
+        }
+
+        $overall_ok           = $overall_ok && $api_check['ok'];
+        $checks['api_health'] = $api_check;
+
+        $signature_check = array(
+            'ok'      => false,
+            'message' => '',
+        );
+
+        if ( $contracts_api instanceof Contracts_API ) {
+            $result = $contracts_api->get_contracts( array( 'limit' => 1 ) );
+
+            if ( \is_wp_error( $result ) ) {
+                $signature_check['message'] = $result->get_error_message();
+            } else {
+                $signature_check['ok']      = true;
+                $signature_check['message'] = __( 'Signed API call successful.', 'sor-booking' );
+            }
+        } else {
+            $signature_check['message'] = __( 'Contracts API client unavailable.', 'sor-booking' );
+        }
+
+        $overall_ok            = $overall_ok && $signature_check['ok'];
+        $checks['signature']   = $signature_check;
+
+        return array(
+            'ok'     => $overall_ok,
+            'checks' => $checks,
+        );
+    }
+
+    /**
+     * Retrieve API base URL for status introspection.
+     *
+     * @return string
+     */
+    public function get_api_base_url() {
+        return $this->get_base_url();
+    }
+
+    /**
      * Retrieve base API URL.
      *
      * @return string
@@ -610,6 +698,13 @@ class API {
     protected $sync;
 
     /**
+     * Contracts API client.
+     *
+     * @var Contracts_API|null
+     */
+    protected $contracts_api;
+
+    /**
      * Constructor.
      *
      * @param DB                      $db     Database.
@@ -617,11 +712,12 @@ class API {
      * @param PayPal                  $paypal PayPal helper.
      * @param SorBookingSyncService   $sync   Sync service.
      */
-    public function __construct( DB $db, QR $qr, PayPal $paypal, ?SorBookingSyncService $sync = null ) {
+    public function __construct( DB $db, QR $qr, PayPal $paypal, ?SorBookingSyncService $sync = null, ?Contracts_API $contracts_api = null ) {
         $this->db     = $db;
         $this->qr     = $qr;
         $this->paypal = $paypal;
         $this->sync   = $sync;
+        $this->contracts_api = $contracts_api;
 
         \add_action( 'rest_api_init', array( $this, 'register_routes' ) );
     }
@@ -727,6 +823,16 @@ class API {
                 ),
             )
         );
+
+        \register_rest_route(
+            'sor/v1',
+            '/status',
+            array(
+                'methods'             => WP_REST_Server::READABLE,
+                'callback'            => array( $this, 'handle_status' ),
+                'permission_callback' => '__return_true',
+            )
+        );
     }
 
     /**
@@ -777,6 +883,43 @@ class API {
      */
     public function validate_admin_request( WP_REST_Request $request ) {
         return \current_user_can( 'manage_options' );
+    }
+
+    /**
+     * Provide WordPress bridge status information.
+     *
+     * @param WP_REST_Request $request Request instance.
+     *
+     * @return WP_REST_Response
+     */
+    public function handle_status( WP_REST_Request $request ) {
+        $timestamp = gmdate( DATE_ATOM );
+
+        if ( ! $this->sync ) {
+            $payload = array(
+                'ok'       => false,
+                'checks'   => array(
+                    'integration_enabled' => array(
+                        'ok'      => false,
+                        'message' => __( 'Sync service unavailable.', 'sor-booking' ),
+                    ),
+                ),
+                'timestamp' => $timestamp,
+            );
+
+            return new WP_REST_Response( $payload, 503 );
+        }
+
+        $report   = $this->sync->get_status_report( $this->contracts_api );
+        $payload  = array(
+            'ok'        => $report['ok'],
+            'checks'    => $report['checks'],
+            'timestamp' => $timestamp,
+            'api_base'  => $this->sync->get_api_base_url(),
+        );
+        $status   = $report['ok'] ? 200 : 503;
+
+        return new WP_REST_Response( $payload, $status );
     }
 
     /**

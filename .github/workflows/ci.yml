@@ -183,3 +183,103 @@ jobs:
 
       - name: Run contracts UI smoke
         run: ./scripts/wp-contracts-ui-tests.sh
+
+  monitoring-tests:
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Prepare shared directories
+        run: |
+          mkdir -p shared/jwt/backend shared/backend/var shared/agreements/signing shared/audit wp-content
+
+      - name: Prepare environment
+        run: |
+          cat <<'ENV' > .env
+          POSTGRES_USER=postgres
+          POSTGRES_PASSWORD=postgres
+          POSTGRES_DB=postgres
+          MARIADB_ROOT_PASSWORD=rootpassword
+          MARIADB_USER=wordpress
+          MARIADB_PASSWORD=wordpress
+          MARIADB_DATABASE=wordpress
+          WORDPRESS_DB_HOST=wp-db
+          WORDPRESS_DB_USER=wordpress
+          WORDPRESS_DB_PASSWORD=wordpress
+          WORDPRESS_DB_NAME=wordpress
+          WORDPRESS_TABLE_PREFIX=wp_
+          DOMAIN=ci.silent-oak.local
+          BOOKING_DOMAIN=book.ci.silent-oak.local
+          LETSENCRYPT_EMAIL=ci@silent-oak.local
+          STATUS_DASH_AUTH_USERS=admin:$apr1$Vq6NPmrh$8Dvip4HZaDhuXQog76oVK1
+          STORAGE_BOX_REMOTE=silent-oak
+          WP_BRIDGE_KEY=test-key
+          WP_BRIDGE_SECRET=test-secret
+          TZ=Europe/Berlin
+          ENV
+
+      - name: Build backup image
+        run: docker compose build backup-cron
+
+      - name: Start databases
+        run: docker compose up -d db wp-db
+
+      - name: Wait for Postgres
+        run: |
+          for attempt in {1..20}; do
+            if docker compose exec -T db pg_isready -U "$POSTGRES_USER" -d "$POSTGRES_DB" >/dev/null 2>&1; then
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "Postgres did not become ready in time" >&2
+          exit 1
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_DB: postgres
+
+      - name: Wait for MariaDB
+        run: |
+          for attempt in {1..30}; do
+            if docker compose exec -T wp-db mysqladmin ping -u"${MARIADB_USER}" -p"${MARIADB_PASSWORD}" >/dev/null 2>&1; then
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "MariaDB did not become ready in time" >&2
+          exit 1
+        env:
+          MARIADB_USER: wordpress
+          MARIADB_PASSWORD: wordpress
+
+      - name: Start application services
+        run: docker compose up -d backend wordpress grafana
+
+      - name: Install WP-CLI
+        run: |
+          docker compose exec -T -u root wordpress sh -lc 'if ! command -v wp >/dev/null 2>&1; then curl -sS https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar -o /usr/local/bin/wp && chmod +x /usr/local/bin/wp; fi'
+
+      - name: Install WordPress
+        env:
+          SITE_URL: http://localhost
+        run: |
+          docker compose exec -T wordpress wp core install --url="${SITE_URL}" --title="Silent Oak Monitoring" --admin_user="admin" --admin_password="ci-Admin-123" --admin_email="admin@example.com" --skip-email --allow-root
+          docker compose exec -T wordpress wp plugin activate sor-booking --allow-root
+          docker compose exec -T wordpress wp option patch update sor_booking_options api_enabled 1 --allow-root
+          docker compose exec -T wordpress wp option patch update sor_booking_options api_base_url http://backend:8080/api --allow-root
+          docker compose exec -T wordpress wp option patch update sor_booking_options api_key test-key --allow-root
+          docker compose exec -T wordpress wp option patch update sor_booking_options api_secret test-secret --allow-root
+
+      - name: Check backend health endpoint
+        run: docker compose exec -T backend curl -fsS http://localhost:9000/health
+
+      - name: Check WordPress bridge status
+        run: docker compose exec -T wordpress curl -fsS http://localhost/wp-json/sor/v1/status
+
+      - name: Check Grafana API health
+        run: docker compose exec -T grafana curl -fsS http://localhost:3000/api/health
+
+      - name: Tear down stack
+        if: always()
+        run: docker compose down -v --remove-orphans

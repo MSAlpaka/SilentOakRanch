@@ -267,9 +267,9 @@ function sor_booking_init() {
     $paypal = new \SOR\Booking\PayPal( $db );
     require_once SOR_BOOKING_PATH . 'includes/class-sor-booking-api.php';
     require_once SOR_BOOKING_PATH . 'includes/class-sor-booking-contracts-api.php';
-    $sync   = new \SOR\Booking\SorBookingSyncService( $db );
-    $api    = new \SOR\Booking\API( $db, $qr, $paypal, $sync );
+    $sync          = new \SOR\Booking\SorBookingSyncService( $db );
     $contracts_api = new \SOR\Booking\Contracts_API();
+    $api           = new \SOR\Booking\API( $db, $qr, $paypal, $sync, $contracts_api );
 
     $GLOBALS['sor_booking_db']     = $db;
     $GLOBALS['sor_booking_qr']     = $qr;

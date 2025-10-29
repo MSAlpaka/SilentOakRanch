@@ -2,6 +2,7 @@
 
 namespace App\Controller;
 
+use App\Service\HealthCheckService;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
@@ -15,8 +16,14 @@ class HealthCheckController
     }
 
     #[Route('/health', name: 'health', methods: ['GET'])]
-    public function health(): Response
+    public function health(HealthCheckService $healthCheckService): Response
     {
-        return new Response('', Response::HTTP_OK);
+        $result = $healthCheckService->check();
+
+        if ($result['ok'] ?? false) {
+            return new JsonResponse($result, Response::HTTP_OK);
+        }
+
+        return new JsonResponse($result, Response::HTTP_SERVICE_UNAVAILABLE);
     }
 }

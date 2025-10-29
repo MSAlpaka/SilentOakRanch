@@ -3,7 +3,8 @@
 ## Project overview & tech stack
 - Symfony 7.3 backend running on PHP 8.3 FPM.
 - React with Redux Toolkit on Node.js 20, built via Vite, Vitest, ESLint, and the i18n tooling.
-- Docker Compose orchestrates the PHP backend, PostgreSQL 15, the static frontend, and the nginx-proxy/Let's Encrypt companions used in production.
+- Docker Compose orchestrates the PHP backend, PostgreSQL 15, the static frontend, and the Traefik-based ingress/ACME stack used in production.
+- Live status & monitoring: https://status.silentoakranch.de
 
 ## Dependencies
 Composer packages are pinned to stable versions for reproducible builds. Notable constraints include `endroid/qr-code-bundle` (^6.0) and `stripe/stripe-php` (^14.0).
@@ -37,7 +38,10 @@ Populate every mandatory entry from `.env.example`:
 
 - `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB`, `DATABASE_URL` – configure the PostgreSQL 15 service that the backend reaches via the internal host `db:5432`.
 - `APP_ENV`, `APP_SECRET` – choose the Symfony environment (`dev` for local, `prod` for deployments) and generate a 64-character secret, e.g. `php -r 'echo bin2hex(random_bytes(32));'`.
-- `DOMAIN`, `LETSENCRYPT_EMAIL`, `TRUSTED_PROXIES`, `TRUSTED_HOSTS` – define the public hostname and proxy settings consumed by the nginx-proxy and Let's Encrypt companion containers.
+- `DOMAIN`, `BOOKING_DOMAIN`, `LETSENCRYPT_EMAIL`, `TRUSTED_PROXIES`, `TRUSTED_HOSTS` – define the public hostnames and proxy settings consumed by Traefik and the application containers.
+- `STATUS_DASH_AUTH_USERS`, `OAUTH2_PROXY_CLIENT_ID`, `OAUTH2_PROXY_CLIENT_SECRET`, `OAUTH2_PROXY_COOKIE_SECRET`, `OAUTH2_PROXY_OIDC_ISSUER_URL` – protect the monitoring dashboards (basic auth for Uptime Kuma, OAuth2 Proxy in front of Grafana).
+- `ALERTMANAGER_SMTP_*`, `ALERTMANAGER_EMAIL_TO`, `ALERTMANAGER_TELEGRAM_*` – configure alert delivery targets.
+- `STORAGE_BOX_REMOTE` – rclone remote name for Hetzner Storage Box uploads used by `scripts/backup.sh`.
 - `STRIPE_SECRET_KEY`, `VITE_STRIPE_PUBLISHABLE_KEY` – supply the backend secret key and frontend publishable key used during Stripe Checkout. The publishable key must be available when the frontend builds; export it before running `npm run build` or provide it via `.env` so `docker compose build frontend` receives the same value. Otherwise Vite renders the Stripe button in a disabled state. Mirror the value in the `VITE_STRIPE_PUBLISHABLE_KEY` GitHub secret so the CI and deployment workflows inject the key as a Docker build argument.
 - `JWT_SECRET_KEY`, `JWT_PUBLIC_KEY`, `JWT_PASSPHRASE` – point to the LexikJWT key pair and provide the matching passphrase (generate the keys with `docker compose run --rm backend php bin/console lexik:jwt:generate-keypair --overwrite`).
 - `AGREEMENT_SIGNATURE_CERTIFICATE_PATH`, `AGREEMENT_SIGNATURE_PRIVATE_KEY_PATH`, `AGREEMENT_SIGNATURE_PRIVATE_KEY_PASSPHRASE` – configure the X.509 certificate and encrypted private key used to sign digitally generated agreements. Keep the files outside the Git repository (e.g. `./shared/agreements/signing/`). Docker Compose mounts that directory into the backend container at `/var/www/backend/config/agreements/`, so dropping the certificate and key there satisfies the paths.

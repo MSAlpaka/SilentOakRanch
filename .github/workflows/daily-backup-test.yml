@@ -1,0 +1,30 @@
+name: daily-backup-test
+
+on:
+  schedule:
+    - cron: '30 2 * * *'
+  workflow_dispatch:
+
+jobs:
+  verify-backup:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Prepare fake remote
+        run: |
+          mkdir -p /tmp/sor-backups/daily
+          stamp=$(date +%Y%m%d-%H%M%S)
+          mkdir -p "/tmp/sor-backups/daily/${stamp}"
+          echo "test checksum" > "/tmp/sor-backups/daily/${stamp}/SHA256SUMS"
+          echo "STORAGE_BOX_REMOTE=local:/tmp/sor-backups" > .env
+
+      - name: Build backup image
+        run: docker compose build backup-cron
+
+      - name: Run backup verification
+        run: docker compose run --rm -e STORAGE_BOX_REMOTE=local:/tmp/sor-backups backup-cron /opt/backup.sh --verify
+
+      - name: Cleanup
+        if: always()
+        run: docker compose down -v --remove-orphans || true

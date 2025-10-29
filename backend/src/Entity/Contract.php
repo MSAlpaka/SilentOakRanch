@@ -21,10 +21,10 @@ class Contract
     private Booking $booking;
 
     #[ORM\Column(length: 255)]
-    private string $path;
+    private string $path = '';
 
     #[ORM\Column(length: 128)]
-    private string $hash;
+    private string $hash = '';
 
     #[ORM\Column(enumType: ContractStatus::class)]
     private ContractStatus $status = ContractStatus::QUEUED;

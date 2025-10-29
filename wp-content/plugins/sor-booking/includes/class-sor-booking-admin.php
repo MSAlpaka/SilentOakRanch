@@ -21,6 +21,13 @@ class Admin {
     protected $sync;
 
     /**
+     * Contracts API client.
+     *
+     * @var Contracts_API|null
+     */
+    protected $contracts_api;
+
+    /**
      * Stored admin page hooks.
      *
      * @var array
@@ -30,12 +37,14 @@ class Admin {
     /**
      * Constructor.
      *
-     * @param DB                    $db   Database handler.
-     * @param SorBookingSyncService $sync Sync service.
+     * @param DB                    $db             Database handler.
+     * @param SorBookingSyncService $sync           Sync service.
+     * @param Contracts_API         $contracts_api  Contracts API client.
      */
-    public function __construct( DB $db, ?SorBookingSyncService $sync = null ) {
-        $this->db   = $db;
-        $this->sync = $sync;
+    public function __construct( DB $db, ?SorBookingSyncService $sync = null, ?Contracts_API $contracts_api = null ) {
+        $this->db            = $db;
+        $this->sync          = $sync;
+        $this->contracts_api = $contracts_api;
 
         \add_action( 'admin_menu', array( $this, 'register_menu' ) );
         \add_action( 'admin_init', array( $this, 'register_settings' ) );
@@ -43,6 +52,8 @@ class Admin {
         \add_action( 'admin_post_sor_booking_export', array( $this, 'handle_export' ) );
         \add_action( 'admin_post_sor_booking_mark_synced', array( $this, 'handle_mark_synced' ) );
         \add_action( 'admin_notices', array( $this, 'render_sync_notice' ) );
+        \add_action( 'wp_ajax_sor_booking_contract_verify', array( $this, 'ajax_verify_contract' ) );
+        \add_action( 'wp_ajax_sor_booking_contract_audit', array( $this, 'ajax_audit_contract' ) );
     }
 
     /**
@@ -221,9 +232,9 @@ class Admin {
      * Register admin menu pages.
      */
     public function register_menu() {
-        $this->page_hooks['bookings'] = \add_menu_page(
-            \__( 'Ranch Buchungen', 'sor-booking' ),
-            \__( 'Ranch Buchungen', 'sor-booking' ),
+        $this->page_hooks['root'] = \add_menu_page(
+            \__( 'Silent Oak Ranch', 'sor-booking' ),
+            \__( 'Silent Oak Ranch', 'sor-booking' ),
             'manage_options',
             'sor-booking',
             array( $this, 'render_bookings_page' ),
@@ -231,10 +242,10 @@ class Admin {
             26
         );
 
-        $this->page_hooks['bookings_sub'] = \add_submenu_page(
+        $this->page_hooks['bookings'] = \add_submenu_page(
             'sor-booking',
-            \__( 'Alle Buchungen', 'sor-booking' ),
-            \__( 'Alle Buchungen', 'sor-booking' ),
+            \__( 'Buchungen', 'sor-booking' ),
+            \__( 'Buchungen', 'sor-booking' ),
             'manage_options',
             'sor-booking',
             array( $this, 'render_bookings_page' )
@@ -273,7 +284,7 @@ class Admin {
             \__( 'Verträge', 'sor-booking' ),
             'manage_options',
             'sor-booking-contracts',
-            array( $this, 'render_contracts_page' )
+            'sor_booking_render_contracts_page'
         );
     }
 
@@ -285,130 +296,106 @@ class Admin {
             return;
         }
 
-        $sign_request = isset( $_GET['sign'] ) ? \sanitize_text_field( \wp_unslash( $_GET['sign'] ) ) : '';
-
-        if ( $sign_request && $this->sync && $this->sync->is_enabled() ) {
-            \check_admin_referer( 'sor-booking-contract-sign' );
-
-            $result = $this->sync->get_contract_link( $sign_request, array( 'signed' => true ) );
-            if ( \is_wp_error( $result ) ) {
-                \add_settings_error( 'sor-booking-contracts', 'contract-signature', $result->get_error_message(), 'error' );
-            } else {
-                \add_settings_error( 'sor-booking-contracts', 'contract-signature', \__( 'Signatur wurde ausgelöst. Bitte lade die Seite neu.', 'sor-booking' ), 'updated' );
-            }
-        }
-
-        echo '<div class="wrap" id="sor-booking-contracts">';
-        echo '<h1>' . \esc_html__( 'Verträge', 'sor-booking' ) . '</h1>';
-        \settings_errors( 'sor-booking-contracts' );
-
-        if ( ! $this->sync || ! $this->sync->is_enabled() ) {
-            echo '<div class="notice notice-warning"><p>' . \esc_html__( 'API-Synchronisierung ist deaktiviert. Verträge können nicht abgerufen werden.', 'sor-booking' ) . '</p></div>';
-            echo '</div>';
-
-            return;
-        }
-
-        $bookings = $this->db->get_all_bookings(
-            array(
-                'limit' => 50,
-                'order' => 'DESC',
-            )
+        $contracts_error  = '';
+        $contracts_items  = array();
+        $contracts_meta   = array();
+        $status_labels    = array(
+            'queued'    => \__( 'Entwurf', 'sor-booking' ),
+            'generated' => \__( 'Bereitgestellt', 'sor-booking' ),
+            'signed'    => \__( 'Signiert', 'sor-booking' ),
+        );
+        $validation_labels = array(
+            'VALID'    => \__( 'Geprüft', 'sor-booking' ),
+            'TAMPERED' => \__( 'Manipuliert', 'sor-booking' ),
+            'UNSIGNED' => \__( 'Nicht signiert', 'sor-booking' ),
+            'EXPIRED'  => \__( 'Abgelaufen', 'sor-booking' ),
         );
 
-        $eligible_statuses = array( 'paid', 'confirmed', 'completed' );
-        $rows              = array();
-
-        foreach ( $bookings as $booking ) {
-            if ( empty( $booking->uuid ) || ! in_array( $booking->status, $eligible_statuses, true ) ) {
-                continue;
-            }
-
-            $contract = $this->sync->get_contract_link( $booking->uuid );
-
-            $row = array(
-                'booking'     => $booking,
-                'hash'        => '',
-                'signed_hash' => '',
-                'signed'      => false,
-                'download'    => '',
-                'signed_url'  => '',
-                'error'       => '',
-            );
-
-            if ( \is_wp_error( $contract ) ) {
-                $row['error'] = $contract->get_error_message();
-            } elseif ( isset( $contract['ok'] ) && $contract['ok'] ) {
-                $row['hash']        = isset( $contract['hash'] ) ? (string) $contract['hash'] : '';
-                $row['signed_hash'] = isset( $contract['signed_hash'] ) ? (string) $contract['signed_hash'] : '';
-                $row['signed']      = ! empty( $contract['signed'] );
-                $row['download']    = isset( $contract['download_url'] ) ? (string) $contract['download_url'] : '';
-                $row['signed_url']  = isset( $contract['signed_download_url'] ) ? (string) $contract['signed_download_url'] : '';
+        if ( ! $this->contracts_api || ! $this->contracts_api->is_available() ) {
+            $contracts_error = \__( 'API-Synchronisierung ist deaktiviert. Verträge können nicht abgerufen werden.', 'sor-booking' );
+        } else {
+            $response = $this->contracts_api->get_contracts();
+            if ( \is_wp_error( $response ) ) {
+                $contracts_error = $response->get_error_message();
             } else {
-                $row['error'] = \__( 'Kein Vertrag vorhanden.', 'sor-booking' );
+                $contracts_items = isset( $response['items'] ) && \is_array( $response['items'] ) ? $response['items'] : array();
+                $contracts_meta  = array(
+                    'count'      => isset( $response['count'] ) ? (int) $response['count'] : count( $contracts_items ),
+                    'fetched_at' => \current_time( 'mysql' ),
+                );
             }
-
-            $rows[] = $row;
         }
 
-        if ( empty( $rows ) ) {
-            echo '<div class="notice notice-info"><p>' . \esc_html__( 'Keine bezahlten Buchungen gefunden.', 'sor-booking' ) . '</p></div>';
-            echo '</div>';
+        $contracts_data   = array(
+            'items' => $contracts_items,
+            'meta'  => $contracts_meta,
+        );
+        $contracts_nonce  = \wp_create_nonce( 'sor-booking-contracts' );
+        $view              = \trailingslashit( SOR_BOOKING_PATH ) . 'admin/views/contracts-page.php';
 
-            return;
+        if ( file_exists( $view ) ) {
+            include $view;
+        } else {
+            echo '<div class="wrap"><div class="notice notice-error"><p>' . \esc_html__( 'Ansicht konnte nicht geladen werden.', 'sor-booking' ) . '</p></div></div>';
+        }
+    }
+
+    /**
+     * Handle AJAX verification requests.
+     */
+    public function ajax_verify_contract() {
+        if ( ! \current_user_can( 'manage_options' ) ) {
+            \wp_send_json_error( array( 'message' => \__( 'Keine Berechtigung.', 'sor-booking' ) ), 403 );
         }
 
-        echo '<table class="wp-list-table widefat fixed striped">';
-        echo '<thead><tr>';
-        echo '<th>' . \esc_html__( 'UUID', 'sor-booking' ) . '</th>';
-        echo '<th>' . \esc_html__( 'Name', 'sor-booking' ) . '</th>';
-        echo '<th>' . \esc_html__( 'Status', 'sor-booking' ) . '</th>';
-        echo '<th>' . \esc_html__( 'Hash', 'sor-booking' ) . '</th>';
-        echo '<th>' . \esc_html__( 'Signiert', 'sor-booking' ) . '</th>';
-        echo '<th>' . \esc_html__( 'Aktionen', 'sor-booking' ) . '</th>';
-        echo '</tr></thead><tbody>';
+        \check_ajax_referer( 'sor-booking-contracts', 'nonce' );
 
-        foreach ( $rows as $row ) {
-            echo '<tr>';
-            echo '<td>' . \esc_html( $row['booking']->uuid ) . '</td>';
-            echo '<td>' . \esc_html( $row['booking']->name ) . '</td>';
-            echo '<td>' . \esc_html( $row['booking']->status ) . '</td>';
-            if ( $row['error'] ) {
-                echo '<td colspan="2"><span class="description">' . \esc_html( $row['error'] ) . '</span></td>';
-                echo '<td></td>';
-            } else {
-                echo '<td>' . \esc_html( $row['hash'] ) . '</td>';
-                echo '<td>' . ( $row['signed'] ? \esc_html__( 'Ja', 'sor-booking' ) : \esc_html__( 'Nein', 'sor-booking' ) );
-                if ( $row['signed'] && $row['signed_hash'] ) {
-                    echo '<br /><span class="description">' . \esc_html( $row['signed_hash'] ) . '</span>';
-                }
-                echo '</td>';
-                echo '<td>';
-                if ( $row['download'] ) {
-                    echo '<a class="button button-secondary" href="' . \esc_url( $row['download'] ) . '">' . \esc_html__( 'Download', 'sor-booking' ) . '</a> ';
-                }
-                if ( $row['signed_url'] ) {
-                    echo '<a class="button" href="' . \esc_url( $row['signed_url'] ) . '">' . \esc_html__( 'Signierte Version', 'sor-booking' ) . '</a>';
-                } elseif ( $row['download'] ) {
-                    $sign_url = \wp_nonce_url(
-                        \add_query_arg(
-                            array(
-                                'page' => 'sor-booking-contracts',
-                                'sign' => $row['booking']->uuid,
-                            ),
-                            \admin_url( 'admin.php' )
-                        ),
-                        'sor-booking-contract-sign'
-                    );
-                    echo '<a class="button" href="' . \esc_url( $sign_url ) . '">' . \esc_html__( 'Signatur anfordern', 'sor-booking' ) . '</a>';
-                }
-                echo '</td>';
-            }
-            echo '</tr>';
+        if ( ! $this->contracts_api || ! $this->contracts_api->is_available() ) {
+            \wp_send_json_error( array( 'message' => \__( 'API-Synchronisierung ist deaktiviert.', 'sor-booking' ) ), 400 );
         }
 
-        echo '</tbody></table>';
-        echo '</div>';
+        $uuid = isset( $_POST['uuid'] ) ? \sanitize_text_field( \wp_unslash( $_POST['uuid'] ) ) : '';
+
+        if ( '' === $uuid ) {
+            \wp_send_json_error( array( 'message' => \__( 'Ungültige Vertrags-ID.', 'sor-booking' ) ), 400 );
+        }
+
+        $result = $this->contracts_api->verify_contract( $uuid );
+        if ( \is_wp_error( $result ) ) {
+            \wp_send_json_error( array( 'message' => $result->get_error_message() ), 400 );
+        }
+
+        $result['received_at'] = \current_time( 'mysql' );
+
+        \wp_send_json_success( $result );
+    }
+
+    /**
+     * Handle AJAX audit retrieval.
+     */
+    public function ajax_audit_contract() {
+        if ( ! \current_user_can( 'manage_options' ) ) {
+            \wp_send_json_error( array( 'message' => \__( 'Keine Berechtigung.', 'sor-booking' ) ), 403 );
+        }
+
+        \check_ajax_referer( 'sor-booking-contracts', 'nonce' );
+
+        if ( ! $this->contracts_api || ! $this->contracts_api->is_available() ) {
+            \wp_send_json_error( array( 'message' => \__( 'API-Synchronisierung ist deaktiviert.', 'sor-booking' ) ), 400 );
+        }
+
+        $uuid = isset( $_POST['uuid'] ) ? \sanitize_text_field( \wp_unslash( $_POST['uuid'] ) ) : '';
+
+        if ( '' === $uuid ) {
+            \wp_send_json_error( array( 'message' => \__( 'Ungültige Vertrags-ID.', 'sor-booking' ) ), 400 );
+        }
+
+        $result = $this->contracts_api->get_audit( $uuid );
+        if ( \is_wp_error( $result ) ) {
+            \wp_send_json_error( array( 'message' => $result->get_error_message() ), 400 );
+        }
+
+        \wp_send_json_success( $result );
     }
 
     /**
@@ -470,6 +457,48 @@ class Admin {
         );
 
         \wp_enqueue_script( 'sor-booking-admin' );
+
+        if ( isset( $this->page_hooks['contracts'] ) && $hook === $this->page_hooks['contracts'] ) {
+            \wp_register_script(
+                'sor-booking-contracts',
+                \SOR_BOOKING_URL . 'admin/js/contracts.js',
+                array(),
+                \SOR_BOOKING_VERSION,
+                true
+            );
+
+            \wp_localize_script(
+                'sor-booking-contracts',
+                'SORBookingContracts',
+                array(
+                    'ajaxUrl'          => \admin_url( 'admin-ajax.php' ),
+                    'nonce'            => \wp_create_nonce( 'sor-booking-contracts' ),
+                    'statusLabels'     => array(
+                        'queued'    => \__( 'Entwurf', 'sor-booking' ),
+                        'generated' => \__( 'Bereitgestellt', 'sor-booking' ),
+                        'signed'    => \__( 'Signiert', 'sor-booking' ),
+                    ),
+                    'validationLabels' => array(
+                        'VALID'    => \__( 'Geprüft', 'sor-booking' ),
+                        'TAMPERED' => \__( 'Manipuliert', 'sor-booking' ),
+                        'UNSIGNED' => \__( 'Nicht signiert', 'sor-booking' ),
+                        'EXPIRED'  => \__( 'Abgelaufen', 'sor-booking' ),
+                    ),
+                    'strings'          => array(
+                        'verifySuccess' => \__( 'Vertrag wurde erfolgreich geprüft.', 'sor-booking' ),
+                        'verifyError'   => \__( 'Die Prüfung ist fehlgeschlagen.', 'sor-booking' ),
+                        'pendingLabel'  => \__( 'Noch nicht geprüft', 'sor-booking' ),
+                        'auditTitle'    => \__( 'Audit-Trail', 'sor-booking' ),
+                        'auditEmpty'    => \__( 'Für diesen Vertrag liegen keine Audit-Einträge vor.', 'sor-booking' ),
+                        'auditError'    => \__( 'Audit konnte nicht geladen werden.', 'sor-booking' ),
+                        'close'         => \__( 'Schließen', 'sor-booking' ),
+                        'previewTitle'  => \__( 'Vertragsvorschau', 'sor-booking' ),
+                    ),
+                )
+            );
+
+            \wp_enqueue_script( 'sor-booking-contracts' );
+        }
     }
 
     /**

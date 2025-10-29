@@ -39,6 +39,7 @@ security:
     access_control:
         - { path: ^/api/bookings, roles: PUBLIC_ACCESS, methods: [OPTIONS] }
         - { path: ^/api/bookings, roles: ROLE_RANCH_BOOKING }
+        - { path: ^/api/wp/contracts/.+/download, roles: PUBLIC_ACCESS }
         - { path: ^/api/wp, roles: PUBLIC_ACCESS, methods: [OPTIONS] }
         - { path: ^/api/wp, roles: ROLE_WORDPRESS_WEBHOOK }
         - { path: ^/healthz, roles: PUBLIC_ACCESS }

@@ -2,6 +2,7 @@
 
 namespace App\Controller\Api;
 
+use App\Entity\AuditLog;
 use App\Entity\Booking;
 use App\Entity\Contract;
 use App\Enum\ContractStatus;
@@ -11,6 +12,8 @@ use App\Repository\ContractRepository;
 use App\Service\AuditLogger;
 use App\Service\ContractGenerator;
 use App\Service\SignatureClient;
+use App\Service\SignatureValidator;
+use DateTimeImmutable;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
@@ -30,6 +33,7 @@ class WpContractController extends AbstractController
         private readonly AuditLogger $auditLogger,
         private readonly AuditLogRepository $auditLogs,
         private readonly SignatureClient $signatureClient,
+        private readonly SignatureValidator $signatureValidator,
         private readonly EntityManagerInterface $entityManager,
         private readonly UrlGeneratorInterface $urlGenerator,
         private readonly string $wpBridgeSecret
@@ -121,6 +125,76 @@ class WpContractController extends AbstractController
             'audit_summary' => $serialized['contract']['audit_summary'],
             'booking' => $serialized['booking'],
             'contract' => $serialized['contract'],
+        ]);
+    }
+
+    #[Route('/api/wp/contracts/{contractUuid}/verify', name: 'app_wp_contracts_verify_wp', methods: ['GET'])]
+    public function verifyContract(string $contractUuid): JsonResponse
+    {
+        try {
+            $uuid = Uuid::fromString($contractUuid);
+        } catch (\Throwable) {
+            return $this->json(['ok' => false, 'error' => 'Invalid contract identifier.'], Response::HTTP_BAD_REQUEST);
+        }
+
+        $contract = $this->contracts->find($uuid);
+        if (!$contract instanceof Contract) {
+            return $this->json(['ok' => false, 'error' => 'Contract not found.'], Response::HTTP_NOT_FOUND);
+        }
+
+        $result = $this->signatureValidator->validate($contract);
+        $this->auditLogger->log($contract, 'CONTRACT_VERIFIED', [
+            'hash' => $result->getCalculatedHash(),
+            'status' => $result->getStatus()->value,
+        ]);
+
+        $this->entityManager->flush();
+
+        return $this->json([
+            'ok' => true,
+            'contract_uuid' => (string) $contract->getId(),
+            'status' => $result->getStatus()->value,
+            'hash' => $result->getCalculatedHash(),
+            'expected_hash' => $result->getExpectedHash(),
+            'signed_hash' => $contract->getSignedHash(),
+            'signed_at' => $contract->getSignedAt()?->format(DATE_ATOM),
+            'details' => $result->getDetails(),
+            'received_at' => (new DateTimeImmutable())->format(DATE_ATOM),
+        ]);
+    }
+
+    #[Route('/api/wp/contracts/{contractUuid}/audit', name: 'app_wp_contracts_audit', methods: ['GET'])]
+    public function auditTrail(string $contractUuid): JsonResponse
+    {
+        try {
+            $uuid = Uuid::fromString($contractUuid);
+        } catch (\Throwable) {
+            return $this->json(['ok' => false, 'error' => 'Invalid contract identifier.'], Response::HTTP_BAD_REQUEST);
+        }
+
+        $contract = $this->contracts->find($uuid);
+        if (!$contract instanceof Contract) {
+            return $this->json(['ok' => false, 'error' => 'Contract not found.'], Response::HTTP_NOT_FOUND);
+        }
+
+        $entries = $this->auditLogs->findForEntity('CONTRACT', (string) $contract->getId());
+        $trail = array_map(static function (AuditLog $entry): array {
+            return [
+                'id' => (string) $entry->getId(),
+                'timestamp' => $entry->getTimestamp()->format(DATE_ATOM),
+                'action' => $entry->getAction(),
+                'hash' => $entry->getHash(),
+                'user' => $entry->getUserIdentifier(),
+                'ip' => $entry->getIpAddress(),
+                'meta' => $entry->getMeta(),
+            ];
+        }, $entries);
+
+        return $this->json([
+            'ok' => true,
+            'contract_uuid' => (string) $contract->getId(),
+            'count' => count($trail),
+            'audit' => $trail,
         ]);
     }
 

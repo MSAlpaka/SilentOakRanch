@@ -96,6 +96,25 @@ class ContractApiTest extends WebTestCase
         self::assertIsArray($payload['audit_summary']);
         self::assertSame('CONTRACT_GENERATED', $payload['audit_summary']['action']);
 
+        $verifyPath = '/api/wp/contracts/' . $payload['contract_uuid'] . '/verify';
+        $client->request('GET', $verifyPath, [], [], $this->buildHeaders('GET', $verifyPath));
+        $verifyResponse = $client->getResponse();
+        self::assertResponseIsSuccessful();
+        $verifyPayload = json_decode($verifyResponse->getContent(), true, 512, JSON_THROW_ON_ERROR);
+        self::assertTrue($verifyPayload['ok']);
+        self::assertSame($payload['contract_uuid'], $verifyPayload['contract_uuid']);
+        self::assertArrayHasKey('status', $verifyPayload);
+
+        $auditPath = '/api/wp/contracts/' . $payload['contract_uuid'] . '/audit';
+        $client->request('GET', $auditPath, [], [], $this->buildHeaders('GET', $auditPath));
+        $auditResponse = $client->getResponse();
+        self::assertResponseIsSuccessful();
+        $auditPayload = json_decode($auditResponse->getContent(), true, 512, JSON_THROW_ON_ERROR);
+        self::assertTrue($auditPayload['ok']);
+        self::assertSame($payload['contract_uuid'], $auditPayload['contract_uuid']);
+        self::assertGreaterThanOrEqual(1, $auditPayload['count']);
+        self::assertIsArray($auditPayload['audit']);
+
         $downloadUrl = $payload['download_url'];
         $parts = parse_url($downloadUrl);
         self::assertIsArray($parts);

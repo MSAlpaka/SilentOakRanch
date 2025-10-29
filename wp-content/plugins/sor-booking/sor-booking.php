@@ -163,6 +163,44 @@ function sor_booking_get_api_secret() {
     return (string) sor_booking_get_option( 'api_secret', '' );
 }
 
+/**
+ * Retrieve webhook token used for WordPress-to-backend requests.
+ *
+ * @return string
+ */
+function sor_booking_get_webhook_token() {
+    $candidates = array(
+        sor_booking_get_option( 'api_webhook_token', '' ),
+        getenv( 'WORDPRESS_WEBHOOK_TOKEN' ),
+        $_ENV['WORDPRESS_WEBHOOK_TOKEN'] ?? null,
+        $_SERVER['WORDPRESS_WEBHOOK_TOKEN'] ?? null,
+    );
+
+    foreach ( $candidates as $candidate ) {
+        if ( is_string( $candidate ) ) {
+            $candidate = trim( $candidate );
+
+            if ( '' !== $candidate ) {
+                return $candidate;
+            }
+        }
+    }
+
+    if ( defined( 'WORDPRESS_WEBHOOK_TOKEN' ) ) {
+        $value = constant( 'WORDPRESS_WEBHOOK_TOKEN' );
+
+        if ( is_string( $value ) ) {
+            $value = trim( $value );
+
+            if ( '' !== $value ) {
+                return $value;
+            }
+        }
+    }
+
+    return '';
+}
+
 spl_autoload_register(
     function ( $class ) {
         $prefix   = 'SOR\\Booking\\';

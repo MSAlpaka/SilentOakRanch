@@ -60,7 +60,7 @@ class Contracts_API {
             return new WP_Error( 'sor_contracts_missing_uuid', __( 'Ungültige Vertrags-ID.', 'sor-booking' ) );
         }
 
-        return $this->get( sprintf( '/api/contracts/%s/verify', rawurlencode( $contract_uuid ) ) );
+        return $this->get( sprintf( '/api/wp/contracts/%s/verify', rawurlencode( $contract_uuid ) ) );
     }
 
     /**
@@ -77,7 +77,7 @@ class Contracts_API {
             return new WP_Error( 'sor_contracts_missing_uuid', __( 'Ungültige Vertrags-ID.', 'sor-booking' ) );
         }
 
-        return $this->get( sprintf( '/api/audit/contract/%s', rawurlencode( $contract_uuid ) ) );
+        return $this->get( sprintf( '/api/wp/contracts/%s/audit', rawurlencode( $contract_uuid ) ) );
     }
 
     /**
@@ -108,6 +108,11 @@ class Contracts_API {
 
         $signer  = new HMAC( \sor_booking_get_api_key(), \sor_booking_get_api_secret() );
         $headers = $signer->build_headers( 'GET', $sign_path, '' );
+
+        $webhook_token = $this->get_webhook_token();
+        if ( '' !== $webhook_token ) {
+            $headers['Authorization'] = 'Bearer ' . $webhook_token;
+        }
 
         $response = \wp_remote_get(
             $url,
@@ -148,6 +153,17 @@ class Contracts_API {
         }
 
         return $decoded;
+    }
+
+    /**
+     * Retrieve webhook token used for protected endpoints.
+     *
+     * @return string
+     */
+    protected function get_webhook_token() {
+        $candidate = \sor_booking_get_webhook_token();
+
+        return is_string( $candidate ) ? trim( $candidate ) : '';
     }
 
     /**

@@ -26,13 +26,40 @@ services:
       - ./proxy/traefik/acme.json:/etc/traefik/acme.json
     environment:
       - TZ=${TZ:-Europe/Berlin}
+    labels:
+      - traefik.enable=false
+      - traefik.http.middlewares.secure-headers.headers.stsSeconds=31536000
+      - traefik.http.middlewares.secure-headers.headers.stsIncludeSubdomains=true
+      - traefik.http.middlewares.secure-headers.headers.stsPreload=true
+      - traefik.http.middlewares.secure-headers.headers.forceSTSHeader=true
+      - traefik.http.middlewares.secure-headers.headers.referrerPolicy=no-referrer-when-downgrade
+      - traefik.http.middlewares.secure-headers.headers.contentTypeNosniff=true
+      - traefik.http.middlewares.secure-headers.headers.browserXssFilter=true
+      - traefik.http.middlewares.compress.compress=true
+      - traefik.http.middlewares.frontend-cache.headers.customresponseheaders.Cache-Control=public,max-age=600
+      - traefik.http.middlewares.wordpress-cache.headers.customresponseheaders.Cache-Control=public,max-age=300
     networks:
       - default
       - monitoring
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M
 
   db:
     image: postgres:15
     env_file: .env
+    command:
+      - postgres
+      - -c
+      - shared_preload_libraries=pg_stat_statements
+      - -c
+      - pg_stat_statements.track=all
+      - -c
+      - log_min_duration_statement=500
+      - -c
+      - log_checkpoints=on
     volumes:
       - db-data:/var/lib/postgresql/data
     restart: unless-stopped
@@ -44,6 +71,23 @@ services:
       timeout: 5s
       retries: 5
       start_period: 30s
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 2G
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: ["redis-server", "--save", "60", "1", "--loglevel", "warning"]
+    volumes:
+      - redis-data:/data
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M
 
   wp-db:
     image: mariadb:11
@@ -62,6 +106,11 @@ services:
       timeout: 10s
       retries: 5
       start_period: 30s
+    deploy:
+      resources:
+        limits:
+          cpus: '1.5'
+          memory: 1024M
 
   backend:
     image: silentoakranch/backend:latest
@@ -70,6 +119,7 @@ services:
     restart: unless-stopped
     depends_on:
       - db
+      - redis
     expose:
       - "8080"
     volumes:
@@ -85,7 +135,7 @@ services:
       - traefik.http.routers.backend.rule=Host(`${DOMAIN}`) && PathPrefix(`/api`)
       - traefik.http.routers.backend.entrypoints=websecure
       - traefik.http.routers.backend.tls.certresolver=letsencrypt
-      - traefik.http.routers.backend.middlewares=backend-strip
+      - traefik.http.routers.backend.middlewares=backend-strip,secure-headers,compress
       - traefik.http.middlewares.backend-strip.stripprefix.prefixes=/api
       - traefik.http.services.backend.loadbalancer.server.port=8080
     healthcheck:
@@ -94,6 +144,15 @@ services:
       timeout: 5s
       retries: 3
       start_period: 10s
+
+    environment:
+      - REDIS_URL=${REDIS_URL:-redis://redis:6379}
+
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 1536M
 
   frontend:
     image: silentoakranch/frontend:latest
@@ -110,7 +169,13 @@ services:
       - traefik.http.routers.frontend.rule=Host(`${DOMAIN}`)
       - traefik.http.routers.frontend.entrypoints=websecure
       - traefik.http.routers.frontend.tls.certresolver=letsencrypt
+      - traefik.http.routers.frontend.middlewares=secure-headers,compress,frontend-cache
       - traefik.http.services.frontend.loadbalancer.server.port=80
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M
     healthcheck:
       test:
         - CMD-SHELL
@@ -130,12 +195,20 @@ services:
     networks:
       - default
       - symfony-wp
+    environment:
+      - WP_CACHE=${WP_CACHE:-true}
     labels:
       - traefik.enable=true
       - traefik.http.routers.wordpress.rule=Host(`${BOOKING_DOMAIN:-book.silentoakranch.de}`)
       - traefik.http.routers.wordpress.entrypoints=websecure
       - traefik.http.routers.wordpress.tls.certresolver=letsencrypt
+      - traefik.http.routers.wordpress.middlewares=secure-headers,compress,wordpress-cache
       - traefik.http.services.wordpress.loadbalancer.server.port=80
+    deploy:
+      resources:
+        limits:
+          cpus: '1.5'
+          memory: 1024M
 
   uptime-kuma:
     image: louislam/uptime-kuma:1
@@ -153,6 +226,11 @@ services:
       - traefik.http.services.status.loadbalancer.server.port=3001
       - traefik.http.routers.status.middlewares=status-auth
       - traefik.http.middlewares.status-auth.basicauth.users=${STATUS_DASH_AUTH_USERS}
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
 
   prometheus:
     image: prom/prometheus:v2.51.2
@@ -169,6 +247,11 @@ services:
       - --web.enable-lifecycle
     networks:
       - monitoring
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1024M
 
   alertmanager:
     image: prom/alertmanager:v0.26.0
@@ -326,6 +409,7 @@ volumes:
   grafana-data:
   loki-data:
   alertmanager-data:
+  redis-data:
 
 networks:
   symfony-wp:

@@ -1,5 +1,7 @@
 # SilentOakRanch
 
+![Production Ready – v1.0.0](https://img.shields.io/badge/Production%20Ready-v1.0.0-success?style=flat-square)
+
 ## Project overview & tech stack
 - Symfony 7.3 backend running on PHP 8.3 FPM.
 - React with Redux Toolkit on Node.js 20, built via Vite, Vitest, ESLint, and the i18n tooling.

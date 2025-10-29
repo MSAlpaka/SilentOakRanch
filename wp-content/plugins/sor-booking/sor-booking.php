@@ -228,8 +228,10 @@ function sor_booking_init() {
     $qr     = new \SOR\Booking\QR();
     $paypal = new \SOR\Booking\PayPal( $db );
     require_once SOR_BOOKING_PATH . 'includes/class-sor-booking-api.php';
+    require_once SOR_BOOKING_PATH . 'includes/class-sor-booking-contracts-api.php';
     $sync   = new \SOR\Booking\SorBookingSyncService( $db );
     $api    = new \SOR\Booking\API( $db, $qr, $paypal, $sync );
+    $contracts_api = new \SOR\Booking\Contracts_API();
 
     $GLOBALS['sor_booking_db']     = $db;
     $GLOBALS['sor_booking_qr']     = $qr;
@@ -238,10 +240,19 @@ function sor_booking_init() {
     $GLOBALS['sor_booking_sync']   = $sync;
 
     if ( is_admin() ) {
-        new \SOR\Booking\Admin( $db, $sync );
+        $GLOBALS['sor_booking_admin'] = new \SOR\Booking\Admin( $db, $sync, $contracts_api );
     }
 }
 add_action( 'plugins_loaded', 'sor_booking_init' );
+
+/**
+ * Render the contracts administration page.
+ */
+function sor_booking_render_contracts_page() {
+    if ( isset( $GLOBALS['sor_booking_admin'] ) && $GLOBALS['sor_booking_admin'] instanceof \SOR\Booking\Admin ) {
+        $GLOBALS['sor_booking_admin']->render_contracts_page();
+    }
+}
 
 /**
  * Register assets.

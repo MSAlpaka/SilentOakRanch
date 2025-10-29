@@ -35,7 +35,13 @@ class HmacRequestSubscriber implements EventSubscriberInterface
 
         $request = $event->getRequest();
 
-        if (!str_starts_with($request->getPathInfo(), '/api/wp/')) {
+        $pathInfo = $request->getPathInfo();
+
+        if (!str_starts_with($pathInfo, '/api/wp/')) {
+            return;
+        }
+
+        if (preg_match('#^/api/wp/contracts/[^/]+/download$#', $pathInfo) === 1) {
             return;
         }
 
@@ -67,19 +73,28 @@ class HmacRequestSubscriber implements EventSubscriberInterface
             return;
         }
 
-        $payload = sprintf(
-            '%s|%s|%s|%s',
-            strtoupper($request->getMethod()),
-            $request->getPathInfo(),
-            $dateHeader,
-            (string) $request->getContent(),
-        );
+        $method = strtoupper($request->getMethod());
+        $path = $request->getPathInfo();
+        $body = (string) $request->getContent();
 
-        $expectedRaw = hash_hmac('sha256', $payload, $this->wpBridgeSecret, true);
-        $expectedHex = hash_hmac('sha256', $payload, $this->wpBridgeSecret);
-        $expectedBase64 = base64_encode($expectedRaw);
+        $payloadPipe = sprintf('%s|%s|%s|%s', $method, $path, $dateHeader, $body);
+        $payloadNewline = sprintf("%s\n%s\n%s\n%s", $method, $path, $dateHeader, $body);
 
-        $signatureIsValid = hash_equals($expectedHex, $signatureHeader) || hash_equals($expectedBase64, $signatureHeader);
+        $signatures = [];
+
+        foreach ([$payloadPipe, $payloadNewline] as $candidate) {
+            $raw = hash_hmac('sha256', $candidate, $this->wpBridgeSecret, true);
+            $signatures[] = hash_hmac('sha256', $candidate, $this->wpBridgeSecret);
+            $signatures[] = base64_encode($raw);
+        }
+
+        $signatureIsValid = false;
+        foreach ($signatures as $expected) {
+            if (hash_equals($expected, $signatureHeader)) {
+                $signatureIsValid = true;
+                break;
+            }
+        }
 
         if (!$signatureIsValid) {
             $this->deny($event);

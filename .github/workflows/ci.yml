@@ -174,3 +174,12 @@ jobs:
         env:
           WORDPRESS_IMAGE: ${{ matrix.wordpress_image }}
         run: docker compose down -v --remove-orphans
+
+  wp-contracts-ui-tests:
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run contracts UI smoke
+        run: ./scripts/wp-contracts-ui-tests.sh

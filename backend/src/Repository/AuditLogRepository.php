@@ -30,4 +30,17 @@ class AuditLogRepository extends ServiceEntityRepository
             ->getQuery()
             ->getResult();
     }
+
+    public function findLatestForEntity(string $entityType, string $entityId): ?AuditLog
+    {
+        return $this->createQueryBuilder('audit')
+            ->andWhere('audit.entityType = :type')
+            ->andWhere('audit.entityId = :id')
+            ->setParameter('type', $entityType)
+            ->setParameter('id', $entityId)
+            ->orderBy('audit.timestamp', 'DESC')
+            ->setMaxResults(1)
+            ->getQuery()
+            ->getOneOrNullResult();
+    }
 }

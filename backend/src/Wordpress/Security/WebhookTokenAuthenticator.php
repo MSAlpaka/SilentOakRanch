@@ -27,7 +27,17 @@ class WebhookTokenAuthenticator extends AbstractAuthenticator
             return false;
         }
 
-        return str_starts_with($request->getPathInfo(), '/api/wp');
+        $path = $request->getPathInfo();
+
+        if (!str_starts_with($path, '/api/wp')) {
+            return false;
+        }
+
+        if (preg_match('#^/api/wp/contracts/[^/]+/download$#', $path) === 1) {
+            return false;
+        }
+
+        return true;
     }
 
     public function authenticate(Request $request): SelfValidatingPassport

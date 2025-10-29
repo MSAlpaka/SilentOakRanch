@@ -159,6 +159,176 @@
     color: #385a3f;
 }
 
+#sor-booking-contracts .notice.inline {
+    margin-top: 1rem;
+}
+
+.sor-contracts-table {
+    margin-top: 1rem;
+}
+
+.sor-contract-status,
+.sor-contract-validation,
+.sor-contract-flag {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.2rem 0.6rem;
+    border-radius: 999px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+}
+
+.sor-contract-status {
+    background: #f3f4f6;
+    color: #1f2937;
+}
+
+.sor-contract-status--queued {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.sor-contract-status--generated {
+    background: #e0f2fe;
+    color: #1e3a8a;
+}
+
+.sor-contract-status--signed {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.sor-contract-validation {
+    background: #f3f4f6;
+    color: #1f2937;
+}
+
+.sor-contract-validation--valid {
+    background: #bbf7d0;
+    color: #166534;
+}
+
+.sor-contract-validation--tampered {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+.sor-contract-validation--unsigned {
+    background: #e0e7ff;
+    color: #3730a3;
+}
+
+.sor-contract-validation--expired {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.sor-contract-validation--pending {
+    background: #e5e7eb;
+    color: #374151;
+}
+
+.sor-contract-flag {
+    background: #e5e7eb;
+    color: #111827;
+}
+
+.sor-contract-flag--positive {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.sor-contracts-messages {
+    margin-top: 1rem;
+}
+
+.sor-contracts-messages .notice {
+    margin: 0;
+}
+
+.sor-contracts-actions .button {
+    margin-right: 0.5rem;
+    margin-bottom: 0.4rem;
+}
+
+.sor-contracts-viewer {
+    margin-top: 1.5rem;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    background: #fff;
+    box-shadow: 0 10px 25px rgba(31, 41, 55, 0.08);
+    padding: 1rem;
+}
+
+.sor-contracts-viewer[hidden] {
+    display: none;
+}
+
+.sor-contracts-viewer__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.75rem;
+}
+
+.sor-contracts-viewer__frame {
+    width: 100%;
+    min-height: 480px;
+    border: 1px solid #d1d5db;
+    border-radius: 4px;
+}
+
+.sor-contracts-modal {
+    position: fixed;
+    inset: 0;
+    background: rgba(17, 24, 39, 0.45);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+    padding: 2rem;
+}
+
+.sor-contracts-modal[hidden] {
+    display: none;
+}
+
+.sor-contracts-modal__dialog {
+    background: #fff;
+    border-radius: 12px;
+    max-width: 960px;
+    width: 100%;
+    max-height: 80vh;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 20px 40px rgba(15, 23, 42, 0.25);
+}
+
+.sor-contracts-modal__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 1.25rem;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.sor-contracts-modal__body {
+    padding: 1rem 1.25rem 1.5rem;
+    overflow: auto;
+}
+
+.sor-contracts-audit-table {
+    margin-top: 0;
+}
+
+.sor-contracts-audit-table td code {
+    background: #f3f4f6;
+    padding: 0.15rem 0.35rem;
+    border-radius: 4px;
+    display: inline-block;
+}
+
 /* Admin dashboard */
 
 #sor-booking-admin {

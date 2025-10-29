@@ -1,0 +1,37 @@
+name: Release Artifacts
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  package:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install md-to-pdf
+        run: npm install -g md-to-pdf@5
+
+      - name: Prepare release artifacts
+        run: |
+          mkdir -p release-artifacts
+          md-to-pdf docs/release-1.0.0.md --dest release-artifacts/release-1.0.0.pdf
+          md-to-pdf docs/compliance-report.md --dest release-artifacts/compliance-report.pdf
+          tar -czf release-artifacts/silent-oak-ranch-${GITHUB_REF_NAME}.tar.gz \
+            docker-compose.yml \
+            .env.example \
+            SECURITY.md \
+            deploy.sh \
+            docs/release-1.0.0.md \
+            docs/compliance-report.md
+          zip -j release-artifacts/docs-bundle-${GITHUB_REF_NAME}.zip \
+            release-artifacts/release-1.0.0.pdf \
+            release-artifacts/compliance-report.pdf
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-${{ github.ref_name }}
+          path: release-artifacts/*

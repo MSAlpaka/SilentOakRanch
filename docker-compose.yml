@@ -296,6 +296,7 @@ services:
       - MARIADB_HOST=wp-db
       - MARIADB_PORT=3306
       - STORAGE_BOX_REMOTE=${STORAGE_BOX_REMOTE}
+      - RCLONE_CONFIG=/config/rclone/rclone.conf
       - TZ=${TZ:-Europe/Berlin}
     depends_on:
       - db

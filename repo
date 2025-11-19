@@ -1,135 +1,48 @@
 #!/usr/bin/env python3
-"""Project-aware helper CLI for listing SilentOakRanch modules."""
+"""SilentOakRanch repository helper."""
 from __future__ import annotations
 
 import argparse
-import json
-import sys
 from pathlib import Path
-from textwrap import wrap
 
 ROOT = Path(__file__).resolve().parent
-CODEX_PATH = ROOT / "codex.json"
-
-SUPPORTING_COMPONENTS = {
-    "docs": "Project documentation, deployment notes, and release reports.",
-    "scripts": "Operational helpers including backups, smoke tests, and tooling wrappers.",
-    "monitoring": "Prometheus, Grafana, and alerting configuration for production observability.",
-    "proxy": "Traefik configuration, vhost templates, and supporting proxy assets.",
-    "wp-content": "Legacy WordPress content served alongside the modern frontend.",
-    "var": "Mutable directories bind-mounted into containers (cache, agreements, invoices).",
-}
+EXCLUDED_DIRS = {"node_modules", "vendor", ".git"}
+MAX_DEPTH = 5
 
 
-def load_codex() -> dict:
-    try:
-        return json.loads(CODEX_PATH.read_text())
-    except FileNotFoundError:  # pragma: no cover - defensive guard
-        sys.exit(f"Unable to locate {CODEX_PATH.relative_to(ROOT)}")
-    except json.JSONDecodeError as exc:  # pragma: no cover - defensive guard
-        sys.exit(f"Failed to parse {CODEX_PATH.relative_to(ROOT)}: {exc}")
-
-
-def describe_component(component: dict) -> str:
-    bits = []
-    language = component.get("language")
-    framework = component.get("framework")
-    if language:
-        bits.append(language)
-    if framework:
-        bits.append(framework)
-    if not bits and component.get("description"):
-        bits.append(component["description"])
-    return ", ".join(bits) if bits else "—"
-
-
-def collect_components(include_all: bool) -> list[dict]:
-    codex = load_codex()
-    components: list[dict] = []
-    for key in ("backend", "frontend"):
-        if key in codex:
-            entry = dict(codex[key])
-            entry.setdefault("name", key)
-            components.append(entry)
-
-    if include_all and "shared" in codex:
-        entry = dict(codex["shared"])
-        entry.setdefault("name", "shared")
-        entry.setdefault("description", "Shared assets consumed by multiple services.")
-        components.append(entry)
-
-    if include_all:
-        # Attach supporting directories when present in the repository.
-        for path, description in sorted(SUPPORTING_COMPONENTS.items()):
-            candidate = ROOT / path
-            if candidate.exists():
-                components.append({
-                    "name": path,
-                    "path": path,
-                    "description": description,
-                })
-
-    return components
-
-
-def render_table(components: list[dict]) -> None:
-    if not components:
-        print("No components detected.")
+def iter_tree(base: Path, depth: int = 0):
+    if depth > MAX_DEPTH:
         return
 
-    rows = []
-    for component in components:
-        rows.append((
-            component.get("name", "—"),
-            component.get("path", "—"),
-            describe_component(component),
-        ))
+    rel_path = base.relative_to(ROOT)
+    print("." if rel_path == Path('.') else rel_path.as_posix())
 
-    headers = ("NAME", "PATH", "DETAILS")
-    col_widths = [max(len(row[idx]) for row in rows + [headers]) for idx in range(3)]
+    if depth == MAX_DEPTH:
+        return
 
-    def format_row(row: tuple[str, str, str]) -> list[str]:
-        wrapped = [
-            wrap(row[0], col_widths[0]) or [""],
-            wrap(row[1], col_widths[1]) or [""],
-            wrap(row[2], 80) or [""]
-        ]
-        lines = []
-        max_lines = max(len(col) for col in wrapped)
-        for i in range(max_lines):
-            parts = []
-            for col_idx, col in enumerate(wrapped):
-                text = col[i] if i < len(col) else ""
-                width = col_widths[col_idx] if col_idx < 2 else 80
-                parts.append(text.ljust(width))
-            lines.append("  ".join(parts))
-        return lines
-
-    header_line = "  ".join(
-        [headers[0].ljust(col_widths[0]), headers[1].ljust(col_widths[1]), headers[2]]
-    )
-    print(header_line)
-    print("-" * len(header_line))
-    for row in rows:
-        for idx, line in enumerate(format_row(row)):
-            print(line if idx == 0 else line)
+    entries = sorted(base.iterdir(), key=lambda p: p.name.lower())
+    for entry in entries:
+        if entry.is_dir():
+            if entry.name in EXCLUDED_DIRS:
+                continue
+            iter_tree(entry, depth + 1)
+        else:
+            rel_entry = entry.relative_to(ROOT)
+            print(rel_entry.as_posix())
 
 
 def handle_list(args: argparse.Namespace) -> None:
-    components = collect_components(include_all=args.all)
-    render_table(components)
+    if not args.all:
+        raise SystemExit("The --all flag is required to list the directory tree.")
+    iter_tree(ROOT)
 
 
 def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(description="SilentOakRanch helper CLI")
+    parser = argparse.ArgumentParser(description="SilentOakRanch repository helper")
     subparsers = parser.add_subparsers(dest="command", required=True)
 
-    list_parser = subparsers.add_parser("list", help="List repository components")
-    list_parser.add_argument(
-        "--all",
-        action="store_true",
-        help="Show supporting directories in addition to core services",
-    )
+    list_parser = subparsers.add_parser("list", help="List repository contents")
+    list_parser.add_argument("--all", action="store_true", help="List all files up to depth 5")
     list_parser.set_defaults(func=handle_list)
 
     return parser

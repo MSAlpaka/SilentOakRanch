@@ -80,6 +80,20 @@ npm test
 npm run build
 ```
 
+## Repository helper CLI
+
+Use the bundled `repo` helper to discover the major components that make up Silent
+Oak Ranch. The command reads `codex.json` and renders a short table so you can
+quickly jump to the relevant directory:
+
+```bash
+./repo list --all
+```
+
+Passing `--all` expands the table with supporting directories such as
+`docs/`, `monitoring/`, `proxy/`, `scripts/`, and the shared bind mounts that
+power the Docker services.
+
 ## Testing
 The backend uses PHPUnit 12. To run the test suite without deprecations or skipped tests:
 

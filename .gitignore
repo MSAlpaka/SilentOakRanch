@@ -11,3 +11,6 @@ var/phpstan/*
 !var/phpstan/.gitkeep
 
 .phpstan.neon
+
+# Exclude generated Solekammer PDFs
+Betriebsdokumentation/Solekammer/*.pdf

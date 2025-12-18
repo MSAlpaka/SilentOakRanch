@@ -4,7 +4,7 @@ set -eu
 APP_DIR="/var/www/backend"
 APP_USER="${APP_USER:-appuser}"
 APP_GROUP="${APP_GROUP:-$APP_USER}"
-RUNTIME_DIRS="/var/www/backend/var /var/www/backend/config/jwt /var/www/backend/config/agreements"
+RUNTIME_DIRS="/var/www/backend/var /var/www/backend/config/jwt /var/www/backend/config/agreements /var/www/backend/shared/audit"
 
 cd "$APP_DIR"
 

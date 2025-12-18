@@ -69,6 +69,7 @@ RUN apk add --no-cache \
         curl \
         su-exec \
     && mkdir -p /run/nginx /var/log/supervisor /var/cache/nginx /var/www/html
+RUN chown -R appuser:appuser /var/log/nginx
 RUN sed -i '1i pid /run/nginx/nginx.pid;' /etc/nginx/nginx.conf
 
 RUN sed -i 's|listen = 9000|listen = 9001|' /usr/local/etc/php-fpm.d/zz-docker.conf

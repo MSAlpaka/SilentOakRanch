@@ -1,0 +1,214 @@
+# Silent Oak Ranch – Leistungs-ID Register (FINAL v1.0)
+
+## Zweck
+Dieses Register definiert eindeutige Leistungs-IDs für:
+- Buchung (Konfiguration pro Pferd)
+- Leistungsprotokoll (tatsächliche Ausführung)
+- Abrechnung / Statistik
+- spätere Digitalisierung ohne Datenbrüche
+
+Die Leistungs-ID ist versionsstabil. Preise werden ausschließlich über das Leistungsverzeichnis (Version + Gültigkeitsdatum) abgebildet.
+
+---
+
+## ID-Schema (verbindlich)
+
+FORMAT:
+<DOMAIN>-<AREA>-<SERVICE>-<VARIANT>
+
+DOMAIN:
+- BASE = Einstellmodelle (Grundversorgung)
+- ADD  = Zusatzleistungen
+
+VARIANT:
+- WD      = Werktag
+- SAT     = Samstag
+- SUN     = Sonntag
+- MON     = Monatspauschale
+- PK4SAT  = Paket 4× Samstag
+- PK4SUN  = Paket 4× Sonntag
+- PK5WD   = Paket 5 Werktage
+- PKMON   = Monatslogik (wenn nötig, siehe Hinweise)
+- SELF    = selbstständige Nutzung (ohne Dienstleistung)
+- SVC     = Dienstleistung durch Betrieb
+
+Hinweis:
+Für Zeitvarianten wird die Dauer als Teil des SERVICE geführt (z. B. LEAD-10, LEAD-20).
+
+---
+
+## 1) BASE – Einstellmodelle (Grundversorgung)
+
+### Box
+- BASE-BOX-SV
+- BASE-BOX-TPA
+- BASE-BOX-TPB
+- BASE-BOX-TPC
+- BASE-BOX-TPD
+- BASE-BOX-VP
+
+### Offenstall
+- BASE-OS-SV
+- BASE-OS-TPA
+- BASE-OS-TPB
+- BASE-OS-TPC
+- BASE-OS-TPD
+- BASE-OS-VP
+
+---
+
+## 2) ADD – Zusatzleistungen
+
+### 2.1 Solekammer
+- ADD-SOLE-SELF-20
+- ADD-SOLE-SELF-MON
+- ADD-SOLE-SVC-WD
+- ADD-SOLE-SVC-SAT
+- ADD-SOLE-SVC-SUN
+- ADD-SOLE-SVC-PK4SAT
+- ADD-SOLE-SVC-PK4SUN
+- ADD-SOLE-SVC-MON
+
+---
+
+### 2.2 Waage & Gewicht
+- ADD-WEIGHT-SCALE-SELF
+- ADD-WEIGHT-MONITOR-MON
+
+---
+
+### 2.3 Führservice (Dauer in Minuten)
+
+#### Einzelleistungen Werktag
+- ADD-LEAD-5-WD
+- ADD-LEAD-10-WD
+- ADD-LEAD-15-WD
+- ADD-LEAD-20-WD
+- ADD-LEAD-30-WD
+
+#### Einzelleistungen Samstag
+- ADD-LEAD-5-SAT
+- ADD-LEAD-10-SAT
+- ADD-LEAD-15-SAT
+- ADD-LEAD-20-SAT
+- ADD-LEAD-30-SAT
+
+#### Einzelleistungen Sonntag
+- ADD-LEAD-5-SUN
+- ADD-LEAD-10-SUN
+- ADD-LEAD-15-SUN
+- ADD-LEAD-20-SUN
+- ADD-LEAD-30-SUN
+
+#### Monatspauschalen (Werktage, Dauer fix)
+- ADD-LEAD-5-MON
+- ADD-LEAD-10-MON
+- ADD-LEAD-15-MON
+- ADD-LEAD-20-MON
+- ADD-LEAD-30-MON
+
+---
+
+### 2.4 Wochenendservice (Stallversorgung)
+- ADD-WEEKEND-SAT
+- ADD-WEEKEND-SUN
+- ADD-WEEKEND-PK4SAT
+- ADD-WEEKEND-PK4SUN
+- ADD-WEEKEND-MON
+
+---
+
+### 2.5 Medizinische Versorgung – light (< 5 min)
+- ADD-MED-LIGHT-WD
+- ADD-MED-LIGHT-SAT
+- ADD-MED-LIGHT-SUN
+- ADD-MED-LIGHT-MON
+- ADD-MED-LIGHT-MON-WE
+
+---
+
+### 2.6 Medizinische Versorgung – umfangreich (> 5 min)
+- ADD-MED-FULL-WD
+- ADD-MED-FULL-SAT
+- ADD-MED-FULL-SUN
+- ADD-MED-FULL-MON
+- ADD-MED-FULL-MON-WE
+
+---
+
+### 2.7 Notfallbetreuung
+- ADD-EMERGENCY-WD
+- ADD-EMERGENCY-SAT
+- ADD-EMERGENCY-SUN
+
+---
+
+### 2.8 Betreuung externer Termine
+- ADD-EXT-CARE-WD
+- ADD-EXT-CARE-SAT
+
+---
+
+### 2.9 Gesundheitsmanagement
+- ADD-HEALTH-FECAL
+- ADD-HEALTH-DEWORM
+
+---
+
+### 2.10 Longieren / Bodenarbeit / Bewegung
+- ADD-MOVE-WD
+- ADD-MOVE-PK5WD
+- ADD-MOVE-MON
+- ADD-MOVE-SAT
+- ADD-MOVE-PK4SAT
+- ADD-MOVE-SUN
+- ADD-MOVE-PK4SUN
+- ADD-MOVE-MON-WE
+
+---
+
+### 2.11 Deckenservice
+- ADD-RUG-PK5WD
+- ADD-RUG-MON
+- ADD-RUG-SAT
+- ADD-RUG-PK4SAT
+- ADD-RUG-SUN
+- ADD-RUG-PK4SUN
+- ADD-RUG-MON-WE
+
+---
+
+## 3) Hinweise zur späteren Digitalisierung (praktisch)
+
+### Buchung (Konfiguration)
+Gespeichert werden:
+- horse_id
+- service_id (aus diesem Register)
+- effective_from
+- effective_to (optional)
+- booking_notes (optional)
+
+### Protokoll (Ausführung)
+Gespeichert werden:
+- horse_id
+- service_id
+- performed_at (Datum/Uhrzeit)
+- duration_minutes (wenn relevant)
+- performed_by (Person/Role)
+- billable (bool)
+- notes (optional)
+
+### Preislogik
+Preise liegen ausschließlich im Leistungsverzeichnis:
+- price_list_version
+- valid_from
+- service_id → price
+So können Preise geändert werden, ohne historische Buchungen zu beschädigen.
+
+---
+
+## 4) Qualitätsregel
+Neue Leistungen dürfen nur hinzugefügt werden, wenn:
+- sie eine eindeutige ID bekommen
+- sie im Leistungsverzeichnis mit Preis stehen
+- die Leistungsbuchung Auswahlfelder erhält

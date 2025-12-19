@@ -75,6 +75,7 @@ RUN sed -i '1i pid /run/nginx/nginx.pid;' /etc/nginx/nginx.conf
 RUN sed -i 's|listen = 9000|listen = 9001|' /usr/local/etc/php-fpm.d/zz-docker.conf
 
 COPY docker/ /docker/
+RUN [ -f /docker/php-local.conf ] && cp /docker/php-local.conf /usr/local/etc/php-fpm.d/php-local.conf || true
 RUN cp /docker/app.conf /etc/nginx/conf.d/app.conf \
     && cp /docker/supervisord.conf /etc/supervisord.conf \
     && chmod +x /docker/entrypoint.sh
